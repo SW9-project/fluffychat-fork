@@ -11,15 +11,20 @@ class TwoColumnLayout extends StatelessWidget {
   final Widget sideView;
   final bool hasNavigationRail;
 
+  /// Floats at the bottom of the main view, next to the navigation rail.
+  final Widget? bottomBar;
+
   const TwoColumnLayout({
     super.key,
     required this.mainView,
     required this.sideView,
     this.hasNavigationRail = true,
+    this.bottomBar,
   });
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bottomBar = this.bottomBar;
 
     return ScaffoldMessenger(
       child: Scaffold(
@@ -31,7 +36,18 @@ class TwoColumnLayout extends StatelessWidget {
               width:
                   FluffyThemes.columnWidth +
                   (hasNavigationRail ? FluffyThemes.navRailWidth : 0),
-              child: mainView,
+              child: Stack(
+                children: [
+                  Positioned.fill(child: mainView),
+                  if (bottomBar != null)
+                    Positioned(
+                      left: hasNavigationRail ? FluffyThemes.navRailWidth : 0,
+                      right: 0,
+                      bottom: 0,
+                      child: bottomBar,
+                    ),
+                ],
+              ),
             ),
             Container(width: 1.0, color: theme.dividerColor),
             Expanded(child: ClipRRect(child: sideView)),

@@ -2852,5 +2852,11 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "calls": "Calls",
+    "assistant": "Assistant",
+    "outgoingCall": "Outgoing call",
+    "ongoingCall": "Ongoing call",
+    "noCallsYet": "No calls yet",
+    "callHistoryDescription": "Your voice and video calls will show up here."
 }

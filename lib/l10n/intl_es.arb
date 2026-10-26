@@ -2659,5 +2659,35 @@
     "@openFile": {
         "type": "String",
         "placeholders": {}
+    },
+    "calls": "Llamadas",
+    "@calls": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "assistant": "Asistente",
+    "@assistant": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "outgoingCall": "Llamada saliente",
+    "@outgoingCall": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "ongoingCall": "Llamada en curso",
+    "@ongoingCall": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "noCallsYet": "Aún no hay llamadas",
+    "@noCallsYet": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "callHistoryDescription": "Tus llamadas de voz y vídeo aparecerán aquí.",
+    "@callHistoryDescription": {
+        "type": "String",
+        "placeholders": {}
     }
 }
