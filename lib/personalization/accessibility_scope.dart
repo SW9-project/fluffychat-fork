@@ -27,9 +27,13 @@ class AccessibilityScope extends StatefulWidget {
       AccessibilitySettings.defaults;
 
   /// The controller, for changing settings. Does not register for rebuilds.
-  static AccessibilityController controllerOf(BuildContext context) => context
-      .getInheritedWidgetOfExactType<_AccessibilityInherited>()!
-      .notifier!;
+  static AccessibilityController controllerOf(BuildContext context) =>
+      maybeControllerOf(context)!;
+
+  static AccessibilityController? maybeControllerOf(BuildContext context) =>
+      context
+          .getInheritedWidgetOfExactType<_AccessibilityInherited>()
+          ?.notifier;
 
   @override
   State<AccessibilityScope> createState() => _AccessibilityScopeState();
@@ -65,16 +69,24 @@ class AccessibilityTextScale extends StatelessWidget {
 
   const AccessibilityTextScale({required this.child, super.key});
 
+  /// [base] multiplied by [factor], keeping nonlinear system scaling.
+  static TextScaler multiply(TextScaler base, double factor) =>
+      factor == 1.0 ? base : _MultipliedTextScaler(base, factor);
+
+  /// The text scaler for text typed into the message input: the app-wide
+  /// scale times the user's input text scale.
+  static TextScaler inputTextScaler(BuildContext context) => multiply(
+    MediaQuery.textScalerOf(context),
+    AccessibilityScope.of(context).inputTextScale,
+  );
+
   @override
   Widget build(BuildContext context) {
     final textScale = AccessibilityScope.of(context).textScale;
     if (textScale == 1.0) return child;
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(
-        textScaler: _MultipliedTextScaler(
-          MediaQuery.textScalerOf(context),
-          textScale,
-        ),
+        textScaler: multiply(MediaQuery.textScalerOf(context), textScale),
       ),
       child: child,
     );

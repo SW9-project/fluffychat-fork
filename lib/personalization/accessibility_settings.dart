@@ -14,6 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// values they accept. Phase 3 builds the model's allowlist from it.
 enum ScaleCategory {
   text('text_scale', min: 0.8, max: 2.0, step: 0.1),
+
+  /// Text typed in the message input, on top of [text].
+  inputText('input_text_scale', min: 1.0, max: 2.0, step: 0.1),
   button('button_scale', min: 1.0, max: 2.0, step: 0.1),
   touchTarget('touch_target_scale', min: 1.0, max: 2.0, step: 0.1),
   avatar('avatar_scale', min: 1.0, max: 2.0, step: 0.1);
@@ -63,6 +66,7 @@ class AccessibilitySettings {
       _values[category] ?? category.defaultValue;
 
   double get textScale => this[ScaleCategory.text];
+  double get inputTextScale => this[ScaleCategory.inputText];
   double get buttonScale => this[ScaleCategory.button];
   double get touchTargetScale => this[ScaleCategory.touchTarget];
   double get avatarScale => this[ScaleCategory.avatar];

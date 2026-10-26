@@ -171,6 +171,9 @@ class _Preview extends StatelessWidget {
                       l10n.typeMessage,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      textScaler: AccessibilityTextScale.inputTextScaler(
+                        context,
+                      ),
                       style: TextStyle(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

@@ -18,6 +18,11 @@ class PersonalizationL10n {
   final String typeMessage;
   final String undo;
   final String reset;
+  final String suggestion;
+  final String apply;
+  final String notNow;
+  final String dontSuggestAgain;
+  final String Function(String category, String value) changedTo;
   final Map<ScaleCategory, String> categoryTitles;
   final Map<ScaleCategory, String> categoryDescriptions;
 
@@ -31,6 +36,11 @@ class PersonalizationL10n {
     required this.typeMessage,
     required this.undo,
     required this.reset,
+    required this.suggestion,
+    required this.apply,
+    required this.notNow,
+    required this.dontSuggestAgain,
+    required this.changedTo,
     required this.categoryTitles,
     required this.categoryDescriptions,
   });
@@ -51,14 +61,21 @@ class PersonalizationL10n {
     typeMessage: 'Write a message',
     undo: 'Undo',
     reset: 'Reset',
+    suggestion: 'Suggestion',
+    apply: 'Yes, change it',
+    notNow: 'Not now',
+    dontSuggestAgain: "Don't suggest this again",
+    changedTo: _changedToEn,
     categoryTitles: {
       ScaleCategory.text: 'Text size',
+      ScaleCategory.inputText: 'Typing text size',
       ScaleCategory.button: 'Button size',
       ScaleCategory.touchTarget: 'Touch area',
       ScaleCategory.avatar: 'Picture size',
     },
     categoryDescriptions: {
       ScaleCategory.text: 'Size of all text in the app',
+      ScaleCategory.inputText: 'Size of the text you type in a message',
       ScaleCategory.button: 'Size of icons on buttons',
       ScaleCategory.touchTarget: 'How large the area you can tap is',
       ScaleCategory.avatar: 'Size of profile pictures',
@@ -75,17 +92,31 @@ class PersonalizationL10n {
     typeMessage: 'Skriv en besked',
     undo: 'Fortryd',
     reset: 'Nulstil',
+    suggestion: 'Forslag',
+    apply: 'Ja, skift den',
+    notNow: 'Ikke nu',
+    dontSuggestAgain: 'Foreslå ikke dette igen',
+    changedTo: _changedToDa,
     categoryTitles: {
       ScaleCategory.text: 'Tekststørrelse',
+      ScaleCategory.inputText: 'Størrelse på skrivetekst',
       ScaleCategory.button: 'Knapstørrelse',
       ScaleCategory.touchTarget: 'Trykområde',
       ScaleCategory.avatar: 'Billedstørrelse',
     },
     categoryDescriptions: {
       ScaleCategory.text: 'Størrelsen på al tekst i appen',
+      ScaleCategory.inputText:
+          'Størrelsen på den tekst, du skriver i en besked',
       ScaleCategory.button: 'Størrelsen på ikoner på knapper',
       ScaleCategory.touchTarget: 'Hvor stort området er, som du kan trykke på',
       ScaleCategory.avatar: 'Størrelsen på profilbilleder',
     },
   );
 }
+
+String _changedToEn(String category, String value) =>
+    '$category is now × $value';
+
+String _changedToDa(String category, String value) =>
+    '$category er nu × $value';

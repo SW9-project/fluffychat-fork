@@ -10,6 +10,7 @@ import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_list/active_call_indicator.dart';
 import 'package:fluffychat/pages/chat_list/unread_bubble.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/signals/tracked_target.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/utils/room_status_extension.dart';
@@ -430,6 +431,7 @@ class ChatListItem extends StatelessWidget {
               ),
             ),
           ),
+          TrackedTarget.fill(id: 'chat_list_item', kind: TargetKind.listItem),
           Positioned(
             left: horizontalPadding * 2 + avatarSize,
             right: 0,

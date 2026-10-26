@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "placeholder": true,
+  "note": "PLACEHOLDER VALUES. Every threshold and text below only shows the format. Replace them with values from the literature review before any study. Signals and counts never leave the device.",
+  "signals": {
+    "nearMissDistance": 16,
+    "repeatedTapWindowMs": 600,
+    "repeatedTapDistance": 24,
+    "pinchMinChange": 0.15,
+    "windowMinutes": 10,
+    "maxEvents": 500
+  },
+  "suggestions": {
+    "undoSeconds": 10
+  },
+  "heuristics": [
+    {
+      "id": "near-miss-buttons",
+      "source": "TBD from literature review",
+      "placeholder": true,
+      "condition": {
+        "type": "share",
+        "signal": "nearMiss",
+        "of": ["hit", "nearMiss"],
+        "targetKind": "button",
+        "minShare": 0.25,
+        "minEvents": 8
+      },
+      "change": { "category": "button", "steps": 1 },
+      "cooldownMinutes": 30,
+      "description": {
+        "en": "Some taps land just next to the buttons. Make the buttons bigger?",
+        "da": "Nogle tryk rammer lige ved siden af knapperne. Skal knapperne gøres større?"
+      }
+    },
+    {
+      "id": "text-zoom",
+      "source": "TBD from literature review",
+      "placeholder": true,
+      "condition": {
+        "type": "count",
+        "signal": "pinch",
+        "targetKind": "text",
+        "minCount": 3,
+        "withinMinutes": 5
+      },
+      "change": { "category": "text", "steps": 1 },
+      "cooldownMinutes": 30,
+      "description": {
+        "en": "It looks like you tried to zoom in on the messages. Make the text bigger?",
+        "da": "Det ser ud til, at du prøvede at zoome ind på beskederne. Skal teksten gøres større?"
+      }
+    }
+  ]
+}

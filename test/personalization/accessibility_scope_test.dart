@@ -46,6 +46,29 @@ void main() {
     expect(scaler.scale(10), 30);
   });
 
+  testWidgets('input text scale multiplies only the input text', (
+    tester,
+  ) async {
+    late TextScaler appScaler;
+    late TextScaler inputScaler;
+    await tester.pumpWidget(
+      app(
+        Builder(
+          builder: (context) {
+            appScaler = MediaQuery.textScalerOf(context);
+            inputScaler = AccessibilityTextScale.inputTextScaler(context);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    await controller.apply(ScaleCategory.text, 1.5);
+    await controller.apply(ScaleCategory.inputText, 2.0);
+    await tester.pump();
+    expect(appScaler.scale(10), 15);
+    expect(inputScaler.scale(10), 30);
+  });
+
   testWidgets('icon buttons follow button and touch target scale', (
     tester,
   ) async {
