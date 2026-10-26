@@ -9,6 +9,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   dynamic_color
   emoji_picker_flutter
   file_selector_windows
+  flutter_edge_ai
   flutter_secure_storage_windows
   flutter_webrtc
   geolocator_windows
@@ -20,6 +21,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   screen_retriever_windows
   share_plus
   url_launcher_windows
+  webcrypto
   window_manager
   window_to_front
 )

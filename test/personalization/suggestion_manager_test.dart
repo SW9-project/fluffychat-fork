@@ -65,7 +65,7 @@ void main() {
     pinch(1);
     expect(manager.current, isNull);
     pinch(1);
-    expect(manager.current?.heuristic.id, 'text-zoom');
+    expect(manager.current?.id, 'text-zoom');
   });
 
   test('nothing is applied without confirmation', () {
@@ -86,7 +86,7 @@ void main() {
     await manager.apply();
     expect(accessibility.settings.textScale, 1.1);
     expect(manager.current, isNull);
-    expect(manager.applied?.suggestion.heuristic.id, 'text-zoom');
+    expect(manager.applied?.suggestion.id, 'text-zoom');
 
     await manager.undoApplied();
     expect(accessibility.settings.textScale, 1.0);
@@ -125,7 +125,7 @@ void main() {
     // The signals before applying were cleared, so new ones are needed.
     expect(manager.current, isNull);
     pinch();
-    expect(manager.current?.heuristic.id, 'text-zoom');
+    expect(manager.current?.id, 'text-zoom');
     expect(manager.current?.from, 1.1);
     expect(manager.current?.to, 1.2);
   });
@@ -135,7 +135,7 @@ void main() {
     await manager.apply();
     await manager.undoApplied();
     pinch();
-    expect(manager.current?.heuristic.id, 'avatar-zoom');
+    expect(manager.current?.id, 'avatar-zoom');
   });
 
   test('no new suggestion while the undo offer is open', () async {
@@ -152,7 +152,7 @@ void main() {
 
     // The cleared window needs new signals; the next heuristic may show.
     pinch();
-    expect(manager.current?.heuristic.id, 'avatar-zoom');
+    expect(manager.current?.id, 'avatar-zoom');
     manager.notNow();
 
     now = now.add(const Duration(minutes: 10));
@@ -161,7 +161,7 @@ void main() {
 
     now = now.add(const Duration(minutes: 25));
     pinch();
-    expect(manager.current?.heuristic.id, 'text-zoom');
+    expect(manager.current?.id, 'text-zoom');
   });
 
   test('resolving a suggestion clears the signal window', () {
@@ -193,12 +193,12 @@ void main() {
         ),
       );
     }
-    expect(restarted.current?.heuristic.id, 'avatar-zoom');
+    expect(restarted.current?.id, 'avatar-zoom');
   });
 
   test('no suggestion when the category is already at its max', () async {
     await accessibility.apply(ScaleCategory.text, ScaleCategory.text.max);
     pinch();
-    expect(manager.current?.heuristic.id, 'avatar-zoom');
+    expect(manager.current?.id, 'avatar-zoom');
   });
 }

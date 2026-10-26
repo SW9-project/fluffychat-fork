@@ -23,6 +23,17 @@ class PersonalizationL10n {
   final String notNow;
   final String dontSuggestAgain;
   final String Function(String category, String value) changedTo;
+  final String askTitle;
+  final String askDescription;
+  final String askSetup;
+  final String Function(int percent) askSettingUp;
+  final String askFailed;
+  final String tryAgain;
+  final String askHint;
+  final String ask;
+  final String didNotCatchThat;
+  final String Function(String category) alreadyAtLimit;
+  final String Function(String text) youWrote;
   final Map<ScaleCategory, String> categoryTitles;
   final Map<ScaleCategory, String> categoryDescriptions;
 
@@ -41,6 +52,17 @@ class PersonalizationL10n {
     required this.notNow,
     required this.dontSuggestAgain,
     required this.changedTo,
+    required this.askTitle,
+    required this.askDescription,
+    required this.askSetup,
+    required this.askSettingUp,
+    required this.askFailed,
+    required this.tryAgain,
+    required this.askHint,
+    required this.ask,
+    required this.didNotCatchThat,
+    required this.alreadyAtLimit,
+    required this.youWrote,
     required this.categoryTitles,
     required this.categoryDescriptions,
   });
@@ -66,6 +88,21 @@ class PersonalizationL10n {
     notNow: 'Not now',
     dontSuggestAgain: "Don't suggest this again",
     changedTo: _changedToEn,
+    askTitle: 'Tell the app what is hard',
+    askDescription:
+        'Write what bothers you, and the app suggests a change. '
+        'This runs only on your phone.',
+    askSetup: 'Set up',
+    askSettingUp: _askSettingUpEn,
+    askFailed: 'The assistant could not be set up.',
+    tryAgain: 'Try again',
+    askHint: 'For example: the buttons are too small',
+    ask: 'Ask',
+    didNotCatchThat:
+        "I didn't catch that. You can also change the sizes with the "
+        'sliders below.',
+    alreadyAtLimit: _alreadyAtLimitEn,
+    youWrote: _youWroteEn,
     categoryTitles: {
       ScaleCategory.text: 'Text size',
       ScaleCategory.inputText: 'Typing text size',
@@ -97,6 +134,21 @@ class PersonalizationL10n {
     notNow: 'Ikke nu',
     dontSuggestAgain: 'Foreslå ikke dette igen',
     changedTo: _changedToDa,
+    askTitle: 'Fortæl appen, hvad der er svært',
+    askDescription:
+        'Skriv, hvad der generer dig, så foreslår appen en ændring. '
+        'Det kører kun på din telefon.',
+    askSetup: 'Klargør',
+    askSettingUp: _askSettingUpDa,
+    askFailed: 'Assistenten kunne ikke klargøres.',
+    tryAgain: 'Prøv igen',
+    askHint: 'For eksempel: knapperne er for små',
+    ask: 'Spørg',
+    didNotCatchThat:
+        'Det forstod jeg ikke. Du kan også ændre størrelserne med '
+        'skyderne herunder.',
+    alreadyAtLimit: _alreadyAtLimitDa,
+    youWrote: _youWroteDa,
     categoryTitles: {
       ScaleCategory.text: 'Tekststørrelse',
       ScaleCategory.inputText: 'Størrelse på skrivetekst',
@@ -120,3 +172,17 @@ String _changedToEn(String category, String value) =>
 
 String _changedToDa(String category, String value) =>
     '$category er nu × $value';
+
+String _askSettingUpEn(int percent) => 'Setting up… $percent%';
+
+String _askSettingUpDa(int percent) => 'Klargør… $percent%';
+
+String _alreadyAtLimitEn(String category) =>
+    '$category cannot change any further that way.';
+
+String _alreadyAtLimitDa(String category) =>
+    '$category kan ikke ændres mere i den retning.';
+
+String _youWroteEn(String text) => 'You wrote: “$text”';
+
+String _youWroteDa(String text) => 'Du skrev: “$text”';

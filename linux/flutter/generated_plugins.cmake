@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   dynamic_color
   emoji_picker_flutter
   file_selector_linux
+  flutter_edge_ai
   flutter_secure_storage_linux
   flutter_webrtc
   handy_window
@@ -17,6 +18,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   record_linux
   screen_retriever_linux
   url_launcher_linux
+  webcrypto
   window_manager
   window_to_front
 )

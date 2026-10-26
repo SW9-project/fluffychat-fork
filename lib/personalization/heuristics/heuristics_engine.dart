@@ -4,22 +4,10 @@
 
 import '../accessibility_settings.dart';
 import '../signals/interaction_signal.dart';
+import '../suggestions/suggestion.dart';
 import 'heuristic.dart';
 
-/// A proposed settings change, always shown to the user before it applies.
-class Suggestion {
-  final Heuristic heuristic;
-  final ScaleCategory category;
-  final double from;
-  final double to;
-
-  const Suggestion({
-    required this.heuristic,
-    required this.category,
-    required this.from,
-    required this.to,
-  });
-}
+export '../suggestions/suggestion.dart';
 
 /// Evaluates heuristics against the rolling signal window. Rules only, no
 /// model.
@@ -48,11 +36,6 @@ class HeuristicsEngine {
     final from = settings[category];
     final to = category.normalize(from + heuristic.steps * category.step);
     if (to == from) return null;
-    return Suggestion(
-      heuristic: heuristic,
-      category: category,
-      from: from,
-      to: to,
-    );
+    return Suggestion.fromHeuristic(heuristic, from: from, to: to);
   }
 }

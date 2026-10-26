@@ -28,7 +28,7 @@ class SuggestionCard extends StatelessWidget {
       final Widget content;
       if (current != null) {
         content = _SuggestionContent(
-          key: ValueKey(current.heuristic.id),
+          key: ValueKey(current.id),
           suggestion: current,
           manager: manager,
         );
@@ -123,7 +123,7 @@ class _SuggestionContent extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            suggestion.heuristic.description(language),
+            suggestion.description(language),
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: 12),
@@ -134,11 +134,12 @@ class _SuggestionContent extends StatelessWidget {
             spacing: 8,
             runSpacing: 4,
             children: [
-              TextButton(
-                key: const Key('suggestion_opt_out'),
-                onPressed: manager.optOut,
-                child: Text(l10n.dontSuggestAgain),
-              ),
+              if (!suggestion.isUserRequest)
+                TextButton(
+                  key: const Key('suggestion_opt_out'),
+                  onPressed: manager.optOut,
+                  child: Text(l10n.dontSuggestAgain),
+                ),
               TextButton(
                 key: const Key('suggestion_not_now'),
                 onPressed: manager.notNow,

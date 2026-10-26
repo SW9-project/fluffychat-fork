@@ -31,6 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_callkit_incoming: ^3.1.6
+  flutter_edge_ai: ^2.5.3
+  flutter_edge_ai_litertlm: ^1.18.0
   flutter_foreground_task: ^11.0.3
   flutter_linkify: ^6.0.0
   flutter_local_notifications: ^22.3.2
@@ -113,6 +115,7 @@ flutter:
     - assets/
     - assets/logo/mini/
     - assets/sounds/
+    - assets/models/
     - assets/vodozemac/0.8.1/
 
 hooks:

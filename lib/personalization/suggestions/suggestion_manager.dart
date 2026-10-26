@@ -86,7 +86,7 @@ class SuggestionManager extends ChangeNotifier {
       now,
     );
     for (final suggestion in candidates) {
-      final id = suggestion.heuristic.id;
+      final id = suggestion.id;
       if (optedOut.contains(id)) continue;
       final cooldownUntil = _cooldownUntil[id];
       if (cooldownUntil != null && now.isBefore(cooldownUntil)) continue;
@@ -94,6 +94,17 @@ class SuggestionManager extends ChangeNotifier {
       notifyListeners();
       return;
     }
+  }
+
+  /// Shows a change the user asked for through the model. It replaces any
+  /// open suggestion and ignores rate limits, because the user started it.
+  /// It still needs [apply], like every other suggestion.
+  void proposeUserRequest(Suggestion suggestion) {
+    _undoTimer?.cancel();
+    _undoTimer = null;
+    _applied = null;
+    _current = suggestion;
+    notifyListeners();
   }
 
   Future<void> apply() async {
@@ -144,17 +155,12 @@ class SuggestionManager extends ChangeNotifier {
     _current = null;
     _resolve(suggestion);
     notifyListeners();
-    await _store.setStringList(optOutKey, [
-      ...optedOut,
-      suggestion.heuristic.id,
-    ]);
+    await _store.setStringList(optOutKey, [...optedOut, suggestion.id]);
   }
 
   void _resolve(Suggestion suggestion, {bool cooldown = true}) {
     if (cooldown) {
-      _cooldownUntil[suggestion.heuristic.id] = _clock().add(
-        suggestion.heuristic.cooldown,
-      );
+      _cooldownUntil[suggestion.id] = _clock().add(suggestion.cooldown);
     }
     // The signals that led here were measured with the old sizes or were
     // already answered.

@@ -11,13 +11,16 @@ import 'package:matrix/matrix.dart';
 
 import 'accessibility_scope.dart';
 import 'heuristics/heuristic.dart';
+import 'model/function_gemma_model.dart';
+import 'model/settings_intent_model.dart';
 import 'signals/interaction_monitor.dart';
 import 'suggestions/suggestion_card.dart';
 import 'suggestions/suggestion_manager.dart';
 
-/// Watches interactions and shows heuristic suggestions above the app. Works
-/// without any model. If the heuristics file is missing or broken, the app
-/// simply shows no suggestions.
+/// Watches interactions and shows suggestions above the app, from heuristics
+/// and from the user's own requests through the on-device model. Works without
+/// the model. If the heuristics file is missing or broken, the app simply
+/// shows no heuristic suggestions.
 class PersonalizationLayer extends StatefulWidget {
   static const heuristicsAsset = 'assets/personalization_heuristics.json';
 
@@ -25,12 +28,24 @@ class PersonalizationLayer extends StatefulWidget {
 
   const PersonalizationLayer({required this.child, super.key});
 
+  /// The suggestion manager and the on-device model, or null outside the
+  /// layer.
+  static ({SuggestionManager manager, SettingsIntentModel model})? maybeOf(
+    BuildContext context,
+  ) {
+    final inherited = context
+        .getInheritedWidgetOfExactType<_PersonalizationInherited>();
+    if (inherited == null) return null;
+    return (manager: inherited.manager, model: inherited.model);
+  }
+
   @override
   State<PersonalizationLayer> createState() => _PersonalizationLayerState();
 }
 
 class _PersonalizationLayerState extends State<PersonalizationLayer> {
   SuggestionManager? _manager;
+  SettingsIntentModel? _model;
 
   @override
   void didChangeDependencies() {
@@ -42,6 +57,7 @@ class _PersonalizationLayerState extends State<PersonalizationLayer> {
       accessibility: accessibility,
       store: AppSettings.store,
     );
+    _model = FunctionGemmaModel();
     _loadHeuristics();
   }
 
@@ -64,20 +80,41 @@ class _PersonalizationLayerState extends State<PersonalizationLayer> {
   @override
   void dispose() {
     _manager?.dispose();
+    _model?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final manager = _manager;
-    if (manager == null) return widget.child;
-    return InteractionMonitor(
-      config: manager.config.signals,
-      onSignal: manager.addSignal,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [widget.child, SuggestionCard(manager)],
+    final model = _model;
+    if (manager == null || model == null) return widget.child;
+    return _PersonalizationInherited(
+      manager: manager,
+      model: model,
+      child: InteractionMonitor(
+        config: manager.config.signals,
+        onSignal: manager.addSignal,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [widget.child, SuggestionCard(manager)],
+        ),
       ),
     );
   }
+}
+
+class _PersonalizationInherited extends InheritedWidget {
+  final SuggestionManager manager;
+  final SettingsIntentModel model;
+
+  const _PersonalizationInherited({
+    required this.manager,
+    required this.model,
+    required super.child,
+  });
+
+  @override
+  bool updateShouldNotify(_PersonalizationInherited oldWidget) =>
+      manager != oldWidget.manager || model != oldWidget.model;
 }

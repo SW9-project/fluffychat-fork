@@ -324,3 +324,7 @@ macos/FluffyChat.app/Contents/Resources/wakelock_plus_wakelock_plus.bundle/Conte
 macos/FluffyChat.app/Contents/_CodeSignature/CodeResources
 macos/FluffyChat.app.dSYM.zip
 macos/FluffyChat.pkg
+
+# On-device model files are too large for git, see assets/models/README.md
+assets/models/*.litertlm
+assets/models/*.part
