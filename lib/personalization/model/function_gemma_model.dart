@@ -124,7 +124,9 @@ class FunctionGemmaModel implements SettingsIntentModel {
   Future<InferenceModel> _load() async {
     final model = _model;
     if (model != null && !model.isClosed) return model;
-    return _model = await FlutterEdgeAi.getActiveModel(maxTokens: 1024);
+    final loaded = _model = await FlutterEdgeAi.getActiveModel(maxTokens: 1024);
+    Logs().i('On-device model loaded, backend: ${loaded.activeBackend}');
+    return loaded;
   }
 
   @override

@@ -44,7 +44,9 @@ void main() {
 
       final counts = {for (final o in Outcome.values) o: 0};
       final times = <int>[];
-      final report = StringBuffer();
+      // One print per line: Android cuts long log lines.
+      // ignore: avoid_print
+      void report(String line) => print(line);
       for (final phrase in phrases) {
         final stopwatch = Stopwatch()..start();
         final call = await model.propose(phrase.text);
@@ -67,7 +69,7 @@ void main() {
                   ? Outcome.correct
                   : Outcome.wrong);
         counts[outcome] = counts[outcome]! + 1;
-        report.writeln(
+        report(
           '[phrases] ${phrase.language} ${outcome.name.padRight(8)} '
           '${stopwatch.elapsedMilliseconds.toString().padLeft(6)} ms  '
           '"${phrase.text}" -> ${proposed ?? 'rejected'} (raw: $call)',
@@ -76,20 +78,17 @@ void main() {
       model.dispose();
 
       times.sort();
-      report
-        ..writeln('[phrases] load ${load.elapsedMilliseconds} ms')
-        ..writeln(
-          '[phrases] ${phrases.length} phrases: '
-          '${counts[Outcome.correct]} correct, '
-          '${counts[Outcome.rejected]} safely rejected, '
-          '${counts[Outcome.wrong]} wrong',
-        )
-        ..writeln(
-          '[phrases] median ${times[times.length ~/ 2]} ms, '
-          'max ${times.last} ms',
-        );
-      // ignore: avoid_print
-      print(report);
+      report('[phrases] load ${load.elapsedMilliseconds} ms');
+      report(
+        '[phrases] ${phrases.length} phrases: '
+        '${counts[Outcome.correct]} correct, '
+        '${counts[Outcome.rejected]} safely rejected, '
+        '${counts[Outcome.wrong]} wrong',
+      );
+      report(
+        '[phrases] median ${times[times.length ~/ 2]} ms, '
+        'max ${times.last} ms',
+      );
     });
   });
 }
