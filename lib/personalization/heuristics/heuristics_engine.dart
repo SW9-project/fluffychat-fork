@@ -9,6 +9,10 @@ import 'heuristic.dart';
 
 export '../suggestions/suggestion.dart';
 
+/// Disabled for now (Phase 3b): signals are not collected, so nothing calls
+/// this. The heuristics are offered to the on-device model instead (see
+/// `HeuristicFunctions`).
+///
 /// Evaluates heuristics against the rolling signal window. Rules only, no
 /// model.
 class HeuristicsEngine {

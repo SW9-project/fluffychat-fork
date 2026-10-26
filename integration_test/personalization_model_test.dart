@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Runs the phrase list through the real on-device model and prints a report.
+// Since Phase 3b the model is offered only the heuristic functions from
+// assets/personalization_heuristics.json.
 //
 // Needs an arm64 process on Android 11+ and the bundled model file
 // (scripts/fetch_personalization_model.sh). On a phone:
@@ -13,11 +15,15 @@
 // then install it and read the report from `adb logcat -s flutter`.
 // Latency numbers from an emulator are not valid study results.
 
+import 'dart:convert';
+
 import 'package:fluffychat/personalization/accessibility_settings.dart';
+import 'package:fluffychat/personalization/heuristics/heuristic.dart';
 import 'package:fluffychat/personalization/model/function_gemma_model.dart';
-import 'package:fluffychat/personalization/model/settings_call_validator.dart';
-import 'package:fluffychat/personalization/model/settings_functions.dart';
+import 'package:fluffychat/personalization/model/heuristic_functions.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
+import 'package:fluffychat/personalization/personalization_layer.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -36,6 +42,13 @@ void main() {
     }
 
     await tester.runAsync(() async {
+      final heuristics = HeuristicsConfig.fromJson(
+        jsonDecode(
+              await rootBundle.loadString(PersonalizationLayer.heuristicsAsset),
+            )
+            as Map<String, Object?>,
+      ).heuristics;
+      final functions = HeuristicFunctions.declarationsFor(heuristics);
       final model = FunctionGemmaModel();
       final load = Stopwatch()..start();
       await model.prepare();
@@ -49,19 +62,20 @@ void main() {
       void report(String line) => print(line);
       for (final phrase in phrases) {
         final stopwatch = Stopwatch()..start();
-        final call = await model.propose(phrase.text);
+        final call = await model.propose(phrase.text, functions);
         stopwatch.stop();
         times.add(stopwatch.elapsedMilliseconds);
 
-        final result = SettingsCallValidator.validate(
+        final result = HeuristicFunctions.interpret(
           call,
+          heuristics,
           AccessibilitySettings.defaults,
         );
         final proposed = switch (result) {
-          ValidCall(:final category, :final from, :final to) =>
-            '${SettingsFunctions.nameFor(category)}: '
-                '${to > from ? SettingsFunctions.bigger : SettingsFunctions.smaller}',
-          RejectedCall() => null,
+          AssistProposal(:final heuristic) => HeuristicFunctions.nameFor(
+            heuristic,
+          ),
+          AssistAtLimit() || AssistNoSuggestion() => null,
         };
         final outcome = proposed == null
             ? (phrase.accept.isEmpty ? Outcome.correct : Outcome.rejected)
@@ -72,7 +86,7 @@ void main() {
         report(
           '[phrases] ${phrase.language} ${outcome.name.padRight(8)} '
           '${stopwatch.elapsedMilliseconds.toString().padLeft(6)} ms  '
-          '"${phrase.text}" -> ${proposed ?? 'rejected'} (raw: $call)',
+          '"${phrase.text}" -> ${proposed ?? 'no suggestion'} (raw: $call)',
         );
       }
       model.dispose();
@@ -82,7 +96,7 @@ void main() {
       report(
         '[phrases] ${phrases.length} phrases: '
         '${counts[Outcome.correct]} correct, '
-        '${counts[Outcome.rejected]} safely rejected, '
+        '${counts[Outcome.rejected]} no suggestion where one fits, '
         '${counts[Outcome.wrong]} wrong',
       );
       report(

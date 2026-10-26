@@ -10,9 +10,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'accessibility_scope.dart';
 import 'accessibility_settings.dart';
-import 'model/ask_the_app_section.dart';
 import 'personalization_l10n.dart';
-import 'personalization_layer.dart';
 
 /// Lets the user resize UI elements by hand, with a live preview.
 class AccessibilitySettingsPage extends StatelessWidget {
@@ -43,12 +41,6 @@ class AccessibilitySettingsPage extends StatelessWidget {
                 style: theme.textTheme.bodyLarge,
               ),
             ),
-            if (PersonalizationLayer.maybeOf(context) case final layer?)
-              AskTheAppSection(
-                model: layer.model,
-                manager: layer.manager,
-                accessibility: controller,
-              ),
             ListTile(
               title: Text(
                 l10n.preview,

@@ -109,6 +109,11 @@ class Heuristic {
   /// Premade description per language code, e.g. `en` and `da`.
   final Map<String, String> descriptions;
 
+  /// One plain English sentence the on-device model reads: which problem the
+  /// heuristic addresses and which change helps. Without it the heuristic is
+  /// not offered to the model.
+  final String? rule;
+
   const Heuristic({
     required this.id,
     required this.source,
@@ -117,6 +122,7 @@ class Heuristic {
     required this.steps,
     required this.cooldown,
     required this.descriptions,
+    this.rule,
   });
 
   String description(String languageCode) =>
@@ -145,6 +151,7 @@ class Heuristic {
       descriptions: (json['description'] as Map<String, Object?>).map(
         (key, value) => MapEntry(key, value as String),
       ),
+      rule: json['rule'] as String?,
     );
   }
 }

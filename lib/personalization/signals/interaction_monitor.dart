@@ -8,6 +8,9 @@ import 'package:material_ui/material_ui.dart';
 import 'interaction_signal.dart';
 import 'tracked_target.dart';
 
+/// Disabled for now (Phase 3b): nothing inserts this widget, so no signals
+/// are collected. Kept for a later phase.
+///
 /// Watches all pointer events below it without taking part in gestures and
 /// reports taps and pinch attempts as [InteractionSignal]s.
 class InteractionMonitor extends StatefulWidget {

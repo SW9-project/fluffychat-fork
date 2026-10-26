@@ -23,17 +23,25 @@ class PersonalizationL10n {
   final String notNow;
   final String dontSuggestAgain;
   final String Function(String category, String value) changedTo;
-  final String askTitle;
-  final String askDescription;
+  final String assistIntro;
+  final String assistUnavailable;
+  final String assistSetupInfo;
+  final String openAccessibilitySettings;
   final String askSetup;
   final String Function(int percent) askSettingUp;
   final String askFailed;
   final String tryAgain;
   final String askHint;
   final String ask;
-  final String didNotCatchThat;
+  final String noSuggestion;
   final String Function(String category) alreadyAtLimit;
-  final String Function(String text) youWrote;
+  final String applyChange;
+  final String noThanks;
+  final String notChanged;
+  final String changeUndone;
+  final String thinking;
+  final String previewNow;
+  final String previewSuggested;
   final Map<ScaleCategory, String> categoryTitles;
   final Map<ScaleCategory, String> categoryDescriptions;
 
@@ -52,17 +60,25 @@ class PersonalizationL10n {
     required this.notNow,
     required this.dontSuggestAgain,
     required this.changedTo,
-    required this.askTitle,
-    required this.askDescription,
+    required this.assistIntro,
+    required this.assistUnavailable,
+    required this.assistSetupInfo,
+    required this.openAccessibilitySettings,
     required this.askSetup,
     required this.askSettingUp,
     required this.askFailed,
     required this.tryAgain,
     required this.askHint,
     required this.ask,
-    required this.didNotCatchThat,
+    required this.noSuggestion,
     required this.alreadyAtLimit,
-    required this.youWrote,
+    required this.applyChange,
+    required this.noThanks,
+    required this.notChanged,
+    required this.changeUndone,
+    required this.thinking,
+    required this.previewNow,
+    required this.previewSuggested,
     required this.categoryTitles,
     required this.categoryDescriptions,
   });
@@ -88,21 +104,30 @@ class PersonalizationL10n {
     notNow: 'Not now',
     dontSuggestAgain: "Don't suggest this again",
     changedTo: _changedToEn,
-    askTitle: 'Tell the app what is hard',
-    askDescription:
-        'Write what bothers you, and the app suggests a change. '
+    assistIntro:
+        'Tell me what is hard to use, and I suggest a change you can try. '
         'This runs only on your phone.',
+    assistUnavailable:
+        "The assistant can't run on this phone. You can still change the "
+        'sizes yourself.',
+    assistSetupInfo:
+        'The assistant needs to be set up once. It runs only on this phone.',
+    openAccessibilitySettings: 'Open accessibility settings',
     askSetup: 'Set up',
     askSettingUp: _askSettingUpEn,
     askFailed: 'The assistant could not be set up.',
     tryAgain: 'Try again',
     askHint: 'For example: the buttons are too small',
     ask: 'Ask',
-    didNotCatchThat:
-        "I didn't catch that. You can also change the sizes with the "
-        'sliders below.',
+    noSuggestion: "I don't have a suggestion for that.",
     alreadyAtLimit: _alreadyAtLimitEn,
-    youWrote: _youWroteEn,
+    applyChange: 'Apply',
+    noThanks: 'No thanks',
+    notChanged: 'Nothing was changed.',
+    changeUndone: 'The change was undone.',
+    thinking: 'Thinking…',
+    previewNow: 'Now',
+    previewSuggested: 'Suggested',
     categoryTitles: {
       ScaleCategory.text: 'Text size',
       ScaleCategory.inputText: 'Typing text size',
@@ -134,21 +159,30 @@ class PersonalizationL10n {
     notNow: 'Ikke nu',
     dontSuggestAgain: 'Foreslå ikke dette igen',
     changedTo: _changedToDa,
-    askTitle: 'Fortæl appen, hvad der er svært',
-    askDescription:
-        'Skriv, hvad der generer dig, så foreslår appen en ændring. '
-        'Det kører kun på din telefon.',
+    assistIntro:
+        'Fortæl mig, hvad der er svært at bruge, så foreslår jeg en ændring, '
+        'du kan prøve. Det kører kun på din telefon.',
+    assistUnavailable:
+        'Assistenten kan ikke køre på denne telefon. Du kan stadig selv '
+        'ændre størrelserne.',
+    assistSetupInfo:
+        'Assistenten skal klargøres én gang. Den kører kun på denne telefon.',
+    openAccessibilitySettings: 'Åbn tilgængelighedsindstillinger',
     askSetup: 'Klargør',
     askSettingUp: _askSettingUpDa,
     askFailed: 'Assistenten kunne ikke klargøres.',
     tryAgain: 'Prøv igen',
     askHint: 'For eksempel: knapperne er for små',
     ask: 'Spørg',
-    didNotCatchThat:
-        'Det forstod jeg ikke. Du kan også ændre størrelserne med '
-        'skyderne herunder.',
+    noSuggestion: 'Det har jeg ikke et forslag til.',
     alreadyAtLimit: _alreadyAtLimitDa,
-    youWrote: _youWroteDa,
+    applyChange: 'Anvend',
+    noThanks: 'Nej tak',
+    notChanged: 'Intet blev ændret.',
+    changeUndone: 'Ændringen blev fortrudt.',
+    thinking: 'Tænker…',
+    previewNow: 'Nu',
+    previewSuggested: 'Forslag',
     categoryTitles: {
       ScaleCategory.text: 'Tekststørrelse',
       ScaleCategory.inputText: 'Størrelse på skrivetekst',
@@ -182,7 +216,3 @@ String _alreadyAtLimitEn(String category) =>
 
 String _alreadyAtLimitDa(String category) =>
     '$category kan ikke ændres mere i den retning.';
-
-String _youWroteEn(String text) => 'You wrote: “$text”';
-
-String _youWroteDa(String text) => 'Du skrev: “$text”';

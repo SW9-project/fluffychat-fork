@@ -4,6 +4,8 @@
 
 import 'package:flutter/foundation.dart';
 
+import 'settings_functions.dart';
+
 /// A function call the model proposed. Not yet validated: see
 /// `SettingsCallValidator`.
 class ProposedCall {
@@ -58,8 +60,13 @@ abstract class SettingsIntentModel {
   /// Prepares the model for first use. Safe to call again.
   Future<void> prepare();
 
-  /// The model's proposed call for [text], or null when it made none.
-  Future<ProposedCall?> propose(String text);
+  /// The model's proposed call for [text], choosing only among [functions],
+  /// or null when it made none. Only the user's own text is sent, never
+  /// messages or other chat data.
+  Future<ProposedCall?> propose(
+    String text,
+    List<FunctionDeclaration> functions,
+  );
 
   /// Frees the loaded model's memory. The next [propose] loads it again.
   Future<void> release();

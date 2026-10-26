@@ -59,6 +59,16 @@ void main() {
       }
     });
 
+    test('every heuristic has a rule for the model and is a placeholder', () {
+      final config = HeuristicsConfig.fromJson(json);
+      for (final h in config.heuristics) {
+        expect(h.rule, isNotEmpty, reason: h.id);
+      }
+      for (final entry in json['heuristics'] as List) {
+        expect((entry as Map)['placeholder'], isTrue, reason: '${entry['id']}');
+      }
+    });
+
     test('is still marked as placeholder data', () {
       // Fails on purpose once the team replaces the values, as a reminder to
       // remove the flag and update this test.

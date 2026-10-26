@@ -1,7 +1,7 @@
 {
   "version": 1,
   "placeholder": true,
-  "note": "PLACEHOLDER VALUES. Every threshold and text below only shows the format. Replace them with values from the literature review before any study. Signals and counts never leave the device.",
+  "note": "PLACEHOLDER VALUES. Every threshold, rule and text below only shows the format. Since Phase 3b the model reads each heuristic's rule and proposes its change; the condition fields are unused. Replace them with values from the literature review before any study. Signals and counts never leave the device.",
   "signals": {
     "nearMissDistance": 16,
     "repeatedTapWindowMs": 600,
@@ -18,6 +18,7 @@
       "id": "near-miss-buttons",
       "source": "TBD from literature review",
       "placeholder": true,
+      "rule": "When buttons are hard to hit or taps land next to them, make the buttons bigger.",
       "condition": {
         "type": "share",
         "signal": "nearMiss",
@@ -37,6 +38,7 @@
       "id": "text-zoom",
       "source": "TBD from literature review",
       "placeholder": true,
+      "rule": "When text is hard to read or the user tries to zoom in on messages, make the text bigger.",
       "condition": {
         "type": "count",
         "signal": "pinch",

@@ -44,11 +44,6 @@ class FunctionGemmaModel implements SettingsIntentModel {
   Timer? _idleTimer;
   bool _disposed = false;
 
-  static final List<Tool> _tools = [
-    for (final f in SettingsFunctions.all)
-      Tool(name: f.name, description: f.description, parameters: f.parameters),
-  ];
-
   FunctionGemmaModel() {
     _availability = _checkAvailability();
   }
@@ -130,7 +125,10 @@ class FunctionGemmaModel implements SettingsIntentModel {
   }
 
   @override
-  Future<ProposedCall?> propose(String text) async {
+  Future<ProposedCall?> propose(
+    String text,
+    List<FunctionDeclaration> functions,
+  ) async {
     await _availability;
     if (_status.value.state != ModelState.ready) await prepare();
     if (_status.value.state != ModelState.ready) {
@@ -140,7 +138,14 @@ class FunctionGemmaModel implements SettingsIntentModel {
     final model = await _load();
     // One fresh chat per request: earlier requests must not steer this one.
     final chat = await model.createChat(
-      tools: _tools,
+      tools: [
+        for (final f in functions)
+          Tool(
+            name: f.name,
+            description: f.description,
+            parameters: f.parameters,
+          ),
+      ],
       supportsFunctionCalls: true,
       modelType: ModelType.functionGemma,
       // Greedy decoding: the same words always give the same proposal.

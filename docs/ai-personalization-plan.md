@@ -113,6 +113,27 @@ Two known pitfalls:
 
 **Out of scope:** fine-tuning. If base accuracy is too low, fine-tuning on data generated from our heuristics is a separate Python track, using Google's documented FunctionGemma fine-tune and `.litertlm` conversion path ([Google AI](https://ai.google.dev/gemma/docs/mobile-actions)).
 
+## Phase 3b: Assist tab with heuristics as the model's knowledge
+
+**Goal:** the model becomes the "expert" in a mixed-initiative setup. It proposes UI changes from the user's prompt and the UX heuristics. Nothing suggests a change without a prompt. Where this conflicts with Phases 2 and 3, Phase 3b wins.
+
+Flow, in the Assist tab (from the `ui-enhancements` navigation):
+
+1. The user types a prompt about the UI, e.g. "the buttons are hard to hit".
+2. FunctionGemma picks the heuristic that fits the prompt.
+3. The tab shows the heuristic's premade description and a live before/after preview of the affected element, and asks for confirmation.
+4. The user taps Apply or No thanks. After Apply, Undo is available for `undoSeconds`.
+
+Design:
+
+- **Heuristics are the model's functions.** Each heuristic in `assets/personalization_heuristics.json` has a `rule`: one plain English sentence on the problem it addresses and the change that helps. Each heuristic with a rule becomes one function, `heuristic_<id>`, whose description is the rule and whose only parameter is `steps` (1 to 3). Which setting changes and in which direction come from the heuristic's `change`, never from the model. The old `adjust_*` functions are not offered; `SettingsCallValidator` still checks the resulting change against the allowed ranges.
+- **No invented changes.** No call, an unknown function or unusable arguments show "I don't have a suggestion for that" and a link to the manual Accessibility settings.
+- **No unprompted suggestions.** Interaction signals, the heuristics engine and the overlay suggestion card are disconnected but kept in the repo, marked as disabled. The `condition` fields in the heuristics file are unused.
+- **The model is confined to the Assist tab.** The tab creates the model when it opens and disposes it when it closes; no engine starts at app start. Each prompt goes to a fresh chat with only the prompt text and the heuristic functions, never rooms, events, timelines or messages. `function_gemma_model.dart` is the only file that imports `flutter_edge_ai`.
+- **States.** Model unavailable (the tab explains this and links to manual settings), not prepared, preparing with progress, failed with retry, ready.
+
+**Open:** the two heuristics and their rules are still placeholders until the team adds literature-based ones. With only two heuristics, most prompts correctly get no suggestion.
+
 ## Phase 4: Sender-side message metadata
 
 **Goal:** the sender's client attaches meaning to a message; the receiver's client uses it to present the message according to the receiver's settings. Phase 1 only covers FluffyChat users, so every message in the study can carry metadata.
