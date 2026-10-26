@@ -398,7 +398,8 @@ class InputBar extends StatelessWidget {
       optionsBuilder: getSuggestions,
       fieldViewBuilder: (context, controller, focusNode, _) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(AppSettings.fontSizeFactor.value),
+          // Text scale is applied app-wide by AccessibilityTextScale.
+          textScaler: MediaQuery.textScalerOf(context),
         ),
         child: TextField(
           controller: controller,

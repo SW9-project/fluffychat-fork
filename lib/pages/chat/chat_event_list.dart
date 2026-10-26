@@ -5,7 +5,6 @@
 
 import 'package:collection/collection.dart';
 import 'package:cupertino_ui/cupertino_ui.dart';
-import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
@@ -115,7 +114,8 @@ class ChatEventList extends StatelessWidget {
     return SelectionArea(
       child: MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(AppSettings.fontSizeFactor.value),
+          // Text scale is applied app-wide by AccessibilityTextScale.
+          textScaler: MediaQuery.textScalerOf(context),
         ),
         child: ListView.custom(
           padding: EdgeInsets.only(

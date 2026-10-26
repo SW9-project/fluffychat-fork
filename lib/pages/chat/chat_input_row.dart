@@ -8,6 +8,7 @@ import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/recording_input_row.dart';
 import 'package:fluffychat/pages/chat/recording_view_model.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/utils/other_party_can_receive.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -51,6 +52,10 @@ class ChatInputRow extends StatelessWidget {
     final selectedTextButtonStyle = TextButton.styleFrom(
       foregroundColor: theme.colorScheme.onTertiaryContainer,
     );
+
+    final a11y = AccessibilityScope.of(context);
+    final height = a11y.buttonBox(ChatInputRow.height);
+    final buttonWidth = a11y.buttonBox(48);
 
     return RecordingViewModel(
       builder: (context, recordingViewModel) {
@@ -134,7 +139,7 @@ class ChatInputRow extends StatelessWidget {
               : <Widget>[
                   Container(
                     height: height,
-                    width: 48,
+                    width: buttonWidth,
                     alignment: Alignment.center,
                     child: IconButton(
                       tooltip: L10n.of(context).emojis,
@@ -153,7 +158,7 @@ class ChatInputRow extends StatelessWidget {
                       Matrix.of(context).currentBundle!.length > 1)
                     Container(
                       height: height,
-                      width: 48,
+                      width: buttonWidth,
                       alignment: Alignment.center,
                       child: _ChatAccountPicker(controller),
                     ),
@@ -210,7 +215,7 @@ class ChatInputRow extends StatelessWidget {
                   AnimatedContainer(
                     duration: FluffyThemes.animationDuration,
                     curve: FluffyThemes.animationCurve,
-                    width: textMessageOnly ? 0 : 48,
+                    width: textMessageOnly ? 0 : buttonWidth,
                     height: height,
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(),

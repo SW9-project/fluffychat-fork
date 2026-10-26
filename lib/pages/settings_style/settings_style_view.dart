@@ -6,7 +6,6 @@
 import 'dart:ui';
 
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/events/state_message.dart';
@@ -164,9 +163,9 @@ class SettingsStyleView extends StatelessWidget {
                   children: [
                     MediaQuery(
                       data: MediaQuery.of(context).copyWith(
-                        textScaler: TextScaler.linear(
-                          AppSettings.fontSizeFactor.value,
-                        ),
+                        // Text scale is applied app-wide by
+                        // AccessibilityTextScale.
+                        textScaler: MediaQuery.textScalerOf(context),
                       ),
                       child: AnimatedContainer(
                         duration: FluffyThemes.animationDuration,
@@ -329,18 +328,7 @@ class SettingsStyleView extends StatelessWidget {
                 );
               },
             ),
-            ListTile(
-              title: Text(L10n.of(context).fontSize),
-              trailing: Text('× ${AppSettings.fontSizeFactor.value}'),
-            ),
-            Slider.adaptive(
-              min: 0.5,
-              max: 2.5,
-              divisions: 20,
-              value: AppSettings.fontSizeFactor.value,
-              semanticFormatterCallback: (d) => d.toString(),
-              onChanged: controller.changeFontSizeFactor,
-            ),
+            // The font size slider moved to the accessibility settings.
           ],
         ),
       ),

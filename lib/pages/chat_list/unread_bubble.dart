@@ -17,11 +17,15 @@ class UnreadBubble extends StatelessWidget {
     final unread = room.isUnreadOrInvited;
     final hasNotifications = room.notificationCount > 0;
     final isMuted = room.pushRuleState != PushRuleState.notify;
-    final unreadBubbleSize = unread || room.hasNewMessages
-        ? room.notificationCount > 0
-              ? 22.0
-              : 12.0
-        : 0.0;
+    // Grows with the text scale so the count is not clipped.
+    final textScale = MediaQuery.textScalerOf(context).scale(13) / 13;
+    final unreadBubbleSize =
+        textScale *
+        (unread || room.hasNewMessages
+            ? room.notificationCount > 0
+                  ? 22.0
+                  : 12.0
+            : 0.0);
     return AnimatedContainer(
       duration: FluffyThemes.animationDuration,
       curve: FluffyThemes.animationCurve,
