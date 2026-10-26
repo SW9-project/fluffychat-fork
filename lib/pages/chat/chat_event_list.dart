@@ -96,8 +96,6 @@ class ChatEventList extends StatelessWidget {
       return const Center(child: CupertinoActivityIndicator());
     }
 
-    final colors = [theme.secondaryBubbleColor, theme.bubbleColor];
-
     final horizontalPadding = FluffyThemes.isColumnMode(context) ? 8.0 : 0.0;
 
     final events = timeline.events.filterByVisibleInGui(
@@ -235,19 +233,18 @@ class ChatEventList extends StatelessWidget {
                               borderRadius: BorderRadius.circular(
                                 AppConfig.borderRadius * 2,
                               ),
-                              color: theme.colorScheme.inverseSurface.withAlpha(
-                                200,
-                              ),
+                              color: theme.serviceMessageColor,
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0,
-                                  vertical: 2.0,
+                                  horizontal: 10.0,
+                                  vertical: 3.0,
                                 ),
                                 child: Text(
                                   event.originServerTs.localizedDate(context),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onInverseSurface,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -282,8 +279,6 @@ class ChatEventList extends StatelessWidget {
                       nextEvent: nextEvent,
                       previousEvent: previousEvent,
                       wallpaperMode: hasWallpaper,
-                      scrollController: controller.scrollController,
-                      colors: colors,
                       isCollapsed: isCollapsed,
                       enterThread: controller.activeThreadId == null
                           ? controller.enterThread

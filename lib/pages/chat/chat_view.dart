@@ -11,6 +11,7 @@ import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
 import 'package:fluffychat/pages/chat/chat_app_bar_list_tile.dart';
 import 'package:fluffychat/pages/chat/chat_app_bar_title.dart';
+import 'package:fluffychat/pages/chat/chat_background.dart';
 import 'package:fluffychat/pages/chat/chat_event_list.dart';
 import 'package:fluffychat/pages/chat/pinned_events.dart';
 import 'package:fluffychat/pages/chat/reply_display.dart';
@@ -39,7 +40,6 @@ class ChatView extends StatelessWidget {
     final theme = Theme.of(context);
     final hasActiveGroupCall = controller.room.hasActiveMatrixRtcCall;
 
-    final bottomSheetPadding = FluffyThemes.isColumnMode(context) ? 16.0 : 8.0;
     final scrollUpBannerEventId = controller.scrollUpBannerEventId;
 
     final accountConfig = Matrix.of(context).client.applicationAccountConfig;
@@ -337,7 +337,9 @@ class ChatView extends StatelessWidget {
                     top: false,
                     child: Stack(
                       children: <Widget>[
-                        if (accountConfig.wallpaperUrl != null)
+                        if (accountConfig.wallpaperUrl == null)
+                          const Positioned.fill(child: ChatBackground())
+                        else
                           Opacity(
                             opacity: accountConfig.wallpaperOpacity ?? 0.5,
                             child: ImageFiltered(
@@ -368,19 +370,16 @@ class ChatView extends StatelessWidget {
                             child: Container(
                               key: controller.inputBarKey,
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    theme.colorScheme.surface.withAlpha(0),
-                                    theme.colorScheme.surface,
-                                    theme.colorScheme.surface,
-                                  ],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
+                                color: theme.colorScheme.surface,
+                                border: Border(
+                                  top: BorderSide(
+                                    color: theme.dividerColor,
+                                    width: 0.5,
+                                  ),
                                 ),
                               ),
                               alignment: Alignment.center,
                               child: Container(
-                                margin: EdgeInsets.all(bottomSheetPadding),
                                 constraints: const BoxConstraints(
                                   maxWidth: FluffyThemes.maxTimelineWidth,
                                 ),
@@ -403,10 +402,7 @@ class ChatView extends StatelessWidget {
                                             ? theme
                                                   .colorScheme
                                                   .tertiaryContainer
-                                            : theme
-                                                  .colorScheme
-                                                  .surfaceContainer,
-                                        borderRadius: BorderRadius.circular(32),
+                                            : theme.colorScheme.surface,
                                         child:
                                             controller.room.membership ==
                                                 .invite

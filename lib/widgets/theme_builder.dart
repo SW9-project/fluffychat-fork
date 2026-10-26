@@ -36,10 +36,17 @@ class ThemeController extends State<ThemeBuilder> {
   SharedPreferences? _sharedPreferences;
   ThemeMode? _themeMode;
   Color? _primaryColor;
+  bool _useSystemColor = false;
+
+  /// Stored instead of a color when the user wants to follow the system
+  /// accent color. Without any stored value the app's default color is used.
+  static const int _systemColorValue = 0;
 
   ThemeMode get themeMode => _themeMode ?? ThemeMode.system;
 
   Color? get primaryColor => _primaryColor;
+
+  bool get useSystemColor => _useSystemColor;
 
   static ThemeController of(BuildContext context) =>
       Provider.of<ThemeController>(context, listen: false);
@@ -55,7 +62,10 @@ class ThemeController extends State<ThemeBuilder> {
       _themeMode = ThemeMode.values.singleWhereOrNull(
         (value) => value.name == rawThemeMode,
       );
-      _primaryColor = rawColor == null ? null : Color(rawColor);
+      _useSystemColor = rawColor == _systemColorValue;
+      _primaryColor = rawColor == null || _useSystemColor
+          ? null
+          : Color(rawColor);
     });
   }
 
@@ -68,19 +78,17 @@ class ThemeController extends State<ThemeBuilder> {
     });
   }
 
+  /// Pass `null` to follow the system accent color.
   Future<void> setPrimaryColor(Color? newPrimaryColor) async {
     final preferences = _sharedPreferences ??=
         await SharedPreferences.getInstance();
-    if (newPrimaryColor == null) {
-      await preferences.remove(widget.primaryColorSettingsKey);
-    } else {
-      await preferences.setInt(
-        widget.primaryColorSettingsKey,
-        newPrimaryColor.hexValue,
-      );
-    }
+    await preferences.setInt(
+      widget.primaryColorSettingsKey,
+      newPrimaryColor?.hexValue ?? _systemColorValue,
+    );
     setState(() {
       _primaryColor = newPrimaryColor;
+      _useSystemColor = newPrimaryColor == null;
     });
   }
 
@@ -95,8 +103,11 @@ class ThemeController extends State<ThemeBuilder> {
     return Provider(
       create: (_) => this,
       child: DynamicColorBuilder(
-        builder: (light, _) =>
-            widget.builder(context, themeMode, primaryColor ?? light?.primary),
+        builder: (light, _) => widget.builder(
+          context,
+          themeMode,
+          primaryColor ?? (useSystemColor ? light?.primary : null),
+        ),
       ),
     );
   }

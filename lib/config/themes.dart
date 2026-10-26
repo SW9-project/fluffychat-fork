@@ -45,21 +45,66 @@ abstract class FluffyThemes {
     Brightness brightness, [
     Color? seed,
   ]) {
-    final colorScheme = ColorScheme.fromSeed(
-      brightness: brightness,
-      seedColor: seed ?? Color(AppSettings.colorSchemeSeedInt.value),
-      dynamicSchemeVariant: DynamicSchemeVariant.rainbow,
-    );
+    final isLight = brightness == Brightness.light;
+    final seedColor = seed ?? Color(AppSettings.colorSchemeSeedInt.value);
+    // Telegram uses the accent color as it is instead of a tonal variant of
+    // it, so we only clamp the lightness to keep it readable.
+    final seedHsl = HSLColor.fromColor(seedColor);
+    final primary = seedHsl
+        .withLightness(
+          seedHsl.lightness.clamp(isLight ? 0.3 : 0.5, isLight ? 0.56 : 0.65),
+        )
+        .toColor();
+    final colorScheme =
+        ColorScheme.fromSeed(
+          brightness: brightness,
+          seedColor: seedColor,
+          dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+        ).copyWith(
+          primary: primary,
+          onPrimary:
+              ThemeData.estimateBrightnessForColor(primary) == Brightness.dark
+              ? Colors.white
+              : Colors.black,
+          surface: isLight ? Colors.white : const Color(0xFF17212B),
+          onSurface: isLight ? Colors.black : Colors.white,
+          onSurfaceVariant: isLight
+              ? const Color(0xFF707579)
+              : const Color(0xFF7F91A4),
+          surfaceContainerLowest: isLight
+              ? Colors.white
+              : const Color(0xFF131C25),
+          surfaceContainerLow: isLight
+              ? const Color(0xFFF7F7F7)
+              : const Color(0xFF1B2631),
+          surfaceContainer: isLight
+              ? const Color(0xFFF1F1F1)
+              : const Color(0xFF1E2A36),
+          surfaceContainerHigh: isLight
+              ? const Color(0xFFEBEBEB)
+              : const Color(0xFF242F3D),
+          surfaceContainerHighest: isLight
+              ? const Color(0xFFE4E4E4)
+              : const Color(0xFF2B3949),
+          surfaceTint: Colors.transparent,
+        );
     final isColumnMode = FluffyThemes.isColumnMode(context);
-    final dividerColor = brightness == Brightness.dark
-        ? colorScheme.surfaceContainerHighest
-        : colorScheme.surfaceContainer;
-    return ThemeData(
+    final dividerColor = isLight
+        ? const Color(0xFFE6E6E6)
+        : const Color(0xFF0E1621);
+    final theme = ThemeData(
       visualDensity: VisualDensity.standard,
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
+      scaffoldBackgroundColor: colorScheme.surface,
       dividerColor: dividerColor,
+      dividerTheme: DividerThemeData(color: dividerColor, thickness: 0.5),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        shape: const StadiumBorder(),
+      ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           iconColor: colorScheme.onSurface,
@@ -86,8 +131,9 @@ abstract class FluffyThemes {
       ),
       appBarTheme: AppBarTheme(
         toolbarHeight: isColumnMode ? 72 : 56,
-        surfaceTintColor: isColumnMode ? colorScheme.surface : null,
-        backgroundColor: isColumnMode ? colorScheme.surface : null,
+        surfaceTintColor: colorScheme.surface,
+        backgroundColor: colorScheme.surface,
+        scrolledUnderElevation: 0,
         actionsPadding: isColumnMode
             ? const EdgeInsets.symmetric(horizontal: 16.0)
             : null,
@@ -130,6 +176,15 @@ abstract class FluffyThemes {
         ),
       ),
     );
+    return theme.copyWith(
+      appBarTheme: theme.appBarTheme.copyWith(
+        titleTextStyle: theme.textTheme.titleLarge?.copyWith(
+          color: colorScheme.onSurface,
+          fontSize: 19,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
   }
 }
 
@@ -138,18 +193,55 @@ extension on Brightness {
       this == Brightness.dark ? Brightness.light : Brightness.dark;
 }
 
+/// Telegram like colors for the chat timeline.
 extension BubbleColorTheme on ThemeData {
-  Color get bubbleColor => brightness == Brightness.light
-      ? colorScheme.primary
-      : colorScheme.primaryContainer;
+  bool get _isLight => brightness == Brightness.light;
 
-  Color get onBubbleColor => brightness == Brightness.light
-      ? colorScheme.onPrimary
-      : colorScheme.onPrimaryContainer;
+  /// Background of own messages.
+  Color get bubbleColor =>
+      _isLight ? const Color(0xFFEFFDDE) : const Color(0xFF2B5278);
 
-  Color get secondaryBubbleColor => HSLColor.fromColor(
-    brightness == Brightness.light
-        ? colorScheme.tertiary
-        : colorScheme.tertiaryContainer,
-  ).withSaturation(0.5).toColor();
+  Color get onBubbleColor => _isLight ? Colors.black : Colors.white;
+
+  /// Time, checkmarks and reply bars inside of own messages.
+  Color get bubbleAccentColor =>
+      _isLight ? const Color(0xFF4FAE4E) : const Color(0xFF8CC3F2);
+
+  /// Background of messages from other users.
+  Color get otherBubbleColor =>
+      _isLight ? Colors.white : const Color(0xFF182533);
+
+  /// Time inside of messages from other users.
+  Color get otherBubbleAccentColor =>
+      _isLight ? const Color(0xFFA1AAB3) : const Color(0xFF6D7F8F);
+
+  /// Links and replies inside of messages.
+  Color get bubbleLinkColor =>
+      _isLight ? colorScheme.primary : colorScheme.primaryFixedDim;
+
+  /// Date chips and state events on top of the chat background.
+  Color get serviceMessageColor =>
+      _isLight ? const Color(0x4D000000) : const Color(0xCC1E2C3A);
+
+  /// The four corners of the default chat background gradient.
+  List<Color> get chatBackgroundColors => _isLight
+      ? const [
+          Color(0xFFDBDDBB),
+          Color(0xFF6BA587),
+          Color(0xFFD5D88D),
+          Color(0xFF88B884),
+        ]
+      : const [
+          Color(0xFF0E1621),
+          Color(0xFF13202E),
+          Color(0xFF111C27),
+          Color(0xFF0E1621),
+        ];
+
+  Color get chatBackgroundPatternColor =>
+      _isLight ? const Color(0x24000000) : const Color(0x0DFFFFFF);
+
+  /// Unread counter of muted chats.
+  Color get mutedBadgeColor =>
+      _isLight ? const Color(0xFFC4C9CC) : const Color(0xFF3E546A);
 }

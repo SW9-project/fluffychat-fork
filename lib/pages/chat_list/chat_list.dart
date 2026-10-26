@@ -312,20 +312,12 @@ class ChatListController extends State<ChatList>
   BoxConstraints? snappingSheetContainerSize;
 
   final ScrollController scrollController = ScrollController();
-  final ValueNotifier<bool> scrolledToTop = ValueNotifier(true);
 
   final StreamController<Client> _clientStream = StreamController.broadcast();
 
   Stream<Client> get clientStream => _clientStream.stream;
 
   void addAccountAction() => context.go('/rooms/settings/account');
-
-  void _onScroll() {
-    final newScrolledToTop = scrollController.position.pixels <= 0;
-    if (newScrolledToTop != scrolledToTop.value) {
-      scrolledToTop.value = newScrolledToTop;
-    }
-  }
 
   Future<void> editSpace(BuildContext context, String spaceId) async {
     await Matrix.of(context).client.getRoomById(spaceId)!.postLoad();
@@ -412,7 +404,6 @@ class ChatListController extends State<ChatList>
   void initState() {
     _initReceiveSharingIntent();
 
-    scrollController.addListener(_onScroll);
     _waitForFirstSync();
     if (PlatformInfos.isMobile) {
       _callEventSubscription = FlutterCallkitIncoming.onEvent.listen(
@@ -485,11 +476,9 @@ class ChatListController extends State<ChatList>
     _intentFileStreamSubscription?.cancel();
     _callEventSubscription?.cancel();
     _onRoomTagUpdate?.cancel();
-    scrollController.removeListener(_onScroll);
     searchController.dispose();
     searchFocusNode.dispose();
     scrollController.dispose();
-    scrolledToTop.dispose();
     _clientStream.close();
     super.dispose();
   }

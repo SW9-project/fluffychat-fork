@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:math';
+
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_list/active_call_indicator.dart';
@@ -17,6 +19,7 @@ import 'package:matrix/matrix.dart';
 
 import '../../config/themes.dart';
 import '../../utils/date_time_extension.dart';
+import '../../utils/event_read_extension.dart';
 import '../../widgets/avatar.dart';
 
 class ChatListItem extends StatelessWidget {
@@ -51,8 +54,13 @@ class ChatListItem extends StatelessWidget {
     final isDirectChat = directChatMatrixId != null;
     final hasNotifications = room.notificationCount > 0;
     final backgroundColor = activeChat
-        ? theme.colorScheme.secondaryContainer
+        ? Color.alphaBlend(
+            theme.colorScheme.primary.withAlpha(32),
+            theme.colorScheme.surface,
+          )
         : null;
+    const avatarSize = 54.0;
+    const horizontalPadding = 12.0;
     final displayname = room.getLocalizedDisplayname(
       MatrixLocals(L10n.of(context)),
     );
@@ -66,323 +74,355 @@ class ChatListItem extends StatelessWidget {
         room.getState(EventTypes.RoomMember, lastEvent.senderId) == null;
     final space = this.space;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Material(
-        borderRadius: BorderRadius.circular(AppConfig.borderRadius),
-        clipBehavior: Clip.hardEdge,
-        color: backgroundColor,
-        child: FutureBuilder(
-          future: room.name.isEmpty ? room.loadHeroUsers() : null,
-          builder: (context, _) => HoverBuilder(
-            builder: (context, listTileHovered) => ListTile(
-              minVerticalPadding: 16,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              onLongPress: () => onLongPress?.call(context),
-              leading: HoverBuilder(
-                builder: (context, hovered) => AnimatedScale(
-                  duration: FluffyThemes.animationDuration,
-                  curve: FluffyThemes.animationCurve,
-                  scale: hovered ? 1.1 : 1.0,
-                  child: SizedBox(
-                    width: Avatar.defaultSize,
-                    height: Avatar.defaultSize,
-                    child: Stack(
-                      children: [
-                        if (space != null)
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            child: Avatar(
-                              shapeBorder: RoundedSuperellipseBorder(
-                                side: BorderSide(
-                                  width: 2,
-                                  color:
-                                      backgroundColor ??
-                                      theme.colorScheme.surface,
+    return Material(
+      color: backgroundColor,
+      child: Stack(
+        children: [
+          FutureBuilder(
+            future: room.name.isEmpty ? room.loadHeroUsers() : null,
+            builder: (context, _) => HoverBuilder(
+              builder: (context, listTileHovered) => ListTile(
+                minVerticalPadding: 9,
+                horizontalTitleGap: horizontalPadding,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                ),
+                onLongPress: () => onLongPress?.call(context),
+                leading: HoverBuilder(
+                  builder: (context, hovered) => AnimatedScale(
+                    duration: FluffyThemes.animationDuration,
+                    curve: FluffyThemes.animationCurve,
+                    scale: hovered ? 1.1 : 1.0,
+                    child: SizedBox(
+                      width: avatarSize,
+                      height: avatarSize,
+                      child: Stack(
+                        children: [
+                          if (space != null)
+                            Positioned(
+                              top: 0,
+                              left: 0,
+                              child: Avatar(
+                                shapeBorder: RoundedSuperellipseBorder(
+                                  side: BorderSide(
+                                    width: 2,
+                                    color:
+                                        backgroundColor ??
+                                        theme.colorScheme.surface,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppConfig.spaceBorderRadius * 0.75,
+                                  ),
                                 ),
                                 borderRadius: BorderRadius.circular(
                                   AppConfig.spaceBorderRadius * 0.75,
                                 ),
+                                mxContent: space.avatar,
+                                size: avatarSize * 0.75,
+                                name: space.getLocalizedDisplayname(),
+                                onTap: () => onLongPress?.call(context),
                               ),
-                              borderRadius: BorderRadius.circular(
-                                AppConfig.spaceBorderRadius * 0.75,
-                              ),
-                              mxContent: space.avatar,
-                              size: Avatar.defaultSize * 0.75,
-                              name: space.getLocalizedDisplayname(),
+                            ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Avatar(
+                              shapeBorder: space == null
+                                  ? room.isSpace
+                                        ? RoundedSuperellipseBorder(
+                                            side: BorderSide(
+                                              width: 1,
+                                              color: theme.dividerColor,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              AppConfig.spaceBorderRadius,
+                                            ),
+                                          )
+                                        : null
+                                  : RoundedRectangleBorder(
+                                      side: BorderSide(
+                                        width: 2,
+                                        color:
+                                            backgroundColor ??
+                                            theme.colorScheme.surface,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        avatarSize,
+                                      ),
+                                    ),
+                              borderRadius: room.isSpace
+                                  ? BorderRadius.circular(
+                                      AppConfig.spaceBorderRadius,
+                                    )
+                                  : null,
+                              mxContent: room.avatar,
+                              size: space != null
+                                  ? avatarSize * 0.75
+                                  : avatarSize,
+                              name: displayname,
+                              presenceUserId: directChatMatrixId,
+                              presenceBackgroundColor: backgroundColor,
                               onTap: () => onLongPress?.call(context),
                             ),
                           ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Avatar(
-                            shapeBorder: space == null
-                                ? room.isSpace
-                                      ? RoundedSuperellipseBorder(
-                                          side: BorderSide(
-                                            width: 1,
-                                            color: theme.dividerColor,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            AppConfig.spaceBorderRadius,
-                                          ),
-                                        )
-                                      : null
-                                : RoundedRectangleBorder(
-                                    side: BorderSide(
-                                      width: 2,
-                                      color:
-                                          backgroundColor ??
-                                          theme.colorScheme.surface,
-                                    ),
-                                    borderRadius: BorderRadius.circular(
-                                      Avatar.defaultSize,
-                                    ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => onLongPress?.call(context),
+                              child: AnimatedScale(
+                                duration: FluffyThemes.animationDuration,
+                                curve: FluffyThemes.animationCurve,
+                                scale: listTileHovered ? 1.0 : 0.0,
+                                child: Material(
+                                  color: backgroundColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: const Icon(
+                                    Icons.arrow_drop_down_circle_outlined,
+                                    size: 18,
                                   ),
-                            borderRadius: room.isSpace
-                                ? BorderRadius.circular(
-                                    AppConfig.spaceBorderRadius,
-                                  )
-                                : null,
-                            mxContent: room.avatar,
-                            size: space != null
-                                ? Avatar.defaultSize * 0.75
-                                : Avatar.defaultSize,
-                            name: displayname,
-                            presenceUserId: directChatMatrixId,
-                            presenceBackgroundColor: backgroundColor,
-                            onTap: () => onLongPress?.call(context),
-                          ),
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onTap: () => onLongPress?.call(context),
-                            child: AnimatedScale(
-                              duration: FluffyThemes.animationDuration,
-                              curve: FluffyThemes.animationCurve,
-                              scale: listTileHovered ? 1.0 : 0.0,
-                              child: Material(
-                                color: backgroundColor,
-                                borderRadius: BorderRadius.circular(16),
-                                child: const Icon(
-                                  Icons.arrow_drop_down_circle_outlined,
-                                  size: 18,
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              title: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      displayname,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                    ),
-                  ),
-                  if (isMuted)
-                    const Padding(
-                      padding: EdgeInsets.only(left: 4.0),
-                      child: Icon(Icons.notifications_off_outlined, size: 16),
-                    ),
-                  if (room.isLowPriority)
-                    Padding(
-                      padding: EdgeInsets.only(
-                        right: hasNotifications ? 4.0 : 0.0,
-                      ),
-                      child: Icon(
-                        Icons.low_priority,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  if (room.isFavourite)
-                    Padding(
-                      padding: EdgeInsets.only(
-                        right: hasNotifications ? 4.0 : 0.0,
-                      ),
-                      child: Icon(
-                        Icons.push_pin,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  if (!room.isSpace && room.membership != Membership.invite)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4.0),
+                title: Row(
+                  children: <Widget>[
+                    Expanded(
                       child: Text(
-                        room.latestEventReceivedTime.localizedTimeShort(
-                          context,
-                        ),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: room.hasNewMessages
-                              ? FontWeight.bold
-                              : null,
-                          color: room.highlightCount >= 1
-                              ? theme.colorScheme.error
-                              : room.hasNewMessages
-                              ? theme.colorScheme.primary
-                              : null,
+                        displayname,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                ],
-              ),
-              subtitle: Row(
-                children: [
-                  if (room.hasActiveMatrixRtcCall)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 4.0),
-                      child: ActiveCallIndicator(room: room),
-                    ),
-                  if (typingText.isEmpty &&
-                      ownMessage &&
-                      room.lastEvent?.status.isSending == true) ...[
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-                    ),
-                    const SizedBox(width: 4),
+                    if (isMuted)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4.0),
+                        child: Icon(
+                          Icons.volume_off,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    if (room.isLowPriority)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          right: hasNotifications ? 4.0 : 0.0,
+                        ),
+                        child: Icon(
+                          Icons.low_priority,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    if (!room.isSpace &&
+                        room.membership != Membership.invite &&
+                        ownMessage &&
+                        lastEvent != null &&
+                        lastEvent.status.isSent)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4.0),
+                        child: Icon(
+                          lastEvent.isReadByOthers
+                              ? Icons.done_all
+                              : Icons.done,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    if (!room.isSpace && room.membership != Membership.invite)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4.0),
+                        child: Text(
+                          room.latestEventReceivedTime.localizedTimeShort(
+                            context,
+                          ),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
                   ],
-                  AnimatedSize(
-                    clipBehavior: Clip.hardEdge,
-                    duration: FluffyThemes.animationDuration,
-                    curve: FluffyThemes.animationCurve,
-                    child: typingText.isNotEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.only(right: 4.0),
-                            child: TypingAnimation(size: 4.0),
-                          )
-                        : room.lastEvent?.relationshipType ==
-                              RelationshipTypes.thread
-                        ? Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: theme.colorScheme.outline,
-                              ),
-                              borderRadius: BorderRadius.circular(
-                                AppConfig.borderRadius,
-                              ),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                            ),
-                            margin: const EdgeInsets.only(right: 4.0),
-                            child: Row(
-                              mainAxisSize: .min,
-                              children: [
-                                Icon(
-                                  Icons.message_outlined,
-                                  size: 12,
+                ),
+                subtitle: Row(
+                  children: [
+                    if (room.hasActiveMatrixRtcCall)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 4.0),
+                        child: ActiveCallIndicator(room: room),
+                      ),
+                    if (typingText.isEmpty &&
+                        ownMessage &&
+                        room.lastEvent?.status.isSending == true) ...[
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator.adaptive(
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    AnimatedSize(
+                      clipBehavior: Clip.hardEdge,
+                      duration: FluffyThemes.animationDuration,
+                      curve: FluffyThemes.animationCurve,
+                      child: typingText.isNotEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.only(right: 4.0),
+                              child: TypingAnimation(size: 4.0),
+                            )
+                          : room.lastEvent?.relationshipType ==
+                                RelationshipTypes.thread
+                          ? Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
                                   color: theme.colorScheme.outline,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  L10n.of(context).thread,
-                                  style: TextStyle(fontSize: 11),
+                                borderRadius: BorderRadius.circular(
+                                  AppConfig.borderRadius,
                                 ),
-                              ],
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                  Expanded(
-                    child: room.isSpace && room.membership == Membership.join
-                        ? Text(
-                            L10n.of(
-                              context,
-                            ).countChats(room.spaceChildren.length),
-                          )
-                        : typingText.isNotEmpty
-                        ? Text(
-                            typingText,
-                            style: TextStyle(color: theme.colorScheme.primary),
-                            maxLines: 1,
-                            softWrap: false,
-                          )
-                        : FutureBuilder(
-                            key: ValueKey(
-                              '${lastEvent?.eventId}_${lastEvent?.type}_${lastEvent?.redacted}',
-                            ),
-                            future: needLastEventSender
-                                ? lastEvent.calcLocalizedBody(
-                                    MatrixLocals(L10n.of(context)),
-                                    hideReply: true,
-                                    hideEdit: true,
-                                    plaintextBody: true,
-                                    removeMarkdown: true,
-                                    withSenderNamePrefix:
-                                        (!isDirectChat ||
-                                        directChatMatrixId !=
-                                            room.lastEvent?.senderId),
-                                  )
-                                : null,
-                            initialData: lastEvent?.calcLocalizedBodyFallback(
-                              MatrixLocals(L10n.of(context)),
-                              hideReply: true,
-                              hideEdit: true,
-                              plaintextBody: true,
-                              removeMarkdown: true,
-                              withSenderNamePrefix:
-                                  (!isDirectChat ||
-                                  directChatMatrixId !=
-                                      room.lastEvent?.senderId),
-                            ),
-                            builder: (context, snapshot) => Text(
-                              room.membership == Membership.invite
-                                  ? room
-                                            .getState(
-                                              EventTypes.RoomMember,
-                                              room.client.userID!,
-                                            )
-                                            ?.content
-                                            .tryGet<String>('reason') ??
-                                        (isDirectChat
-                                            ? L10n.of(context).newChatRequest
-                                            : L10n.of(context).inviteGroupChat)
-                                  : snapshot.data?.trim().replaceAll(
-                                          '\n',
-                                          ' ',
-                                        ) ??
-                                        L10n.of(context).noMessagesYet,
-                              softWrap: false,
-                              maxLines: room.notificationCount >= 1 ? 2 : 1,
-                              overflow: TextOverflow.ellipsis,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
+                              margin: const EdgeInsets.only(right: 4.0),
+                              child: Row(
+                                mainAxisSize: .min,
+                                children: [
+                                  Icon(
+                                    Icons.message_outlined,
+                                    size: 12,
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    L10n.of(context).thread,
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    Expanded(
+                      child: room.isSpace && room.membership == Membership.join
+                          ? Text(
+                              L10n.of(
+                                context,
+                              ).countChats(room.spaceChildren.length),
+                            )
+                          : typingText.isNotEmpty
+                          ? Text(
+                              typingText,
                               style: TextStyle(
-                                decoration: room.lastEvent?.redacted == true
-                                    ? TextDecoration.lineThrough
-                                    : null,
+                                color: theme.colorScheme.primary,
+                              ),
+                              maxLines: 1,
+                              softWrap: false,
+                            )
+                          : FutureBuilder(
+                              key: ValueKey(
+                                '${lastEvent?.eventId}_${lastEvent?.type}_${lastEvent?.redacted}',
+                              ),
+                              future: needLastEventSender
+                                  ? lastEvent.calcLocalizedBody(
+                                      MatrixLocals(L10n.of(context)),
+                                      hideReply: true,
+                                      hideEdit: true,
+                                      plaintextBody: true,
+                                      removeMarkdown: true,
+                                      withSenderNamePrefix:
+                                          (!isDirectChat ||
+                                          directChatMatrixId !=
+                                              room.lastEvent?.senderId),
+                                    )
+                                  : null,
+                              initialData: lastEvent?.calcLocalizedBodyFallback(
+                                MatrixLocals(L10n.of(context)),
+                                hideReply: true,
+                                hideEdit: true,
+                                plaintextBody: true,
+                                removeMarkdown: true,
+                                withSenderNamePrefix:
+                                    (!isDirectChat ||
+                                    directChatMatrixId !=
+                                        room.lastEvent?.senderId),
+                              ),
+                              builder: (context, snapshot) => Text(
+                                room.membership == Membership.invite
+                                    ? room
+                                              .getState(
+                                                EventTypes.RoomMember,
+                                                room.client.userID!,
+                                              )
+                                              ?.content
+                                              .tryGet<String>('reason') ??
+                                          (isDirectChat
+                                              ? L10n.of(context).newChatRequest
+                                              : L10n.of(
+                                                  context,
+                                                ).inviteGroupChat)
+                                    : snapshot.data?.trim().replaceAll(
+                                            '\n',
+                                            ' ',
+                                          ) ??
+                                          L10n.of(context).noMessagesYet,
+                                softWrap: false,
+                                maxLines: room.notificationCount >= 1 ? 2 : 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  decoration: room.lastEvent?.redacted == true
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
                               ),
                             ),
-                          ),
-                  ),
-                  const SizedBox(width: 8),
-                  UnreadBubble(room: room),
-                ],
-              ),
-              onTap: onTap,
-              trailing: onForget == null
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.delete_outlined),
-                      onPressed: onForget,
                     ),
+                    const SizedBox(width: 8),
+                    UnreadBubble(room: room),
+                    if (room.isFavourite &&
+                        !room.isUnreadOrInvited &&
+                        !room.hasNewMessages)
+                      Transform.rotate(
+                        angle: pi / 4,
+                        child: Icon(
+                          Icons.push_pin,
+                          size: 18,
+                          color: theme.colorScheme.onSurfaceVariant.withAlpha(
+                            160,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: onTap,
+                trailing: onForget == null
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.delete_outlined),
+                        onPressed: onForget,
+                      ),
+              ),
             ),
           ),
-        ),
+          Positioned(
+            left: horizontalPadding * 2 + avatarSize,
+            right: 0,
+            bottom: 0,
+            child: Container(height: 0.5, color: theme.dividerColor),
+          ),
+        ],
       ),
     );
   }

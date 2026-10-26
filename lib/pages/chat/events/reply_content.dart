@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:material_ui/material_ui.dart';
@@ -22,10 +23,7 @@ class ReplyContent extends StatelessWidget {
     this.timeline,
   });
 
-  static const BorderRadius borderRadius = BorderRadius.only(
-    topRight: Radius.circular(AppConfig.borderRadius / 2),
-    bottomRight: Radius.circular(AppConfig.borderRadius / 2),
-  );
+  static const BorderRadius borderRadius = BorderRadius.all(Radius.circular(4));
 
   @override
   Widget build(BuildContext context) {
@@ -35,75 +33,69 @@ class ReplyContent extends StatelessWidget {
     final displayEvent = timeline != null
         ? replyEvent.getDisplayEvent(timeline)
         : replyEvent;
-    const fontSize = AppConfig.messageFontSize;
-    final color = theme.brightness == Brightness.dark
-        ? theme.colorScheme.onTertiaryContainer
-        : ownMessage
-        ? theme.colorScheme.tertiaryContainer
-        : theme.colorScheme.tertiary;
+    const fontSize = AppConfig.messageFontSize - 2;
+    final color = ownMessage ? theme.bubbleAccentColor : theme.bubbleLinkColor;
 
-    return Material(
-      color: Colors.transparent,
+    return ClipRRect(
       borderRadius: borderRadius,
-      child: Row(
-        mainAxisSize: .min,
-        children: <Widget>[
-          Container(
-            width: 5,
-            height: fontSize * 2 + 16,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppConfig.borderRadius),
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: .start,
-              mainAxisAlignment: .center,
-              children: <Widget>[
-                FutureBuilder<User?>(
-                  initialData: displayEvent.senderFromMemoryOrFallback,
-                  future: displayEvent.fetchSenderUser(),
-                  builder: (context, snapshot) {
-                    return Text(
-                      '${snapshot.data?.calcDisplayname() ?? displayEvent.senderFromMemoryOrFallback.calcDisplayname()}:',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                        fontSize: fontSize,
-                      ),
-                    );
-                  },
-                ),
-                Text(
-                  displayEvent
-                      .calcLocalizedBodyFallback(
-                        MatrixLocals(L10n.of(context)),
-                        withSenderNamePrefix: false,
-                        hideReply: true,
-                        plaintextBody: true,
-                      )
-                      .trim()
-                      .replaceAll('\n', ' '),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: theme.brightness == Brightness.dark
-                        ? theme.colorScheme.onSurface
-                        : ownMessage
-                        ? theme.colorScheme.onTertiary
-                        : theme.colorScheme.onSurface,
-                    fontSize: fontSize,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withAlpha(32),
+          border: Border(left: BorderSide(color: color, width: 3)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisSize: .min,
+          children: <Widget>[
+            const SizedBox(width: 6),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: .start,
+                mainAxisAlignment: .center,
+                children: <Widget>[
+                  FutureBuilder<User?>(
+                    initialData: displayEvent.senderFromMemoryOrFallback,
+                    future: displayEvent.fetchSenderUser(),
+                    builder: (context, snapshot) {
+                      return Text(
+                        snapshot.data?.calcDisplayname() ??
+                            displayEvent.senderFromMemoryOrFallback
+                                .calcDisplayname(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                          fontSize: fontSize,
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ],
+                  Text(
+                    displayEvent
+                        .calcLocalizedBodyFallback(
+                          MatrixLocals(L10n.of(context)),
+                          withSenderNamePrefix: false,
+                          hideReply: true,
+                          plaintextBody: true,
+                        )
+                        .trim()
+                        .replaceAll('\n', ' '),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: ownMessage
+                          ? theme.onBubbleColor
+                          : theme.colorScheme.onSurface,
+                      fontSize: fontSize,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
-        ],
+            const SizedBox(width: 6),
+          ],
+        ),
       ),
     );
   }

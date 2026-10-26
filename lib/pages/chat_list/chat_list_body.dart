@@ -130,47 +130,38 @@ class ChatListViewBody extends StatelessWidget {
                 ],
                 if (client.rooms.isNotEmpty && !controller.isSearchMode)
                   Container(
-                    height: 36 + 8 + 8,
-                    padding: EdgeInsets.symmetric(vertical: 8),
+                    height: 44,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: theme.dividerColor,
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
                     child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       shrinkWrap: true,
                       scrollDirection: Axis.horizontal,
                       children: [
                         ...ActiveFilter.values
                             .where((filter) => filter != ActiveFilter.tag)
                             .map(
-                              (filter) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4.0,
-                                ),
-                                child: Center(
-                                  child: FilterChip(
-                                    selected: filter == controller.activeFilter,
-                                    onSelected: (_) => controller
-                                        .setActiveFilter(filter, null),
-                                    label: Text(
-                                      filter.toLocalizedString(context),
-                                    ),
-                                  ),
-                                ),
+                              (filter) => _FolderTab(
+                                selected: filter == controller.activeFilter,
+                                onTap: () =>
+                                    controller.setActiveFilter(filter, null),
+                                label: filter.toLocalizedString(context),
                               ),
                             ),
                         ...controller.roomTags.entries.map(
-                          (entry) => Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4.0,
+                          (entry) => _FolderTab(
+                            selected: entry.key == controller.activeTag,
+                            onTap: () => controller.setActiveFilter(
+                              ActiveFilter.tag,
+                              entry.key,
                             ),
-                            child: Center(
-                              child: FilterChip(
-                                selected: entry.key == controller.activeTag,
-                                onSelected: (_) => controller.setActiveFilter(
-                                  ActiveFilter.tag,
-                                  entry.key,
-                                ),
-                                label: Text(entry.key.replaceFirst('u.', '')),
-                              ),
-                            ),
+                            label: entry.key.replaceFirst('u.', ''),
                           ),
                         ),
                       ],
@@ -335,4 +326,64 @@ class _SearchItem extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Folder tab in the style of Telegram: Just a label with an indicator
+/// line below when selected.
+class _FolderTab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final void Function() onTap;
+
+  const _FolderTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: IntrinsicWidth(
+          child: Column(
+            mainAxisAlignment: .end,
+            crossAxisAlignment: .stretch,
+            children: [
+              Expanded(
+                child: Center(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: selected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedContainer(
+                duration: FluffyThemes.animationDuration,
+                curve: FluffyThemes.animationCurve,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? theme.colorScheme.primary
+                      : Colors.transparent,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(3),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

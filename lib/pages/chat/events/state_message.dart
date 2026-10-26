@@ -39,13 +39,11 @@ class StateMessage extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: Material(
-                    color: theme.colorScheme.surface.withAlpha(128),
-                    borderRadius: BorderRadius.circular(
-                      AppConfig.borderRadius / 3,
-                    ),
+                    color: theme.serviceMessageColor,
+                    borderRadius: BorderRadius.circular(AppConfig.borderRadius),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
+                        horizontal: 10.0,
                         vertical: 4.0,
                       ),
                       child: Text.rich(
@@ -86,6 +84,7 @@ class StateMessage extends StatelessWidget {
                                       child: Icon(
                                         Icons.info_outlined,
                                         size: 14,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
@@ -94,10 +93,9 @@ class StateMessage extends StatelessWidget {
                             if (onExpand != null) ...[
                               const TextSpan(text: '\n'),
                               TextSpan(
-                                style: TextStyle(
-                                  color: theme.colorScheme.primary,
+                                style: const TextStyle(
                                   decoration: TextDecoration.underline,
-                                  decorationColor: theme.colorScheme.primary,
+                                  decorationColor: Colors.white,
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = onExpand,
@@ -108,7 +106,9 @@ class StateMessage extends StatelessWidget {
                         ),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
                           decoration: event.redacted
                               ? TextDecoration.lineThrough
                               : null,

@@ -16,10 +16,11 @@ class UnreadBubble extends StatelessWidget {
     final theme = Theme.of(context);
     final unread = room.isUnreadOrInvited;
     final hasNotifications = room.notificationCount > 0;
+    final isMuted = room.pushRuleState != PushRuleState.notify;
     final unreadBubbleSize = unread || room.hasNewMessages
         ? room.notificationCount > 0
-              ? 20.0
-              : 14.0
+              ? 22.0
+              : 12.0
         : 0.0;
     return AnimatedContainer(
       duration: FluffyThemes.animationDuration,
@@ -34,11 +35,11 @@ class UnreadBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: room.highlightCount > 0
             ? theme.colorScheme.error
-            : hasNotifications ||
+            : (hasNotifications && !isMuted) ||
                   room.markedUnread ||
                   room.membership == .invite
             ? theme.colorScheme.primary
-            : theme.colorScheme.primaryContainer,
+            : theme.mutedBadgeColor,
         borderRadius: BorderRadius.circular(unreadBubbleSize),
       ),
       child: hasNotifications || room.markedUnread
@@ -47,11 +48,11 @@ class UnreadBubble extends StatelessWidget {
               style: TextStyle(
                 color: room.highlightCount > 0
                     ? theme.colorScheme.onError
-                    : hasNotifications
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.onPrimaryContainer,
+                    : hasNotifications && isMuted
+                    ? Colors.white
+                    : theme.colorScheme.onPrimary,
                 fontSize: 13,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
               textAlign: .center,
             )

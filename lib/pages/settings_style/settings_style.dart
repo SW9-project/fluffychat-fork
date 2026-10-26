@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:file_picker/file_picker.dart';
+import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/utils/account_config.dart';
 import 'package:fluffychat/utils/file_selector.dart';
@@ -113,7 +114,11 @@ class SettingsStyleController extends State<SettingsStyle> {
   );
 
   ThemeMode get currentTheme => ThemeController.of(context).themeMode;
-  Color? get currentColor => ThemeController.of(context).primaryColor;
+  Color? get currentColor {
+    final themeController = ThemeController.of(context);
+    return themeController.primaryColor ??
+        (themeController.useSystemColor ? null : AppConfig.chatColor);
+  }
 
   void switchTheme(ThemeMode? newTheme) {
     if (newTheme == null) return;
