@@ -148,6 +148,12 @@ Tasks:
 
 **Done when:** two emulator accounts exchange annotated messages, Element shows them as normal text, and an edited message updates its metadata. CC stops for review.
 
+**Decided (Oct 26, 2026):**
+
+- Namespace: `dk.aau.sw9.meaning`.
+- Because of Phase 3b (the model never sees message content), the metadata is proposed by simple English and Danish rules instead of the model: a question mark or question word for questions, request phrases, urgent words, and time and date patterns. The sender sees the proposal as chips above the input and can change or remove it before sending, and can turn it off in the Accessibility settings.
+- The receiver chooses in the Accessibility settings whether questions and requests are marked, urgent messages are marked, and times are highlighted. Times are highlighted only, with no calendar action.
+
 **Out of scope:** free-text rewriting (a `plain` simplified version). No model at this size does it well enough, and it needs its own decision.
 
 ## Phase 5: Evaluation harness and study logging
@@ -173,7 +179,7 @@ These need answers from Simon or the team. CC must not decide them.
 - [ ] Is the emulator x86\_64 or arm64, and which real arm64 phone do we test the model on?
 - [ ] Which UI elements are in scope for resizing in the first version?
 - [ ] Will participants interact in Danish, English or both? This decides the test phrase list and any fine-tuning data.
-- [ ] Namespace string for the message metadata (for example a reversed AAU domain).
+- [x] Namespace string for the message metadata: `dk.aau.sw9.meaning` (decided Oct 26, 2026).
 - [ ] Model delivery: download from our own server on first use, or bundle it in the APK for the study build?
 - [ ] Is the study event log covered by the ethics and consent plan as described in Phase 5?
 - [ ] Phase order: is Phase 4 (metadata) needed for the first study, or can it come after?

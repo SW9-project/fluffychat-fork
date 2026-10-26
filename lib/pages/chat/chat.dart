@@ -19,6 +19,8 @@ import 'package:fluffychat/pages/chat/start_poll_bottom_sheet.dart';
 import 'package:fluffychat/pages/chat/trust_user_key_dialog.dart';
 import 'package:fluffychat/pages/chat/utils/web_file_to_x_file.dart';
 import 'package:fluffychat/pages/chat_details/chat_details.dart';
+import 'package:fluffychat/personalization/meaning/annotated_send.dart';
+import 'package:fluffychat/personalization/meaning/meaning_draft.dart';
 import 'package:fluffychat/utils/adaptive_bottom_sheet.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/file_selector.dart';
@@ -712,6 +714,7 @@ class ChatController extends State<ChatPageWithRoom>
     _storeInputTimeoutTimer?.cancel();
     typingCoolDown?.cancel();
     typingTimeout?.cancel();
+    meaningDraft.dispose();
     sendController.dispose();
     scrollController.dispose();
     inputFocus.removeListener(_inputFocusListener);
@@ -724,6 +727,9 @@ class ChatController extends State<ChatPageWithRoom>
   }
 
   TextEditingController sendController = TextEditingController();
+
+  /// The meaning the sender confirms for the message being written.
+  late final MeaningDraft meaningDraft = MeaningDraft(sendController);
 
   void setSendingClient(Client c) {
     // first cancel typing with the old sending client
@@ -781,14 +787,25 @@ class ChatController extends State<ChatPageWithRoom>
       room.setTyping(false);
     }
 
+    final meaning = meaningDraft.take();
+    final isCommand = parseCommands && commandMatch != null;
     // ignore: unawaited_futures
-    room.sendTextEvent(
-      sendController.text,
-      inReplyTo: replyEvent,
-      editEventId: editEvent?.eventId,
-      parseCommands: parseCommands,
-      threadRootEventId: activeThreadId,
-    );
+    meaning == null || isCommand
+        ? room.sendTextEvent(
+            sendController.text,
+            inReplyTo: replyEvent,
+            editEventId: editEvent?.eventId,
+            parseCommands: parseCommands,
+            threadRootEventId: activeThreadId,
+          )
+        : sendAnnotatedText(
+            room,
+            sendController.text,
+            meaning: meaning,
+            inReplyTo: replyEvent,
+            editEventId: editEvent?.eventId,
+            threadRootEventId: activeThreadId,
+          );
     sendController.value = TextEditingValue(
       text: pendingText,
       selection: const TextSelection.collapsed(offset: 0),

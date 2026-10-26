@@ -11,6 +11,7 @@ import 'package:fluffychat/pages/chat/events/poll.dart';
 import 'package:fluffychat/pages/chat/events/video_player.dart';
 import 'package:fluffychat/pages/image_viewer/image_viewer.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/meaning/meaning_decoration.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
@@ -179,26 +180,30 @@ class MessageContent extends StatelessWidget {
             final bigEmotes =
                 !event.isRichMessage && bigEmojis.contains(event.body);
 
-            return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6) *
-                  AccessibilityScope.of(context).textScale,
-              child: HtmlMessage(
-                html: html,
-                textColor: textColor,
-                room: event.room,
-                fontSize: AppConfig.messageFontSize * (bigEmotes ? 5 : 1),
-                linkStyle: TextStyle(
-                  color: linkColor,
-                  fontSize: AppConfig.messageFontSize,
-                  decoration: TextDecoration.underline,
-                  decorationColor: linkColor,
-                ),
-                onOpen: (url) => UrlLauncher(context, url.url).launchUrl(),
-                eventId: event.eventId,
-                checkboxCheckedEvents: event.aggregatedEvents(
-                  timeline,
-                  EventCheckboxRoomExtension.relationshipType,
+            return MeaningDecoration(
+              content: event.content,
+              textColor: textColor,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6) *
+                    AccessibilityScope.of(context).textScale,
+                child: HtmlMessage(
+                  html: html,
+                  textColor: textColor,
+                  room: event.room,
+                  fontSize: AppConfig.messageFontSize * (bigEmotes ? 5 : 1),
+                  linkStyle: TextStyle(
+                    color: linkColor,
+                    fontSize: AppConfig.messageFontSize,
+                    decoration: TextDecoration.underline,
+                    decorationColor: linkColor,
+                  ),
+                  onOpen: (url) => UrlLauncher(context, url.url).launchUrl(),
+                  eventId: event.eventId,
+                  checkboxCheckedEvents: event.aggregatedEvents(
+                    timeline,
+                    EventCheckboxRoomExtension.relationshipType,
+                  ),
                 ),
               ),
             );

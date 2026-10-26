@@ -42,6 +42,17 @@ class PersonalizationL10n {
   final String thinking;
   final String previewNow;
   final String previewSuggested;
+  final String meaningQuestion;
+  final String meaningInformation;
+  final String meaningRequest;
+  final String meaningUrgent;
+  final String meaningRemove;
+  final String meaningTitle;
+  final String meaningAnnotate;
+  final String meaningAnnotateDescription;
+  final String meaningShowIntent;
+  final String meaningShowUrgency;
+  final String meaningHighlightTimes;
   final Map<ScaleCategory, String> categoryTitles;
   final Map<ScaleCategory, String> categoryDescriptions;
 
@@ -79,6 +90,17 @@ class PersonalizationL10n {
     required this.thinking,
     required this.previewNow,
     required this.previewSuggested,
+    required this.meaningQuestion,
+    required this.meaningInformation,
+    required this.meaningRequest,
+    required this.meaningUrgent,
+    required this.meaningRemove,
+    required this.meaningTitle,
+    required this.meaningAnnotate,
+    required this.meaningAnnotateDescription,
+    required this.meaningShowIntent,
+    required this.meaningShowUrgency,
+    required this.meaningHighlightTimes,
     required this.categoryTitles,
     required this.categoryDescriptions,
   });
@@ -128,6 +150,19 @@ class PersonalizationL10n {
     thinking: 'Thinking…',
     previewNow: 'Now',
     previewSuggested: 'Suggested',
+    meaningQuestion: 'Question',
+    meaningInformation: 'Information',
+    meaningRequest: 'Request',
+    meaningUrgent: 'Urgent',
+    meaningRemove: 'Send without meaning',
+    meaningTitle: 'Message meaning',
+    meaningAnnotate: 'Add meaning to my messages',
+    meaningAnnotateDescription:
+        'Before sending, you see whether your message is a question, a '
+        'request or urgent, and which times it mentions. You can change it.',
+    meaningShowIntent: 'Mark questions and requests',
+    meaningShowUrgency: 'Mark urgent messages',
+    meaningHighlightTimes: 'Highlight times and dates',
     categoryTitles: {
       ScaleCategory.text: 'Text size',
       ScaleCategory.inputText: 'Typing text size',
@@ -183,6 +218,19 @@ class PersonalizationL10n {
     thinking: 'Tænker…',
     previewNow: 'Nu',
     previewSuggested: 'Forslag',
+    meaningQuestion: 'Spørgsmål',
+    meaningInformation: 'Information',
+    meaningRequest: 'Anmodning',
+    meaningUrgent: 'Haster',
+    meaningRemove: 'Send uden betydning',
+    meaningTitle: 'Beskeders betydning',
+    meaningAnnotate: 'Tilføj betydning til mine beskeder',
+    meaningAnnotateDescription:
+        'Før du sender, ser du, om din besked er et spørgsmål, en anmodning '
+        'eller haster, og hvilke tidspunkter den nævner. Du kan ændre det.',
+    meaningShowIntent: 'Markér spørgsmål og anmodninger',
+    meaningShowUrgency: 'Markér beskeder, der haster',
+    meaningHighlightTimes: 'Fremhæv tidspunkter og datoer',
     categoryTitles: {
       ScaleCategory.text: 'Tekststørrelse',
       ScaleCategory.inputText: 'Størrelse på skrivetekst',

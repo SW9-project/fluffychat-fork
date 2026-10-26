@@ -16,6 +16,7 @@ import 'package:fluffychat/pages/chat/chat_event_list.dart';
 import 'package:fluffychat/pages/chat/pinned_events.dart';
 import 'package:fluffychat/pages/chat/reply_display.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/meaning/meaning_chips.dart';
 import 'package:fluffychat/personalization/signals/tracked_target.dart';
 import 'package:fluffychat/utils/account_config.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call.dart';
@@ -518,6 +519,9 @@ class ChatView extends StatelessWidget {
                                                 mainAxisSize: .min,
                                                 children: [
                                                   ReplyDisplay(controller),
+                                                  MeaningChips(
+                                                    controller.meaningDraft,
+                                                  ),
                                                   AccessibilityIconButtons(
                                                     child: ChatInputRow(
                                                       controller,

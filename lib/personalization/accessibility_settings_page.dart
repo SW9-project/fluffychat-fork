@@ -10,6 +10,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'accessibility_scope.dart';
 import 'accessibility_settings.dart';
+import 'meaning/meaning_settings.dart';
 import 'personalization_l10n.dart';
 
 /// Lets the user resize UI elements by hand, with a live preview.
@@ -99,8 +100,65 @@ class AccessibilitySettingsPage extends StatelessWidget {
                 ],
               ),
             ),
+            const Divider(),
+            const _MeaningSection(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Message meaning (Phase 4): whether to add meaning to my messages, and how
+/// to show the meaning of messages I receive.
+class _MeaningSection extends StatelessWidget {
+  const _MeaningSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = PersonalizationL10n.of(context);
+    final settings = MeaningSettings.instance;
+    return ValueListenableBuilder<MeaningPreferences>(
+      valueListenable: settings,
+      builder: (context, prefs, _) => Column(
+        crossAxisAlignment: .stretch,
+        children: [
+          ListTile(
+            title: Text(
+              l10n.meaningTitle,
+              style: TextStyle(
+                color: theme.colorScheme.secondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          SwitchListTile.adaptive(
+            key: const Key('meaning_annotate'),
+            title: Text(l10n.meaningAnnotate),
+            subtitle: Text(l10n.meaningAnnotateDescription),
+            value: prefs.annotateOutgoing,
+            onChanged: (v) =>
+                settings.update(prefs.copyWith(annotateOutgoing: v)),
+          ),
+          SwitchListTile.adaptive(
+            title: Text(l10n.meaningShowIntent),
+            value: prefs.showIntent,
+            onChanged: (v) => settings.update(prefs.copyWith(showIntent: v)),
+          ),
+          SwitchListTile.adaptive(
+            title: Text(l10n.meaningShowUrgency),
+            value: prefs.showUrgency,
+            onChanged: (v) => settings.update(prefs.copyWith(showUrgency: v)),
+          ),
+          SwitchListTile.adaptive(
+            title: Text(l10n.meaningHighlightTimes),
+            value: prefs.highlightTimes,
+            onChanged: (v) =>
+                settings.update(prefs.copyWith(highlightTimes: v)),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
