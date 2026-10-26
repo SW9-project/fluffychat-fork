@@ -45,6 +45,17 @@ abstract class PlatformInfos {
 
   static bool get supportsAppLock => (isMobile || isMacOS);
 
+  /// iOS renders native bars with Liquid Glass since version 26.
+  static bool get supportsLiquidGlass => isIOS && _iosMajorVersion >= 26;
+
+  /// Parsed from something like "Version 26.0 (Build 23A341)".
+  static final int _iosMajorVersion =
+      int.tryParse(
+        RegExp(r'\d+').firstMatch(Platform.operatingSystemVersion)?.group(0) ??
+            '',
+      ) ??
+      0;
+
   static String get appDisplayName =>
       '${AppSettings.applicationName.value} ${isWeb ? 'web' : Platform.operatingSystem}${kReleaseMode ? '' : 'Debug'}';
 

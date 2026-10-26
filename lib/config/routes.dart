@@ -7,7 +7,9 @@ import 'dart:async';
 
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/pages/archive/archive.dart';
+import 'package:fluffychat/pages/assistant/assistant_page.dart';
 import 'package:fluffychat/pages/bootstrap/bootstrap_page.dart';
+import 'package:fluffychat/pages/call_history/call_history.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
 import 'package:fluffychat/pages/chat_access_settings/chat_access_settings_controller.dart';
 import 'package:fluffychat/pages/chat_details/chat_details.dart';
@@ -36,6 +38,8 @@ import 'package:fluffychat/pages/sign_in/sign_in_page.dart';
 import 'package:fluffychat/personalization/accessibility_settings_page.dart';
 import 'package:fluffychat/widgets/config_viewer.dart';
 import 'package:fluffychat/widgets/layouts/empty_page.dart';
+import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
+import 'package:fluffychat/widgets/layouts/main_navigation_shell.dart';
 import 'package:fluffychat/widgets/layouts/two_column_layout.dart';
 import 'package:fluffychat/widgets/log_view.dart';
 import 'package:fluffychat/widgets/matrix.dart';
@@ -121,22 +125,30 @@ abstract class AppRoutes {
       // Never use a transition on the shell route. Changing the PageBuilder
       // here based on a MediaQuery causes the child to briefly be rendered
       // twice with the same GlobalKey, blowing up the rendering.
-      pageBuilder: (context, state, child) => noTransitionPageBuilder(
-        context,
-        state,
-        FluffyThemes.isColumnMode(context) &&
-                state.fullPath?.startsWith('/rooms/settings') == false
-            ? TwoColumnLayout(
-                mainView: ChatList(
-                  activeChat: state.pathParameters['roomid'],
-                  activeSpace: state.uri.queryParameters['spaceId'],
-                  displayNavigationRail:
-                      state.path?.startsWith('/rooms/settings') != true,
-                ),
-                sideView: child,
-              )
-            : child,
-      ),
+      observers: [MainNavigationShell.routeObserver],
+      pageBuilder: (context, state, child) {
+        final tab = MainNavigationTab.fromPath(state.uri.path);
+        return noTransitionPageBuilder(
+          context,
+          state,
+          FluffyThemes.isColumnMode(context)
+              ? TwoColumnLayout(
+                  mainView: switch (tab) {
+                    MainNavigationTab.chats => ChatList(
+                      activeChat: state.pathParameters['roomid'],
+                      activeSpace: state.uri.queryParameters['spaceId'],
+                    ),
+                    MainNavigationTab.calls => const CallHistory(),
+                    MainNavigationTab.assistant => const AssistantPage(),
+                    MainNavigationTab.settings => const Settings(),
+                  },
+                  sideView: child,
+                  hasNavigationRail: tab == MainNavigationTab.chats,
+                  bottomBar: MainNavigationBarHost(activeTab: tab),
+                )
+              : MainNavigationShell(path: state.uri.path, child: child),
+        );
+      },
       routes: [
         GoRoute(
           path: '/rooms',
@@ -176,6 +188,28 @@ abstract class AppRoutes {
               redirect: loggedOutRedirect,
             ),
             GoRoute(
+              path: 'calls',
+              pageBuilder: (context, state) => noTransitionPageBuilder(
+                context,
+                state,
+                FluffyThemes.isColumnMode(context)
+                    ? const EmptyPage()
+                    : const CallHistory(),
+              ),
+              redirect: loggedOutRedirect,
+            ),
+            GoRoute(
+              path: 'assistant',
+              pageBuilder: (context, state) => noTransitionPageBuilder(
+                context,
+                state,
+                FluffyThemes.isColumnMode(context)
+                    ? const EmptyPage()
+                    : const AssistantPage(),
+              ),
+              redirect: loggedOutRedirect,
+            ),
+            GoRoute(
               path: 'newprivatechat',
               pageBuilder: (context, state) => defaultPageBuilder(
                 context,
@@ -208,183 +242,160 @@ abstract class AppRoutes {
               ),
               redirect: loggedOutRedirect,
             ),
-            ShellRoute(
-              pageBuilder: (context, state, child) => defaultPageBuilder(
+            GoRoute(
+              path: 'settings',
+              pageBuilder: (context, state) => noTransitionPageBuilder(
                 context,
                 state,
                 FluffyThemes.isColumnMode(context)
-                    ? TwoColumnLayout(
-                        mainView: Settings(key: state.pageKey),
-                        sideView: child,
-                        hasNavigationRail: false,
-                      )
-                    : child,
+                    ? const EmptyPage()
+                    : const Settings(),
               ),
               routes: [
                 GoRoute(
-                  path: 'settings',
+                  path: 'notifications',
                   pageBuilder: (context, state) => defaultPageBuilder(
                     context,
                     state,
-                    FluffyThemes.isColumnMode(context)
-                        ? const EmptyPage()
-                        : const Settings(),
+                    const SettingsNotifications(),
+                  ),
+                  redirect: loggedOutRedirect,
+                ),
+                GoRoute(
+                  path: 'style',
+                  pageBuilder: (context, state) =>
+                      defaultPageBuilder(context, state, const SettingsStyle()),
+                  redirect: loggedOutRedirect,
+                ),
+                GoRoute(
+                  path: 'accessibility',
+                  pageBuilder: (context, state) => defaultPageBuilder(
+                    context,
+                    state,
+                    const AccessibilitySettingsPage(),
+                  ),
+                  redirect: loggedOutRedirect,
+                ),
+                GoRoute(
+                  path: 'devices',
+                  pageBuilder: (context, state) => defaultPageBuilder(
+                    context,
+                    state,
+                    const DevicesSettings(),
+                  ),
+                  redirect: loggedOutRedirect,
+                ),
+                GoRoute(
+                  path: 'chat',
+                  pageBuilder: (context, state) =>
+                      defaultPageBuilder(context, state, const SettingsChat()),
+                  routes: [
+                    GoRoute(
+                      path: 'emotes',
+                      pageBuilder: (context, state) => defaultPageBuilder(
+                        context,
+                        state,
+                        EmotesSettings(roomId: state.pathParameters['roomid']),
+                      ),
+                    ),
+                  ],
+                  redirect: loggedOutRedirect,
+                ),
+                GoRoute(
+                  path: 'addaccount',
+                  redirect: loggedOutRedirect,
+                  pageBuilder: (context, state) => defaultPageBuilder(
+                    context,
+                    state,
+                    const IntroPagePresenter(),
                   ),
                   routes: [
                     GoRoute(
-                      path: 'notifications',
+                      path: 'sign_in',
                       pageBuilder: (context, state) => defaultPageBuilder(
                         context,
                         state,
-                        const SettingsNotifications(),
+                        SignInPage(signUp: false),
                       ),
                       redirect: loggedOutRedirect,
                     ),
                     GoRoute(
-                      path: 'style',
+                      path: 'sign_up',
                       pageBuilder: (context, state) => defaultPageBuilder(
                         context,
                         state,
-                        const SettingsStyle(),
+                        SignInPage(signUp: true),
                       ),
                       redirect: loggedOutRedirect,
                     ),
                     GoRoute(
-                      path: 'accessibility',
+                      path: 'login',
                       pageBuilder: (context, state) => defaultPageBuilder(
                         context,
                         state,
-                        const AccessibilitySettingsPage(),
+                        Login(client: state.extra as Client),
                       ),
                       redirect: loggedOutRedirect,
                     ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'homeserver',
+                  pageBuilder: (context, state) {
+                    return defaultPageBuilder(
+                      context,
+                      state,
+                      const SettingsHomeserver(),
+                    );
+                  },
+                  redirect: loggedOutRedirect,
+                ),
+                GoRoute(
+                  path: 'security',
+                  redirect: loggedOutRedirect,
+                  pageBuilder: (context, state) => defaultPageBuilder(
+                    context,
+                    state,
+                    const SettingsSecurity(),
+                  ),
+                  routes: [
                     GoRoute(
-                      path: 'devices',
-                      pageBuilder: (context, state) => defaultPageBuilder(
-                        context,
-                        state,
-                        const DevicesSettings(),
-                      ),
-                      redirect: loggedOutRedirect,
-                    ),
-                    GoRoute(
-                      path: 'chat',
-                      pageBuilder: (context, state) => defaultPageBuilder(
-                        context,
-                        state,
-                        const SettingsChat(),
-                      ),
-                      routes: [
-                        GoRoute(
-                          path: 'emotes',
-                          pageBuilder: (context, state) => defaultPageBuilder(
-                            context,
-                            state,
-                            EmotesSettings(
-                              roomId: state.pathParameters['roomid'],
-                            ),
-                          ),
-                        ),
-                      ],
-                      redirect: loggedOutRedirect,
-                    ),
-                    GoRoute(
-                      path: 'addaccount',
-                      redirect: loggedOutRedirect,
-                      pageBuilder: (context, state) => defaultPageBuilder(
-                        context,
-                        state,
-                        const IntroPagePresenter(),
-                      ),
-                      routes: [
-                        GoRoute(
-                          path: 'sign_in',
-                          pageBuilder: (context, state) => defaultPageBuilder(
-                            context,
-                            state,
-                            SignInPage(signUp: false),
-                          ),
-                          redirect: loggedOutRedirect,
-                        ),
-                        GoRoute(
-                          path: 'sign_up',
-                          pageBuilder: (context, state) => defaultPageBuilder(
-                            context,
-                            state,
-                            SignInPage(signUp: true),
-                          ),
-                          redirect: loggedOutRedirect,
-                        ),
-                        GoRoute(
-                          path: 'login',
-                          pageBuilder: (context, state) => defaultPageBuilder(
-                            context,
-                            state,
-                            Login(client: state.extra as Client),
-                          ),
-                          redirect: loggedOutRedirect,
-                        ),
-                      ],
-                    ),
-                    GoRoute(
-                      path: 'homeserver',
+                      path: 'password',
                       pageBuilder: (context, state) {
                         return defaultPageBuilder(
                           context,
                           state,
-                          const SettingsHomeserver(),
+                          const SettingsPassword(),
                         );
                       },
                       redirect: loggedOutRedirect,
                     ),
                     GoRoute(
-                      path: 'security',
+                      path: 'ignorelist',
+                      pageBuilder: (context, state) {
+                        return defaultPageBuilder(
+                          context,
+                          state,
+                          SettingsIgnoreList(
+                            initialUserId: state.extra?.toString(),
+                          ),
+                        );
+                      },
                       redirect: loggedOutRedirect,
+                    ),
+                    GoRoute(
+                      path: '3pid',
                       pageBuilder: (context, state) => defaultPageBuilder(
                         context,
                         state,
-                        const SettingsSecurity(),
+                        const Settings3Pid(),
                       ),
-                      routes: [
-                        GoRoute(
-                          path: 'password',
-                          pageBuilder: (context, state) {
-                            return defaultPageBuilder(
-                              context,
-                              state,
-                              const SettingsPassword(),
-                            );
-                          },
-                          redirect: loggedOutRedirect,
-                        ),
-                        GoRoute(
-                          path: 'ignorelist',
-                          pageBuilder: (context, state) {
-                            return defaultPageBuilder(
-                              context,
-                              state,
-                              SettingsIgnoreList(
-                                initialUserId: state.extra?.toString(),
-                              ),
-                            );
-                          },
-                          redirect: loggedOutRedirect,
-                        ),
-                        GoRoute(
-                          path: '3pid',
-                          pageBuilder: (context, state) => defaultPageBuilder(
-                            context,
-                            state,
-                            const Settings3Pid(),
-                          ),
-                          redirect: loggedOutRedirect,
-                        ),
-                      ],
+                      redirect: loggedOutRedirect,
                     ),
                   ],
-                  redirect: loggedOutRedirect,
                 ),
               ],
+              redirect: loggedOutRedirect,
             ),
             GoRoute(
               path: ':roomid',
