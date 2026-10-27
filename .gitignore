@@ -325,3 +325,6 @@ macos/FluffyChat.app/Contents/_CodeSignature/CodeResources
 macos/FluffyChat.app.dSYM.zip
 macos/FluffyChat.pkg
 BACKLOG.md
+
+# On-device model, fetched by scripts/fetch_personalization_model.sh
+assets/models/*.litertlm
