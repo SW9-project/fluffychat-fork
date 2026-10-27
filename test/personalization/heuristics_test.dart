@@ -117,6 +117,26 @@ void main() {
       expect(config.heuristics.single.steps, 2);
     });
 
+    test('reads a heuristic exported from the catalog, without condition', () {
+      final errors = <Object>[];
+      final config = HeuristicsConfig.fromJson({
+        'heuristics': [
+          {
+            'id': 'text-too-small',
+            'source': 'darroch2005',
+            'rule': 'When text looks too small, make the text bigger.',
+            'change': {'setting': 'text_size', 'category': 'text', 'steps': 1},
+            'description': {'en': 'Bigger text?', 'da': 'Større tekst?'},
+          },
+        ],
+      }, onError: errors.add);
+      expect(errors, isEmpty);
+      final h = config.heuristics.single;
+      expect(h.condition, isNull);
+      expect(h.category, ScaleCategory.text);
+      expect(h.rule, 'When text looks too small, make the text bigger.');
+    });
+
     test('description falls back to English', () {
       final h = heuristic(
         const CountCondition(
@@ -223,6 +243,24 @@ void main() {
       expect(suggestion.category, ScaleCategory.button);
       expect(suggestion.from, 1.0);
       expect(suggestion.to, 1.1);
+    });
+
+    test('never suggests a heuristic without condition', () {
+      final modelOnly = Heuristic(
+        id: 'model-only',
+        source: '',
+        category: ScaleCategory.text,
+        steps: 1,
+        cooldown: const Duration(minutes: 30),
+        descriptions: const {'en': 'x'},
+        rule: 'When text is small, make it bigger.',
+      );
+      expect(
+        HeuristicsEngine([
+          modelOnly,
+        ]).evaluate(const [], AccessibilitySettings.defaults, now),
+        isEmpty,
+      );
     });
 
     test('suggests nothing when the category is already at its max', () {

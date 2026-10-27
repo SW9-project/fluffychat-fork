@@ -28,7 +28,8 @@ class HeuristicsEngine {
     DateTime now,
   ) => [
     for (final heuristic in heuristics)
-      if (heuristic.condition.isMetBy(signals, now))
+      // A heuristic without a condition is only proposed through the model.
+      if (heuristic.condition?.isMetBy(signals, now) ?? false)
         ?_suggestionFor(heuristic, settings),
   ];
 

@@ -101,7 +101,11 @@ class CountCondition extends HeuristicCondition {
 class Heuristic {
   final String id;
   final String source;
-  final HeuristicCondition condition;
+
+  /// When the disabled Phase 2 engine would suggest it. Since Phase 3b only
+  /// the model proposes heuristics, so files exported from the heuristics
+  /// catalog have none.
+  final HeuristicCondition? condition;
   final ScaleCategory category;
   final int steps;
   final Duration cooldown;
@@ -117,7 +121,7 @@ class Heuristic {
   const Heuristic({
     required this.id,
     required this.source,
-    required this.condition,
+    this.condition,
     required this.category,
     required this.steps,
     required this.cooldown,
@@ -130,6 +134,7 @@ class Heuristic {
 
   factory Heuristic.fromJson(Map<String, Object?> json) {
     final change = json['change'] as Map<String, Object?>;
+    final condition = json['condition'] as Map<String, Object?>?;
     final categoryName = change['category'];
     final category = ScaleCategory.values.firstWhereOrNull(
       (c) => c.name == categoryName,
@@ -140,9 +145,9 @@ class Heuristic {
     return Heuristic(
       id: json['id'] as String,
       source: json['source'] as String? ?? '',
-      condition: HeuristicCondition.fromJson(
-        json['condition'] as Map<String, Object?>,
-      ),
+      condition: condition == null
+          ? null
+          : HeuristicCondition.fromJson(condition),
       category: category,
       steps: (change['steps'] as num?)?.toInt() ?? 1,
       cooldown: Duration(
