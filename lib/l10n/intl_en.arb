@@ -1928,6 +1928,7 @@
         }
     },
     "pinMessage": "Pin to room",
+    "unpinMessage": "Unpin from room",
     "confirmEventUnpin": "Are you sure to permanently unpin the event?",
     "emojis": "Emojis",
     "unsupportedAndroidVersion": "Unsupported Android version",

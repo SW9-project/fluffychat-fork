@@ -242,13 +242,16 @@ class ChatDetailsView extends StatelessWidget {
                                       ).colorScheme.primary,
                                       size: 18,
                                     ),
-                                  Text(
-                                    displayname,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.normal,
+                                  Flexible(
+                                    child: Text(
+                                      displayname,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.normal,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -489,12 +492,10 @@ class _MainChatDetailsButton extends StatelessWidget {
             mainAxisSize: .min,
             children: [
               Icon(icon, color: theme.colorScheme.secondary),
-              SizedBox(
-                width: 64,
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 64),
                 child: Text(
                   label,
-                  maxLines: 1,
-                  overflow: .ellipsis,
                   textAlign: .center,
                   style: TextStyle(color: theme.colorScheme.secondary),
                 ),

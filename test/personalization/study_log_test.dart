@@ -206,6 +206,7 @@ void main() {
       );
       expect(events[0]['changes'], {
         'text_scale': [1.0, 1.5],
+        'input_text_scale': [1.0, 1.5],
       });
       expect(events[1]['changes'], {
         'button_scale': [1.0, 1.6],
@@ -215,6 +216,7 @@ void main() {
       });
       expect(events[3]['changes'], {
         'text_scale': [1.5, 1.0],
+        'input_text_scale': [1.5, 1.0],
       });
     });
 

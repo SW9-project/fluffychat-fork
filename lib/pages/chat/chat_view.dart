@@ -27,7 +27,7 @@ import '../../utils/stream_extension.dart';
 import 'chat_emoji_picker.dart';
 import 'chat_input_row.dart';
 
-enum _EventContextAction { info, report }
+enum _EventContextAction { report }
 
 class ChatView extends StatelessWidget {
   final ChatController controller;
@@ -151,15 +151,14 @@ class ChatView extends StatelessWidget {
                         tooltip: L10n.of(context).redactMessage,
                         onPressed: controller.redactEventsAction,
                       ),
-                    if (controller.selectedEvents.length == 1)
+                    if (controller.selectedEvents.length == 1 &&
+                        (controller.canPinSelectedEvents ||
+                            controller.canSaveSelectedEvent ||
+                            controller.selectedEvents.single.status.isSent))
                       PopupMenuButton<_EventContextAction>(
                         useRootNavigator: true,
                         onSelected: (action) {
                           switch (action) {
-                            case _EventContextAction.info:
-                              controller.showEventInfo();
-                              controller.clearSelectedEvents();
-                              break;
                             case _EventContextAction.report:
                               controller.reportEventAction();
                               break;
@@ -173,9 +172,17 @@ class ChatView extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: .min,
                                 children: [
-                                  const Icon(Icons.push_pin_outlined),
+                                  Icon(
+                                    controller.isSelectedEventPinned
+                                        ? Icons.push_pin
+                                        : Icons.push_pin_outlined,
+                                  ),
                                   const SizedBox(width: 12),
-                                  Text(L10n.of(context).pinMessage),
+                                  Text(
+                                    controller.isSelectedEventPinned
+                                        ? L10n.of(context).unpinMessage
+                                        : L10n.of(context).pinMessage,
+                                  ),
                                 ],
                               ),
                             ),
@@ -193,17 +200,6 @@ class ChatView extends StatelessWidget {
                                 ],
                               ),
                             ),
-                          PopupMenuItem(
-                            value: _EventContextAction.info,
-                            child: Row(
-                              mainAxisSize: .min,
-                              children: [
-                                const Icon(Icons.info_outlined),
-                                const SizedBox(width: 12),
-                                Text(L10n.of(context).messageInfo),
-                              ],
-                            ),
-                          ),
                           if (controller.selectedEvents.single.status.isSent)
                             PopupMenuItem(
                               value: _EventContextAction.report,

@@ -59,7 +59,7 @@ class AccessibilityController extends ChangeNotifier {
   Future<void> apply(ScaleCategory category, double value) => _commit(
     SettingsChangeKind.apply,
     _settings,
-    _settings.copyWith(category, value),
+    _settings.change(category, value),
   );
 
   /// Starts a continuous change, such as dragging a slider. Call [preview]
@@ -68,7 +68,7 @@ class AccessibilityController extends ChangeNotifier {
   void beginEdit() => _editStart ??= _settings;
 
   void preview(ScaleCategory category, double value) {
-    final next = _settings.copyWith(category, value);
+    final next = _settings.change(category, value);
     if (next == _settings) return;
     _settings = next;
     notifyListeners();

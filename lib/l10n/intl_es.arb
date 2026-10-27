@@ -1888,6 +1888,7 @@
     "createGroup": "Crear grupo",
     "custom": "Personalizado",
     "pinMessage": "Anclar a la sala",
+    "unpinMessage": "Desanclar de la sala",
     "googlyEyesContent": "{senderName} te manda ojos saltones",
     "@googlyEyesContent": {
         "type": "String",

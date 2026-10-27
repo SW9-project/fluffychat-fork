@@ -80,9 +80,28 @@ void main() {
       expect(s.touchTarget(20), AccessibilitySettings.minTouchTarget);
       expect(s.touchTarget(56), 56);
       expect(
-        s.copyWith(ScaleCategory.touchTarget, 2.0).touchTarget(20),
+        s.copyWith(ScaleCategory.touchTarget, 1.5).touchTarget(20),
         AccessibilitySettings.minTouchTarget,
       );
+    });
+
+    test('typing text follows the text size, not the other way round', () {
+      final s = AccessibilitySettings.defaults.change(ScaleCategory.text, 1.4);
+      expect(s.textScale, 1.4);
+      expect(s.inputTextScale, 1.4);
+
+      final t = s.change(ScaleCategory.inputText, 1.8);
+      expect(t.textScale, 1.4);
+      expect(t.inputTextScale, 1.8);
+
+      final u = t.change(ScaleCategory.text, 0.8);
+      expect(u.textScale, 0.8);
+      expect(u.inputTextScale, 0.8);
+    });
+
+    test('touch area and picture size go up to 1.5', () {
+      expect(ScaleCategory.touchTarget.max, 1.5);
+      expect(ScaleCategory.avatar.max, 1.5);
     });
 
     test('button boxes fit the scaled icon', () {
@@ -106,7 +125,7 @@ void main() {
       final store = await _store();
       final s = AccessibilitySettings.defaults
           .copyWith(ScaleCategory.text, 1.4)
-          .copyWith(ScaleCategory.touchTarget, 1.7);
+          .copyWith(ScaleCategory.touchTarget, 1.3);
       await s.save(store);
       expect(AccessibilitySettings.load(store), s);
     });
@@ -214,13 +233,13 @@ void main() {
     test('reset restores defaults and is undoable', () async {
       final store = await _store();
       final controller = AccessibilityController(store);
-      await controller.apply(ScaleCategory.avatar, 2.0);
+      await controller.apply(ScaleCategory.avatar, 1.5);
       await controller.reset();
       expect(controller.settings, AccessibilitySettings.defaults);
       expect(store.getDouble(ScaleCategory.avatar.storageKey), 1.0);
 
       await controller.undo();
-      expect(controller.settings.avatarScale, 2.0);
+      expect(controller.settings.avatarScale, 1.5);
     });
 
     test('settings survive a restart', () async {

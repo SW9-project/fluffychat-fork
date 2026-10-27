@@ -22,8 +22,8 @@ import 'settings_intent_model.dart';
 /// and the LiteRT-LM engine. Runs fully on the device.
 ///
 /// The model file is bundled as an app asset (see `assets/models/README.md`).
-/// A build without it, a device below Android 11 (API 30) or a process that is
-/// not arm64 reports [ModelState.unavailable], and the app works without it.
+/// A build without it, a device below Android 11 (API 30), a platform other than
+/// Android and iOS or a process that is not arm64 reports [ModelState.unavailable], and the app works without it.
 class FunctionGemmaModel implements SettingsIntentModel {
   static const assetPath = 'assets/models/functiongemma-270M-it.litertlm';
   static const fileName = 'functiongemma-270M-it.litertlm';
@@ -59,15 +59,19 @@ class FunctionGemmaModel implements SettingsIntentModel {
     if (!_disposed) _status.value = status;
   }
 
-  /// The LiteRT-LM engine needs Android 11 and an arm64 process, and this
-  /// build must contain the model file.
+  /// The LiteRT-LM engine needs an arm64 process on iOS or Android 11+, and
+  /// this build must contain the model file.
   static Future<bool> isSupported() async {
-    if (!PlatformInfos.isAndroid || !isAndroidArm64Process) return false;
-    final info = await DeviceInfoPlugin().androidInfo;
-    if (info.version.sdkInt < 30) return false;
-    // An arm64 process on an x86 device runs under ARM translation, where
-    // LiteRT's CPU detection crashes the app (seen on the x86_64 emulator).
-    if (info.supportedAbis.firstOrNull != 'arm64-v8a') return false;
+    if (!(PlatformInfos.isAndroid || PlatformInfos.isIOS) || !isArm64Process) {
+      return false;
+    }
+    if (PlatformInfos.isAndroid) {
+      final info = await DeviceInfoPlugin().androidInfo;
+      if (info.version.sdkInt < 30) return false;
+      // An arm64 process on an x86 device runs under ARM translation, where
+      // LiteRT's CPU detection crashes the app (seen on the x86_64 emulator).
+      if (info.supportedAbis.firstOrNull != 'arm64-v8a') return false;
+    }
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
     return manifest.listAssets().contains(assetPath);
   }

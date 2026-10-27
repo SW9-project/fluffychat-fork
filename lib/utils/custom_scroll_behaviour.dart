@@ -12,4 +12,22 @@ class CustomScrollBehavior extends MaterialScrollBehavior {
     PointerDeviceKind.touch,
     PointerDeviceKind.trackpad,
   };
+
+  // The Material 3 stretch effect on Android distorts the content (round
+  // avatars and color pickers turn into ovals), so use the glow instead.
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    if (getPlatform(context) != TargetPlatform.android) {
+      return super.buildOverscrollIndicator(context, child, details);
+    }
+    return GlowingOverscrollIndicator(
+      axisDirection: details.direction,
+      color: Theme.of(context).colorScheme.secondary,
+      child: child,
+    );
+  }
 }

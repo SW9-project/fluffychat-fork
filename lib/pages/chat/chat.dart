@@ -1230,6 +1230,10 @@ class ChatController extends State<ChatPageWithRoom>
     return true;
   }
 
+  bool get isSelectedEventPinned =>
+      selectedEvents.length == 1 &&
+      room.pinnedEventIds.contains(selectedEvents.single.eventId);
+
   bool get canEditSelectedEvents {
     if (isArchived ||
         selectedEvents.length != 1 ||
@@ -1573,21 +1577,21 @@ class ChatController extends State<ChatPageWithRoom>
     }
   }
 
-  void pinEvent() {
+  Future<void> pinEvent() async {
     final pinnedEventIds = room.pinnedEventIds;
     final selectedEventIds = selectedEvents.map((e) => e.eventId).toSet();
-    final unpin =
-        selectedEventIds.length == 1 &&
-        pinnedEventIds.contains(selectedEventIds.single);
-    if (unpin) {
+    if (isSelectedEventPinned) {
       pinnedEventIds.removeWhere(selectedEventIds.contains);
     } else {
       pinnedEventIds.addAll(selectedEventIds);
     }
-    showFutureLoadingDialog(
+    final result = await showFutureLoadingDialog(
       context: context,
       future: () => room.setPinnedEvents(pinnedEventIds),
     );
+    if (result.error != null) return;
+    if (!mounted) return;
+    clearSelectedEvents();
   }
 
   Timer? _storeInputTimeoutTimer;

@@ -93,7 +93,7 @@ class PinnedEvents extends StatelessWidget {
             icon: const Icon(Icons.push_pin),
             tooltip: L10n.of(context).unpin,
             onPressed: controller.room.canSendEvent(EventTypes.RoomPinnedEvents)
-                ? () => controller.unpinEvent(event!.eventId)
+                ? () => controller.unpinEvent(pinnedEventIds.last)
                 : null,
           ),
           onTap: () => _displayPinnedEventsDialog(context),

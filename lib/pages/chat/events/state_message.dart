@@ -28,97 +28,103 @@ class StateMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AnimatedSize(
-      duration: FluffyThemes.animationDuration,
-      curve: FluffyThemes.animationCurve,
-      child: isCollapsed
-          ? const SizedBox.shrink()
-          : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Material(
-                    color: theme.serviceMessageColor,
-                    borderRadius: BorderRadius.circular(AppConfig.borderRadius),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10.0,
-                        vertical: 4.0,
+    // Service messages are not part of the conversation text, so keep them
+    // out of the timeline's SelectionArea.
+    return SelectionContainer.disabled(
+      child: AnimatedSize(
+        duration: FluffyThemes.animationDuration,
+        curve: FluffyThemes.animationCurve,
+        child: isCollapsed
+            ? const SizedBox.shrink()
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Material(
+                      color: theme.serviceMessageColor,
+                      borderRadius: BorderRadius.circular(
+                        AppConfig.borderRadius,
                       ),
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            if (event.type != EventTypes.Encrypted ||
-                                event.redacted)
-                              TextSpan(
-                                text: event.calcLocalizedBodyFallback(
-                                  MatrixLocals(L10n.of(context)),
-                                ),
-                              )
-                            else ...[
-                              WidgetSpan(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 4.0),
-                                  child: Avatar(
-                                    name: event.senderFromMemoryOrFallback
-                                        .calcDisplayname(),
-                                    size: 14,
-                                    mxContent: event
-                                        .senderFromMemoryOrFallback
-                                        .avatarUrl,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0,
+                          vertical: 4.0,
+                        ),
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              if (event.type != EventTypes.Encrypted ||
+                                  event.redacted)
+                                TextSpan(
+                                  text: event.calcLocalizedBodyFallback(
+                                    MatrixLocals(L10n.of(context)),
                                   ),
-                                ),
-                              ),
-                              TextSpan(
-                                text: L10n.of(context).messageNotDecryptable,
-                              ),
-                              if (!event.redacted)
+                                )
+                              else ...[
                                 WidgetSpan(
                                   child: Padding(
-                                    padding: const EdgeInsets.only(left: 4.0),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(7),
-                                      onTap: () =>
-                                          UtdDialog.show(context, event),
-                                      child: Icon(
-                                        Icons.info_outlined,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
+                                    padding: const EdgeInsets.only(right: 4.0),
+                                    child: Avatar(
+                                      name: event.senderFromMemoryOrFallback
+                                          .calcDisplayname(),
+                                      size: 14,
+                                      mxContent: event
+                                          .senderFromMemoryOrFallback
+                                          .avatarUrl,
                                     ),
                                   ),
                                 ),
-                            ],
-                            if (onExpand != null) ...[
-                              const TextSpan(text: '\n'),
-                              TextSpan(
-                                style: const TextStyle(
-                                  decoration: TextDecoration.underline,
-                                  decorationColor: Colors.white,
+                                TextSpan(
+                                  text: L10n.of(context).messageNotDecryptable,
                                 ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = onExpand,
-                                text: L10n.of(context).moreEvents,
-                              ),
+                                if (!event.redacted)
+                                  WidgetSpan(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 4.0),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(7),
+                                        onTap: () =>
+                                            UtdDialog.show(context, event),
+                                        child: Icon(
+                                          Icons.info_outlined,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                              if (onExpand != null) ...[
+                                const TextSpan(text: '\n'),
+                                TextSpan(
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Colors.white,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = onExpand,
+                                  text: L10n.of(context).moreEvents,
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                          decoration: event.redacted
-                              ? TextDecoration.lineThrough
-                              : null,
+                          ),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                            decoration: event.redacted
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

@@ -4,7 +4,8 @@
 
 import 'dart:ffi';
 
-/// Whether this app process runs as Android arm64. The process ABI matters,
-/// not the device's: an x86_64 build on an emulator that can translate arm64
-/// still cannot load arm64 libraries.
-bool get isAndroidArm64Process => Abi.current() == Abi.androidArm64;
+/// Whether this app process runs as arm64 on Android or iOS. The process ABI
+/// matters, not the device's: an x86_64 build on an emulator that can
+/// translate arm64 still cannot load arm64 libraries.
+bool get isArm64Process =>
+    Abi.current() == Abi.androidArm64 || Abi.current() == Abi.iosArm64;

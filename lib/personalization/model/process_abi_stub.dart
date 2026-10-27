@@ -4,4 +4,4 @@
 
 /// Whether this app process runs as Android arm64. Always false where
 /// `dart:ffi` is missing, such as on the web.
-bool get isAndroidArm64Process => false;
+bool get isArm64Process => false;

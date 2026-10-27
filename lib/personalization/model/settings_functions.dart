@@ -48,7 +48,7 @@ abstract final class SettingsFunctions {
   static const Map<ScaleCategory, String> _purposes = {
     ScaleCategory.text:
         'Make all text in the app bigger or smaller, for example when '
-        'messages are hard to read.',
+        'messages are hard to read. The text the user types follows it.',
     ScaleCategory.inputText:
         'Make the text the user types in the message box bigger or smaller.',
     ScaleCategory.button:

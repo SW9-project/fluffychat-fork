@@ -15,11 +15,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum ScaleCategory {
   text('text_scale', min: 0.8, max: 2.0, step: 0.1),
 
-  /// Text typed in the message input, on top of [text].
-  inputText('input_text_scale', min: 1.0, max: 2.0, step: 0.1),
+  /// Text typed in the message input. Follows [text] when that changes, but
+  /// can be set on its own.
+  inputText('input_text_scale', min: 0.8, max: 2.0, step: 0.1),
   button('button_scale', min: 1.0, max: 2.0, step: 0.1),
-  touchTarget('touch_target_scale', min: 1.0, max: 2.0, step: 0.1),
-  avatar('avatar_scale', min: 1.0, max: 2.0, step: 0.1);
+  touchTarget('touch_target_scale', min: 1.0, max: 1.5, step: 0.1),
+  avatar('avatar_scale', min: 1.0, max: 1.5, step: 0.1);
 
   const ScaleCategory(
     this.id, {
@@ -76,6 +77,14 @@ class AccessibilitySettings {
         ..._values,
         category: category.normalize(value),
       });
+
+  /// Sets [category] to [value] as the user means it: changing the text size
+  /// also sets the typing text size to match, the other way round does not.
+  AccessibilitySettings change(ScaleCategory category, double value) {
+    final next = copyWith(category, value);
+    if (category != ScaleCategory.text) return next;
+    return next.copyWith(ScaleCategory.inputText, value);
+  }
 
   /// Icon size for a button whose icon is [base] at scale 1.
   double icon([double base = 24.0]) => base * buttonScale;

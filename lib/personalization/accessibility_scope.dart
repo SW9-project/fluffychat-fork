@@ -73,12 +73,16 @@ class AccessibilityTextScale extends StatelessWidget {
   static TextScaler multiply(TextScaler base, double factor) =>
       factor == 1.0 ? base : _MultipliedTextScaler(base, factor);
 
-  /// The text scaler for text typed into the message input: the app-wide
-  /// scale times the user's input text scale.
-  static TextScaler inputTextScaler(BuildContext context) => multiply(
-    MediaQuery.textScalerOf(context),
-    AccessibilityScope.of(context).inputTextScale,
-  );
+  /// The text scaler for text typed into the message input: the system scale
+  /// times the user's input text scale. The inherited scaler already includes
+  /// the user's text scale, so that is swapped for the input text scale.
+  static TextScaler inputTextScaler(BuildContext context) {
+    final settings = AccessibilityScope.of(context);
+    return multiply(
+      MediaQuery.textScalerOf(context),
+      settings.inputTextScale / settings.textScale,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
