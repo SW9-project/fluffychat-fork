@@ -101,6 +101,9 @@ class Avatar extends StatelessWidget {
                       child: Text(
                         fallbackLetters,
                         textAlign: TextAlign.center,
+                        // The letters are sized from the avatar size, so text
+                        // scaling would make them overflow the avatar.
+                        textScaler: TextScaler.noScaling,
                         style: TextStyle(
                           fontFamily: 'RobotoMono',
                           color:

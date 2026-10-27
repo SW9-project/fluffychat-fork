@@ -37,7 +37,7 @@ class ClientChooserButton extends StatelessWidget {
           children: [
             const Icon(Icons.group_add_outlined),
             const SizedBox(width: 18),
-            Text(L10n.of(context).createGroup),
+            Flexible(child: Text(L10n.of(context).createGroup)),
           ],
         ),
       ),
@@ -47,7 +47,7 @@ class ClientChooserButton extends StatelessWidget {
           children: [
             const Icon(Icons.edit_outlined),
             const SizedBox(width: 18),
-            Text(L10n.of(context).setStatus),
+            Flexible(child: Text(L10n.of(context).setStatus)),
           ],
         ),
       ),
@@ -57,7 +57,7 @@ class ClientChooserButton extends StatelessWidget {
           children: [
             Icon(Icons.adaptive.share_outlined),
             const SizedBox(width: 18),
-            Text(L10n.of(context).inviteContact),
+            Flexible(child: Text(L10n.of(context).inviteContact)),
           ],
         ),
       ),
@@ -67,7 +67,7 @@ class ClientChooserButton extends StatelessWidget {
           children: [
             const Icon(Icons.archive_outlined),
             const SizedBox(width: 18),
-            Text(L10n.of(context).archive),
+            Flexible(child: Text(L10n.of(context).archive)),
           ],
         ),
       ),
@@ -77,7 +77,7 @@ class ClientChooserButton extends StatelessWidget {
           children: [
             const Icon(Icons.settings_outlined),
             const SizedBox(width: 18),
-            Text(L10n.of(context).settings),
+            Flexible(child: Text(L10n.of(context).settings)),
           ],
         ),
       ),
@@ -87,7 +87,7 @@ class ClientChooserButton extends StatelessWidget {
           children: [
             Icon(Icons.favorite, color: Colors.red),
             const SizedBox(width: 18),
-            Text(L10n.of(context).supportFluffyChat),
+            Flexible(child: Text(L10n.of(context).supportFluffyChat)),
           ],
         ),
       ),
@@ -159,7 +159,7 @@ class ClientChooserButton extends StatelessWidget {
           children: [
             const Icon(Icons.person_add_outlined),
             const SizedBox(width: 18),
-            Text(L10n.of(context).addAccount),
+            Flexible(child: Text(L10n.of(context).addAccount)),
           ],
         ),
       ),

@@ -10,6 +10,7 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/utils/adaptive_bottom_sheet.dart';
 import 'package:fluffychat/utils/date_time_extension.dart';
 import 'package:fluffychat/utils/event_read_extension.dart';
@@ -132,7 +133,7 @@ class Message extends StatelessWidget {
         : MainAxisAlignment.start;
 
     final displayEvent = event.getDisplayEvent(timeline);
-    const avatarSize = 36.0;
+    final avatarSize = AccessibilityScope.of(context).avatar(36);
     final noBubble =
         ({
           MessageTypes.Video,
@@ -841,7 +842,7 @@ class Message extends StatelessWidget {
                   child: threadChildren.isEmpty
                       ? const SizedBox.shrink()
                       : Padding(
-                          padding: const EdgeInsets.only(
+                          padding: EdgeInsets.only(
                             top: 2.0,
                             bottom: 8.0,
                             left: avatarSize + 8,

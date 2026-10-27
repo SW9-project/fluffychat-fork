@@ -143,7 +143,8 @@ class _Reaction extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(AppConfig.borderRadius / 2),
           ),
-          height: 24,
+          // A minimum height lets the chip grow with the text scale.
+          constraints: const BoxConstraints(minHeight: 24),
           padding: const EdgeInsets.symmetric(horizontal: 3),
           child: content,
         ),

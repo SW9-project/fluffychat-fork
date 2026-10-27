@@ -5,6 +5,7 @@
 
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/setting_keys.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -89,6 +90,7 @@ abstract class FluffyThemes {
           surfaceTint: Colors.transparent,
         );
     final isColumnMode = FluffyThemes.isColumnMode(context);
+    final a11y = AccessibilityScope.of(context);
     final dividerColor = isLight
         ? const Color(0xFFE6E6E6)
         : const Color(0xFF0E1621);
@@ -130,7 +132,16 @@ abstract class FluffyThemes {
         ),
       ),
       appBarTheme: AppBarTheme(
-        toolbarHeight: isColumnMode ? 72 : 56,
+        toolbarHeight: a11y.buttonBox(isColumnMode ? 72 : 56),
+        leadingWidth: a11y.buttonBox(56),
+        iconTheme: IconThemeData(
+          color: colorScheme.onSurface,
+          size: a11y.icon(),
+        ),
+        actionsIconTheme: IconThemeData(
+          color: colorScheme.onSurfaceVariant,
+          size: a11y.icon(),
+        ),
         surfaceTintColor: colorScheme.surface,
         backgroundColor: colorScheme.surface,
         scrolledUnderElevation: 0,

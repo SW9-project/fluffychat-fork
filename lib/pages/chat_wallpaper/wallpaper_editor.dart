@@ -5,7 +5,6 @@
 
 import 'package:file_picker/file_picker.dart';
 import 'package:fluffychat/config/app_config.dart';
-import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat_background.dart';
@@ -311,7 +310,8 @@ class ChatStylePreview extends StatelessWidget {
           ];
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(
-        textScaler: TextScaler.linear(AppSettings.fontSizeFactor.value),
+        // Text scale is applied app-wide by AccessibilityTextScale.
+        textScaler: MediaQuery.textScalerOf(context),
       ),
       child: ClipRect(
         child: ColoredBox(

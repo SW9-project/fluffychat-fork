@@ -8,6 +8,8 @@ import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/recording_input_row.dart';
 import 'package:fluffychat/pages/chat/recording_view_model.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/signals/tracked_target.dart';
 import 'package:fluffychat/utils/other_party_can_receive.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -51,6 +53,10 @@ class ChatInputRow extends StatelessWidget {
     final selectedTextButtonStyle = TextButton.styleFrom(
       foregroundColor: theme.colorScheme.onTertiaryContainer,
     );
+
+    final a11y = AccessibilityScope.of(context);
+    final height = a11y.buttonBox(ChatInputRow.height);
+    final buttonWidth = a11y.buttonBox(48);
 
     return RecordingViewModel(
       builder: (context, recordingViewModel) {
@@ -134,18 +140,22 @@ class ChatInputRow extends StatelessWidget {
               : <Widget>[
                   Container(
                     height: height,
-                    width: 48,
+                    width: buttonWidth,
                     alignment: Alignment.center,
-                    child: IconButton(
-                      tooltip: L10n.of(context).emojis,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      icon: Icon(
-                        controller.showEmojiPicker
-                            ? Icons.keyboard
-                            : Icons.emoji_emotions_outlined,
-                        key: ValueKey(controller.showEmojiPicker),
+                    child: TrackedTarget(
+                      id: 'emoji_button',
+                      kind: TargetKind.button,
+                      child: IconButton(
+                        tooltip: L10n.of(context).emojis,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        icon: Icon(
+                          controller.showEmojiPicker
+                              ? Icons.keyboard
+                              : Icons.emoji_emotions_outlined,
+                          key: ValueKey(controller.showEmojiPicker),
+                        ),
+                        onPressed: controller.emojiPickerAction,
                       ),
-                      onPressed: controller.emojiPickerAction,
                     ),
                   ),
                   if (Matrix.of(context).isMultiAccount &&
@@ -153,7 +163,7 @@ class ChatInputRow extends StatelessWidget {
                       Matrix.of(context).currentBundle!.length > 1)
                     Container(
                       height: height,
-                      width: 48,
+                      width: buttonWidth,
                       alignment: Alignment.center,
                       child: _ChatAccountPicker(controller),
                     ),
@@ -210,170 +220,178 @@ class ChatInputRow extends StatelessWidget {
                   AnimatedContainer(
                     duration: FluffyThemes.animationDuration,
                     curve: FluffyThemes.animationCurve,
-                    width: textMessageOnly ? 0 : 48,
+                    width: textMessageOnly ? 0 : buttonWidth,
                     height: height,
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(),
                     clipBehavior: Clip.hardEdge,
-                    child: PopupMenuButton<AddPopupMenuActions>(
-                      useRootNavigator: true,
-                      icon: const Icon(Icons.attach_file),
-                      iconColor: theme.colorScheme.onSurfaceVariant,
-                      onSelected: controller.onAddPopupMenuButtonSelected,
-                      itemBuilder: (BuildContext context) => [
-                        if (PlatformInfos.isMobile)
+                    child: TrackedTarget(
+                      id: 'attach_button',
+                      kind: TargetKind.button,
+                      child: PopupMenuButton<AddPopupMenuActions>(
+                        useRootNavigator: true,
+                        icon: const Icon(Icons.attach_file),
+                        iconColor: theme.colorScheme.onSurfaceVariant,
+                        onSelected: controller.onAddPopupMenuButtonSelected,
+                        itemBuilder: (BuildContext context) => [
+                          if (PlatformInfos.isMobile)
+                            PopupMenuItem(
+                              value: AddPopupMenuActions.location,
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      theme.colorScheme.onPrimaryContainer,
+                                  foregroundColor:
+                                      theme.colorScheme.primaryContainer,
+                                  child: const Icon(Icons.gps_fixed_outlined),
+                                ),
+                                title: Text(L10n.of(context).shareLocation),
+                                contentPadding: const EdgeInsets.all(0),
+                              ),
+                            ),
                           PopupMenuItem(
-                            value: AddPopupMenuActions.location,
+                            value: AddPopupMenuActions.poll,
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor:
                                     theme.colorScheme.onPrimaryContainer,
                                 foregroundColor:
                                     theme.colorScheme.primaryContainer,
-                                child: const Icon(Icons.gps_fixed_outlined),
+                                child: const Icon(Icons.poll_outlined),
                               ),
-                              title: Text(L10n.of(context).shareLocation),
-                              contentPadding: const EdgeInsets.all(0),
-                            ),
-                          ),
-                        PopupMenuItem(
-                          value: AddPopupMenuActions.poll,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  theme.colorScheme.onPrimaryContainer,
-                              foregroundColor:
-                                  theme.colorScheme.primaryContainer,
-                              child: const Icon(Icons.poll_outlined),
-                            ),
-                            title: Text(L10n.of(context).startPoll),
-                            contentPadding: const EdgeInsets.all(0),
-                          ),
-                        ),
-                        PopupMenuDivider(),
-                        if (PlatformInfos.isMobile) ...[
-                          PopupMenuItem(
-                            value: AddPopupMenuActions.videoCamera,
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor:
-                                    theme.colorScheme.onPrimaryContainer,
-                                foregroundColor:
-                                    theme.colorScheme.primaryContainer,
-                                child: const Icon(Icons.videocam_outlined),
-                              ),
-                              title: Text(L10n.of(context).recordAVideo),
-                              contentPadding: const EdgeInsets.all(0),
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: AddPopupMenuActions.photoCamera,
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor:
-                                    theme.colorScheme.onPrimaryContainer,
-                                foregroundColor:
-                                    theme.colorScheme.primaryContainer,
-                                child: const Icon(Icons.camera_alt_outlined),
-                              ),
-                              title: Text(L10n.of(context).takeAPhoto),
+                              title: Text(L10n.of(context).startPoll),
                               contentPadding: const EdgeInsets.all(0),
                             ),
                           ),
                           PopupMenuDivider(),
+                          if (PlatformInfos.isMobile) ...[
+                            PopupMenuItem(
+                              value: AddPopupMenuActions.videoCamera,
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      theme.colorScheme.onPrimaryContainer,
+                                  foregroundColor:
+                                      theme.colorScheme.primaryContainer,
+                                  child: const Icon(Icons.videocam_outlined),
+                                ),
+                                title: Text(L10n.of(context).recordAVideo),
+                                contentPadding: const EdgeInsets.all(0),
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: AddPopupMenuActions.photoCamera,
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      theme.colorScheme.onPrimaryContainer,
+                                  foregroundColor:
+                                      theme.colorScheme.primaryContainer,
+                                  child: const Icon(Icons.camera_alt_outlined),
+                                ),
+                                title: Text(L10n.of(context).takeAPhoto),
+                                contentPadding: const EdgeInsets.all(0),
+                              ),
+                            ),
+                            PopupMenuDivider(),
+                          ],
+                          PopupMenuItem(
+                            value: AddPopupMenuActions.video,
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor:
+                                    theme.colorScheme.onPrimaryContainer,
+                                foregroundColor:
+                                    theme.colorScheme.primaryContainer,
+                                child: const Icon(Icons.movie_outlined),
+                              ),
+                              title: Text(L10n.of(context).sendVideo),
+                              contentPadding: const EdgeInsets.all(0),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: AddPopupMenuActions.image,
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor:
+                                    theme.colorScheme.onPrimaryContainer,
+                                foregroundColor:
+                                    theme.colorScheme.primaryContainer,
+                                child: const Icon(Icons.image_outlined),
+                              ),
+                              title: Text(L10n.of(context).sendImage),
+                              contentPadding: const EdgeInsets.all(0),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: AddPopupMenuActions.file,
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor:
+                                    theme.colorScheme.onPrimaryContainer,
+                                foregroundColor:
+                                    theme.colorScheme.primaryContainer,
+                                child: const Icon(Icons.attachment_outlined),
+                              ),
+                              title: Text(L10n.of(context).sendFile),
+                              contentPadding: const EdgeInsets.all(0),
+                            ),
+                          ),
                         ],
-                        PopupMenuItem(
-                          value: AddPopupMenuActions.video,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  theme.colorScheme.onPrimaryContainer,
-                              foregroundColor:
-                                  theme.colorScheme.primaryContainer,
-                              child: const Icon(Icons.movie_outlined),
-                            ),
-                            title: Text(L10n.of(context).sendVideo),
-                            contentPadding: const EdgeInsets.all(0),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: AddPopupMenuActions.image,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  theme.colorScheme.onPrimaryContainer,
-                              foregroundColor:
-                                  theme.colorScheme.primaryContainer,
-                              child: const Icon(Icons.image_outlined),
-                            ),
-                            title: Text(L10n.of(context).sendImage),
-                            contentPadding: const EdgeInsets.all(0),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: AddPopupMenuActions.file,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  theme.colorScheme.onPrimaryContainer,
-                              foregroundColor:
-                                  theme.colorScheme.primaryContainer,
-                              child: const Icon(Icons.attachment_outlined),
-                            ),
-                            title: Text(L10n.of(context).sendFile),
-                            contentPadding: const EdgeInsets.all(0),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                   Container(
                     height: height,
                     width: height,
                     alignment: Alignment.center,
-                    child:
-                        PlatformInfos.platformCanRecord &&
-                            !controller.sendController.text.isNotEmpty &&
-                            controller.editEvent == null
-                        ? HoverBuilder(
-                            builder: (context, hovered) => IconButton(
-                              tooltip: L10n.of(context).voiceMessage,
-                              onPressed: hovered
-                                  ? () => recordingViewModel.startRecording(
-                                      controller.room,
-                                    )
-                                  : () => ScaffoldMessenger.of(context)
-                                        .showSnackBar(
-                                          SnackBar(
-                                            margin: EdgeInsets.only(
-                                              bottom: height + 16,
-                                              left: 16,
-                                              right: 16,
-                                              top: 16,
-                                            ),
-                                            showCloseIcon: true,
-                                            content: Text(
-                                              L10n.of(
-                                                context,
-                                              ).longPressToRecordVoiceMessage,
+                    child: TrackedTarget(
+                      id: 'send_button',
+                      kind: TargetKind.button,
+                      child:
+                          PlatformInfos.platformCanRecord &&
+                              !controller.sendController.text.isNotEmpty &&
+                              controller.editEvent == null
+                          ? HoverBuilder(
+                              builder: (context, hovered) => IconButton(
+                                tooltip: L10n.of(context).voiceMessage,
+                                onPressed: hovered
+                                    ? () => recordingViewModel.startRecording(
+                                        controller.room,
+                                      )
+                                    : () => ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                            SnackBar(
+                                              margin: EdgeInsets.only(
+                                                bottom: height + 16,
+                                                left: 16,
+                                                right: 16,
+                                                top: 16,
+                                              ),
+                                              showCloseIcon: true,
+                                              content: Text(
+                                                L10n.of(
+                                                  context,
+                                                ).longPressToRecordVoiceMessage,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                              onLongPress: () => recordingViewModel
-                                  .startRecording(controller.room),
-                              color: theme.colorScheme.onSurfaceVariant,
-                              icon: Icon(
-                                hovered ? Icons.mic : Icons.mic_none_outlined,
+                                onLongPress: () => recordingViewModel
+                                    .startRecording(controller.room),
+                                color: theme.colorScheme.onSurfaceVariant,
+                                icon: Icon(
+                                  hovered ? Icons.mic : Icons.mic_none_outlined,
+                                ),
                               ),
+                            )
+                          : IconButton(
+                              key: Key('send_button'),
+                              tooltip: L10n.of(context).send,
+                              onPressed: controller.send,
+                              color: theme.colorScheme.primary,
+                              icon: const Icon(Icons.send),
                             ),
-                          )
-                        : IconButton(
-                            key: Key('send_button'),
-                            tooltip: L10n.of(context).send,
-                            onPressed: controller.send,
-                            color: theme.colorScheme.primary,
-                            icon: const Icon(Icons.send),
-                          ),
+                    ),
                   ),
                 ],
         );

@@ -13,6 +13,9 @@ import 'package:fluffychat/pages/chat/chat_background.dart';
 import 'package:fluffychat/pages/chat/chat_event_list.dart';
 import 'package:fluffychat/pages/chat/pinned_events.dart';
 import 'package:fluffychat/pages/chat/reply_display.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/meaning/meaning_chips.dart';
+import 'package:fluffychat/personalization/signals/tracked_target.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call.dart';
 import 'package:fluffychat/widgets/chat_settings_popup_menu.dart';
@@ -108,7 +111,15 @@ class ChatView extends StatelessWidget {
                       )
                     : FluffyThemes.isColumnMode(context)
                     ? null
-                    : const Center(child: BackButton()),
+                    : const Center(
+                        child: AccessibilityIconButtons(
+                          child: TrackedTarget(
+                            id: 'back_button',
+                            kind: TargetKind.button,
+                            child: BackButton(),
+                          ),
+                        ),
+                      ),
                 titleSpacing: FluffyThemes.isColumnMode(context) ? 24 : 0,
                 title: ChatAppBarTitle(controller),
                 actions: [
@@ -342,7 +353,11 @@ class ChatView extends StatelessWidget {
                         ),
                         GestureDetector(
                           onTap: controller.clearSingleSelectedEvent,
-                          child: ChatEventList(controller: controller),
+                          child: TrackedTarget(
+                            id: 'chat_timeline',
+                            kind: TargetKind.text,
+                            child: ChatEventList(controller: controller),
+                          ),
                         ),
                         Positioned(
                           bottom: 0,
@@ -486,7 +501,14 @@ class ChatView extends StatelessWidget {
                                                 mainAxisSize: .min,
                                                 children: [
                                                   ReplyDisplay(controller),
-                                                  ChatInputRow(controller),
+                                                  MeaningChips(
+                                                    controller.meaningDraft,
+                                                  ),
+                                                  AccessibilityIconButtons(
+                                                    child: ChatInputRow(
+                                                      controller,
+                                                    ),
+                                                  ),
                                                   ChatEmojiPicker(controller),
                                                 ],
                                               ),

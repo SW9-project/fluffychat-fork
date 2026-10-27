@@ -6,6 +6,7 @@
 import 'package:async/async.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/personalization_l10n.dart';
 import 'package:fluffychat/utils/fluffy_share.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -210,6 +211,15 @@ class SettingsView extends StatelessWidget {
                     ? theme.colorScheme.surfaceContainerHigh
                     : null,
                 onTap: () => context.go('/rooms/settings/style'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.accessibility_new_outlined),
+                title: Text(PersonalizationL10n.of(context).accessibility),
+                tileColor:
+                    activeRoute.startsWith('/rooms/settings/accessibility')
+                    ? theme.colorScheme.surfaceContainerHigh
+                    : null,
+                onTap: () => context.go('/rooms/settings/accessibility'),
               ),
               ListTile(
                 leading: const Icon(Icons.notifications_outlined),

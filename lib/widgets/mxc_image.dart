@@ -155,6 +155,15 @@ class _MxcImageState extends State<MxcImage> {
   }
 
   @override
+  void didUpdateWidget(MxcImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The cache key contains the size, so a resized image must load again.
+    if (oldWidget.cacheKey != widget.cacheKey) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _tryLoad());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final data = _imageData;
     final hasData = data != null && data.isNotEmpty;

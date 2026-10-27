@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_wallpaper/wallpaper_editor.dart';
@@ -146,18 +145,7 @@ class SettingsStyleView extends StatelessWidget {
               ),
             ),
             const WallpaperEditor(),
-            ListTile(
-              title: Text(L10n.of(context).fontSize),
-              trailing: Text('× ${AppSettings.fontSizeFactor.value}'),
-            ),
-            Slider.adaptive(
-              min: 0.5,
-              max: 2.5,
-              divisions: 20,
-              value: AppSettings.fontSizeFactor.value,
-              semanticFormatterCallback: (d) => d.toString(),
-              onChanged: controller.changeFontSizeFactor,
-            ),
+            // The font size slider moved to the accessibility settings.
             Divider(color: theme.dividerColor),
             ListTile(
               title: Text(

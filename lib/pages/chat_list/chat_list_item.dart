@@ -9,11 +9,14 @@ import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_list/active_call_indicator.dart';
 import 'package:fluffychat/pages/chat_list/unread_bubble.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/signals/tracked_target.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/utils/room_status_extension.dart';
 import 'package:fluffychat/widgets/hover_builder.dart';
 import 'package:fluffychat/widgets/typing_animation.dart';
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
@@ -59,7 +62,9 @@ class ChatListItem extends StatelessWidget {
             theme.colorScheme.surface,
           )
         : null;
-    const avatarSize = 54.0;
+    final a11y = AccessibilityScope.of(context);
+    final avatarSize = a11y.avatar(54);
+    final minRowHeight = max(avatarSize + 18, a11y.touchTarget(72));
     const horizontalPadding = 12.0;
     final displayname = room.getLocalizedDisplayname(
       MatrixLocals(L10n.of(context)),
@@ -77,12 +82,17 @@ class ChatListItem extends StatelessWidget {
     return Material(
       color: backgroundColor,
       child: Stack(
+        alignment: AlignmentDirectional.centerStart,
         children: [
+          // With large text the ListTile ignores minTileHeight, so the row
+          // keeps its minimum height here and centers the tile in it.
+          SizedBox(height: minRowHeight),
           FutureBuilder(
             future: room.name.isEmpty ? room.loadHeroUsers() : null,
             builder: (context, _) => HoverBuilder(
               builder: (context, listTileHovered) => ListTile(
                 minVerticalPadding: 9,
+                minTileHeight: minRowHeight,
                 horizontalTitleGap: horizontalPadding,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: horizontalPadding,
@@ -93,9 +103,14 @@ class ChatListItem extends StatelessWidget {
                     duration: FluffyThemes.animationDuration,
                     curve: FluffyThemes.animationCurve,
                     scale: hovered ? 1.1 : 1.0,
-                    child: SizedBox(
-                      width: avatarSize,
-                      height: avatarSize,
+                    // ListTile limits the leading height to 56, so a scaled
+                    // avatar overflows it. The tile grows by minTileHeight.
+                    child: OverflowBox(
+                      fit: OverflowBoxFit.deferToChild,
+                      minWidth: avatarSize,
+                      maxWidth: avatarSize,
+                      minHeight: avatarSize,
+                      maxHeight: avatarSize,
                       child: Stack(
                         children: [
                           if (space != null)
@@ -416,6 +431,7 @@ class ChatListItem extends StatelessWidget {
               ),
             ),
           ),
+          TrackedTarget.fill(id: 'chat_list_item', kind: TargetKind.listItem),
           Positioned(
             left: horizontalPadding * 2 + avatarSize,
             right: 0,
