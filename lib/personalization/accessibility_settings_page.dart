@@ -12,6 +12,7 @@ import 'accessibility_scope.dart';
 import 'accessibility_settings.dart';
 import 'meaning/meaning_settings.dart';
 import 'personalization_l10n.dart';
+import 'study/study_screen.dart';
 
 /// Lets the user resize UI elements by hand, with a live preview.
 class AccessibilitySettingsPage extends StatelessWidget {
@@ -28,7 +29,7 @@ class AccessibilitySettingsPage extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: !FluffyThemes.isColumnMode(context),
         centerTitle: FluffyThemes.isColumnMode(context),
-        title: Text(l10n.accessibility),
+        title: StudyEntry(child: Text(l10n.accessibility)),
       ),
       backgroundColor: theme.colorScheme.surface,
       body: MaxWidthBody(

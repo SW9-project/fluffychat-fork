@@ -6,6 +6,9 @@ import 'package:fluffychat/config/setting_keys.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../study/study_events.dart';
+import '../study/study_log.dart';
+
 @immutable
 class MeaningPreferences {
   /// Sender side: propose meaning for my messages.
@@ -67,6 +70,7 @@ class MeaningSettings extends ValueNotifier<MeaningPreferences> {
 
   Future<void> update(MeaningPreferences preferences) async {
     value = preferences;
+    StudyLog.instance.record(MeaningSettingsChanged(preferences));
     await _store.setBool(_annotate, preferences.annotateOutgoing);
     await _store.setBool(_intent, preferences.showIntent);
     await _store.setBool(_urgency, preferences.showUrgency);

@@ -171,6 +171,16 @@ Tasks:
 
 **Important:** accuracy and latency numbers for the thesis come from a real low-end arm64 phone running the deployed runtime, never from the emulator.
 
+**Decided (Oct 27, 2026):**
+
+- Two study conditions, because since Phase 3b the heuristics only reach the user through the model, so "heuristics only" has no UI. **Assist**: the Assist tab with the on-device model (also the normal app). **Manual only**: the Assist tab says the assistant is off and links to the Accessibility settings, and no model is created.
+- Logging is off until the researcher turns it on in the study screen, after the participant agreed. The ethics question below stays open.
+- The log keeps the words participants type in the Assist tab, so the model can be checked against real requests. Prompts can describe health or disabilities, so the consent must cover them. The log never keeps message text: for a message with meaning it keeps the intent, the urgency and how many times it mentions.
+- Hidden study screen: hold the title of the Accessibility page for three seconds. It sets the condition (with a confirmation) and the participant code, turns logging on and off, shows the latest events, and saves the log through the system save dialog. Nothing is uploaded.
+- Format: one JSON object per line in the app's private storage, only ever appended, with UTC timestamps. An export starts with a header line: participant code, condition, app version and device.
+- Events: `logging_started`, `logging_stopped`, `condition_changed`, `log_exported`, `assist_opened`, `assist_model_state`, `assist_prompt`, `assist_proposal` / `assist_at_limit` / `assist_no_suggestion` (with time to first token, total time and tokens), `suggestion_applied` / `_declined` / `_undone` / `_opted_out`, `settings_changed` (slider, apply, reset or undo, with each value's from and to), `meaning_changed`, `meaning_removed`, `meaning_sent`, `meaning_settings`.
+- Harness: `integration_test/personalization_model_test.dart` reports per phrase the outcome, the time to first token as LiteRT-LM measures it (FunctionGemma's tool call is not streamed), the total time and the token counts, plus a `[phrases-csv]` line for a spreadsheet. The summary gives accuracy per language and the median, p90 and maximum. Loading the model is reported once, apart from the totals.
+
 ## Open questions
 
 These need answers from Simon or the team. CC must not decide them.
@@ -181,7 +191,7 @@ These need answers from Simon or the team. CC must not decide them.
 - [ ] Will participants interact in Danish, English or both? This decides the test phrase list and any fine-tuning data.
 - [x] Namespace string for the message metadata: `dk.aau.sw9.meaning` (decided Oct 26, 2026).
 - [ ] Model delivery: download from our own server on first use, or bundle it in the APK for the study build?
-- [ ] Is the study event log covered by the ethics and consent plan as described in Phase 5?
+- [ ] Is the study event log covered by the ethics and consent plan as described in Phase 5? Until this is answered, logging stays off until the researcher turns it on, and the log also keeps Assist prompts (see the Phase 5 decisions).
 - [ ] Phase order: is Phase 4 (metadata) needed for the first study, or can it come after?
 
 ## Claude Code handoff

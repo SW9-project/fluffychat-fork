@@ -4,6 +4,8 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import '../study/study_events.dart';
+import '../study/study_log.dart';
 import 'meaning_rules.dart';
 import 'meaning_settings.dart';
 import 'message_meaning.dart';
@@ -57,22 +59,26 @@ class MeaningDraft extends ChangeNotifier {
 
   void setIntent(MessageIntent intent) {
     _intent = intent;
+    StudyLog.instance.record(MeaningChanged(intent: intent));
     notifyListeners();
   }
 
   void setUrgency(MessageUrgency urgency) {
     _urgency = urgency;
+    StudyLog.instance.record(MeaningChanged(urgency: urgency));
     notifyListeners();
   }
 
   void removeTime(MeaningTime time) {
     _removedTimes.add(time.text);
+    StudyLog.instance.record(const MeaningChanged(timeRemoved: true));
     notifyListeners();
   }
 
   /// Sends the current message without meaning.
   void remove() {
     _removed = true;
+    StudyLog.instance.record(const MeaningRemoved());
     notifyListeners();
   }
 

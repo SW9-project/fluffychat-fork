@@ -5,6 +5,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'accessibility_settings.dart';
+import 'study/study_settings.dart';
 
 /// Strings for the personalization feature, kept apart from FluffyChat's ARB
 /// files so upstream merges do not regenerate the l10n code.
@@ -53,6 +54,22 @@ class PersonalizationL10n {
   final String meaningShowIntent;
   final String meaningShowUrgency;
   final String meaningHighlightTimes;
+  final String assistOff;
+  final String studyTitle;
+  final String studyCondition;
+  final Map<StudyCondition, String> conditionTitles;
+  final Map<StudyCondition, String> conditionDescriptions;
+  final String studyChangeCondition;
+  final String studyChangeConditionInfo;
+  final String studyChange;
+  final String cancel;
+  final String studyLogging;
+  final String studyLoggingDescription;
+  final String studyParticipant;
+  final String Function(int count) studyEvents;
+  final String studySave;
+  final String studyLatest;
+  final String studyNoEvents;
   final Map<ScaleCategory, String> categoryTitles;
   final Map<ScaleCategory, String> categoryDescriptions;
 
@@ -101,6 +118,22 @@ class PersonalizationL10n {
     required this.meaningShowIntent,
     required this.meaningShowUrgency,
     required this.meaningHighlightTimes,
+    required this.assistOff,
+    required this.studyTitle,
+    required this.studyCondition,
+    required this.conditionTitles,
+    required this.conditionDescriptions,
+    required this.studyChangeCondition,
+    required this.studyChangeConditionInfo,
+    required this.studyChange,
+    required this.cancel,
+    required this.studyLogging,
+    required this.studyLoggingDescription,
+    required this.studyParticipant,
+    required this.studyEvents,
+    required this.studySave,
+    required this.studyLatest,
+    required this.studyNoEvents,
     required this.categoryTitles,
     required this.categoryDescriptions,
   });
@@ -163,6 +196,35 @@ class PersonalizationL10n {
     meaningShowIntent: 'Mark questions and requests',
     meaningShowUrgency: 'Mark urgent messages',
     meaningHighlightTimes: 'Highlight times and dates',
+    assistOff:
+        'The assistant is turned off. You can change the sizes yourself.',
+    studyTitle: 'Study',
+    studyCondition: 'Condition',
+    conditionTitles: {
+      StudyCondition.assist: 'Assistant',
+      StudyCondition.manualOnly: 'Manual only',
+    },
+    conditionDescriptions: {
+      StudyCondition.assist: 'The Assist tab with the on-device model.',
+      StudyCondition.manualOnly:
+          'The Assist tab is off. Sizes are only changed in the '
+          'accessibility settings.',
+    },
+    studyChangeCondition: 'Change the study condition?',
+    studyChangeConditionInfo:
+        'The Assist tab follows the new condition the next time it opens.',
+    studyChange: 'Change',
+    cancel: 'Cancel',
+    studyLogging: 'Record study events',
+    studyLoggingDescription:
+        'Turn on only after the participant has agreed. Events stay on this '
+        'phone until you save the log. The log keeps what the participant '
+        'types in the Assist tab, never messages.',
+    studyParticipant: 'Participant code',
+    studyEvents: _studyEventsEn,
+    studySave: 'Save log file',
+    studyLatest: 'Latest events',
+    studyNoEvents: 'Nothing recorded yet.',
     categoryTitles: {
       ScaleCategory.text: 'Text size',
       ScaleCategory.inputText: 'Typing text size',
@@ -231,6 +293,34 @@ class PersonalizationL10n {
     meaningShowIntent: 'Markér spørgsmål og anmodninger',
     meaningShowUrgency: 'Markér beskeder, der haster',
     meaningHighlightTimes: 'Fremhæv tidspunkter og datoer',
+    assistOff: 'Assistenten er slået fra. Du kan selv ændre størrelserne.',
+    studyTitle: 'Studie',
+    studyCondition: 'Betingelse',
+    conditionTitles: {
+      StudyCondition.assist: 'Assistent',
+      StudyCondition.manualOnly: 'Kun manuelt',
+    },
+    conditionDescriptions: {
+      StudyCondition.assist: 'Assist-fanen med modellen på telefonen.',
+      StudyCondition.manualOnly:
+          'Assist-fanen er slået fra. Størrelser ændres kun i '
+          'tilgængelighedsindstillingerne.',
+    },
+    studyChangeCondition: 'Skift studiebetingelse?',
+    studyChangeConditionInfo:
+        'Assist-fanen følger den nye betingelse, næste gang den åbnes.',
+    studyChange: 'Skift',
+    cancel: 'Annuller',
+    studyLogging: 'Optag studiehændelser',
+    studyLoggingDescription:
+        'Slå kun til, når deltageren har sagt ja. Hændelserne bliver på '
+        'telefonen, indtil du gemmer loggen. Loggen gemmer, hvad deltageren '
+        'skriver i Assist-fanen, men aldrig beskeder.',
+    studyParticipant: 'Deltagerkode',
+    studyEvents: _studyEventsDa,
+    studySave: 'Gem logfil',
+    studyLatest: 'Seneste hændelser',
+    studyNoEvents: 'Intet optaget endnu.',
     categoryTitles: {
       ScaleCategory.text: 'Tekststørrelse',
       ScaleCategory.inputText: 'Størrelse på skrivetekst',
@@ -264,3 +354,9 @@ String _alreadyAtLimitEn(String category) =>
 
 String _alreadyAtLimitDa(String category) =>
     '$category kan ikke ændres mere i den retning.';
+
+String _studyEventsEn(int count) =>
+    count == 1 ? '1 event recorded' : '$count events recorded';
+
+String _studyEventsDa(int count) =>
+    count == 1 ? '1 hændelse optaget' : '$count hændelser optaget';

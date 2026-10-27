@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fluffychat/config/setting_keys.dart';
@@ -9,11 +10,16 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
+import 'accessibility_controller.dart';
 import 'accessibility_scope.dart';
 import 'heuristics/heuristic.dart';
+import 'study/study_events.dart';
+import 'study/study_log.dart';
 import 'suggestions/suggestion_manager.dart';
 
-/// Holds the app-wide [SuggestionManager] and the heuristics file.
+/// Holds the app-wide [SuggestionManager] and the heuristics file, and
+/// starts the study log (Phase 5), which records nothing until the researcher
+/// turns it on.
 ///
 /// Since Phase 3b nothing here suggests a change on its own: interaction
 /// signals and automatic heuristic evaluation are disconnected, and changes
@@ -37,6 +43,7 @@ class PersonalizationLayer extends StatefulWidget {
 
 class _PersonalizationLayerState extends State<PersonalizationLayer> {
   SuggestionManager? _manager;
+  StreamSubscription<SettingsCommit>? _commits;
 
   @override
   void didChangeDependencies() {
@@ -44,6 +51,10 @@ class _PersonalizationLayerState extends State<PersonalizationLayer> {
     if (_manager != null) return;
     final accessibility = AccessibilityScope.maybeControllerOf(context);
     if (accessibility == null) return;
+    StudyLog.start();
+    _commits = accessibility.commits.listen(
+      (commit) => StudyLog.instance.record(SettingsChanged(commit)),
+    );
     _manager = SuggestionManager(
       accessibility: accessibility,
       store: AppSettings.store,
@@ -69,6 +80,7 @@ class _PersonalizationLayerState extends State<PersonalizationLayer> {
 
   @override
   void dispose() {
+    _commits?.cancel();
     _manager?.dispose();
     super.dispose();
   }

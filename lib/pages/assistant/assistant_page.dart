@@ -9,6 +9,9 @@ import 'package:fluffychat/personalization/assist/assist_view.dart';
 import 'package:fluffychat/personalization/model/function_gemma_model.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/personalization_layer.dart';
+import 'package:fluffychat/personalization/study/study_events.dart';
+import 'package:fluffychat/personalization/study/study_log.dart';
+import 'package:fluffychat/personalization/study/study_settings.dart';
 import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -21,19 +24,22 @@ class AssistantPage extends StatefulWidget {
 }
 
 class _AssistantPageState extends State<AssistantPage> {
-  /// The on-device model exists only while this tab is open. It is the only
-  /// owner, so no other part of the app can reach it.
-  late final SettingsIntentModel _model;
+  /// The on-device model exists only while this tab is open, and only in
+  /// the Assist study condition. It is the only owner, so no other part of
+  /// the app can reach it.
+  SettingsIntentModel? _model;
 
   @override
   void initState() {
     super.initState();
-    _model = FunctionGemmaModel();
+    final condition = StudySettings.instance.value.condition;
+    StudyLog.instance.record(AssistOpened(condition));
+    if (condition == StudyCondition.assist) _model = FunctionGemmaModel();
   }
 
   @override
   void dispose() {
-    _model.dispose();
+    _model?.dispose();
     super.dispose();
   }
 

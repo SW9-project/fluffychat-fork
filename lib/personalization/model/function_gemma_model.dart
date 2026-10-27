@@ -38,6 +38,7 @@ class FunctionGemmaModel implements SettingsIntentModel {
   );
   InferenceModel? _model;
   Future<void>? _preparing;
+  ModelTiming? _lastTiming;
 
   /// Completes once the initial status is known.
   late final Future<void> _availability;
@@ -50,6 +51,9 @@ class FunctionGemmaModel implements SettingsIntentModel {
 
   @override
   ValueListenable<ModelStatus> get status => _status;
+
+  @override
+  ModelTiming? get lastTiming => _lastTiming;
 
   void _setStatus(ModelStatus status) {
     if (!_disposed) _status.value = status;
@@ -135,7 +139,12 @@ class FunctionGemmaModel implements SettingsIntentModel {
       throw StateError('The on-device model is not ready');
     }
     _idleTimer?.cancel();
+    _lastTiming = null;
+    final stopwatch = Stopwatch()..start();
+    final loaded = _model != null && !_model!.isClosed;
     final model = await _load();
+    final loadMs = loaded ? null : stopwatch.elapsedMilliseconds;
+    stopwatch.reset();
     // One fresh chat per request: earlier requests must not steer this one.
     final chat = await model.createChat(
       tools: [
@@ -155,6 +164,15 @@ class FunctionGemmaModel implements SettingsIntentModel {
     try {
       await chat.addQueryChunk(Message(text: text, isUser: true));
       final response = await chat.generateChatResponse();
+      final metrics = _metricsOf(chat);
+      _lastTiming = ModelTiming(
+        totalMs: stopwatch.elapsedMilliseconds,
+        timeToFirstTokenMs: metrics.timeToFirstTokenMs,
+        loadMs: loadMs,
+        backend: model.activeBackend?.name,
+        inputTokens: metrics.inputTokens > 0 ? metrics.inputTokens : null,
+        outputTokens: metrics.outputTokens > 0 ? metrics.outputTokens : null,
+      );
       return switch (response) {
         FunctionCallResponse(:final name, :final args) => ProposedCall(
           name,
@@ -167,6 +185,18 @@ class FunctionGemmaModel implements SettingsIntentModel {
     } finally {
       await chat.close();
       _idleTimer = Timer(idleTimeout, release);
+    }
+  }
+
+  /// The runtime's own measurements for the last answer in [chat]. The tool
+  /// call is not streamed, so the time to the first token can only come from
+  /// here. A runtime that cannot report them never fails the request.
+  static SessionMetrics _metricsOf(InferenceChat chat) {
+    try {
+      return chat.session.getSessionMetrics();
+    } catch (e, s) {
+      Logs().w('No metrics from the on-device model', e, s);
+      return SessionMetrics();
     }
   }
 

@@ -9,6 +9,8 @@ import 'package:matrix/matrix.dart';
 // ignore: implementation_imports
 import 'package:matrix/src/utils/markdown.dart';
 
+import '../study/study_events.dart';
+import '../study/study_log.dart';
 import 'message_meaning.dart';
 
 /// Builds the content of a text message the way `Room.sendTextEvent` does
@@ -81,6 +83,8 @@ Map<String, Object?> buildAnnotatedTextContent(
 /// Sends a text message with the sender's [meaning]. For an edit
 /// ([editEventId]), the SDK copies the whole content, meaning included, into
 /// `m.new_content`, so the edit carries its own meaning.
+///
+/// The study log gets the kind of meaning only, never the message.
 Future<String?> sendAnnotatedText(
   Room room,
   String message, {
@@ -89,15 +93,20 @@ Future<String?> sendAnnotatedText(
   String? editEventId,
   String? threadRootEventId,
   String? threadLastEventId,
-}) => room.sendEvent(
-  buildAnnotatedTextContent(
-    room,
-    message,
-    meaning: meaning,
+}) {
+  if (meaning != null) {
+    StudyLog.instance.record(MeaningSent(meaning, edit: editEventId != null));
+  }
+  return room.sendEvent(
+    buildAnnotatedTextContent(
+      room,
+      message,
+      meaning: meaning,
+      inReplyTo: inReplyTo,
+    ),
     inReplyTo: inReplyTo,
-  ),
-  inReplyTo: inReplyTo,
-  editEventId: editEventId,
-  threadRootEventId: threadRootEventId,
-  threadLastEventId: threadLastEventId,
-);
+    editEventId: editEventId,
+    threadRootEventId: threadRootEventId,
+    threadLastEventId: threadLastEventId,
+  );
+}

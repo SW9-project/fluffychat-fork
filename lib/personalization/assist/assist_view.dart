@@ -13,6 +13,8 @@ import '../model/heuristic_functions.dart';
 import '../model/settings_call_validator.dart';
 import '../model/settings_intent_model.dart';
 import '../personalization_l10n.dart';
+import '../study/study_events.dart';
+import '../study/study_log.dart';
 import '../suggestions/suggestion.dart';
 import '../suggestions/suggestion_manager.dart';
 import 'change_preview.dart';
@@ -24,8 +26,13 @@ import 'change_preview.dart';
 ///
 /// Each prompt is sent to the model on its own, together with the heuristic
 /// functions. Earlier prompts, chats and messages are never sent.
+///
+/// The study log (Phase 5) records each prompt and the answer, with the
+/// model's timing, when the researcher turned logging on.
 class AssistView extends StatefulWidget {
-  final SettingsIntentModel model;
+  /// The on-device model, or null when the assistant is off in the current
+  /// study condition.
+  final SettingsIntentModel? model;
   final SuggestionManager manager;
   final AccessibilityController accessibility;
   final VoidCallback onOpenAccessibilitySettings;
@@ -58,19 +65,44 @@ class _AssistViewState extends State<AssistView> {
   final ScrollController _scrollController = ScrollController();
   final List<_Exchange> _exchanges = [];
   bool _busy = false;
+  ModelState? _modelState;
 
   List<Heuristic> get _heuristics => widget.manager.config.heuristics;
 
   @override
+  void initState() {
+    super.initState();
+    widget.model?.status.addListener(_onModelStatus);
+  }
+
+  @override
+  void didUpdateWidget(AssistView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.model == widget.model) return;
+    oldWidget.model?.status.removeListener(_onModelStatus);
+    widget.model?.status.addListener(_onModelStatus);
+  }
+
+  /// Records when the model changes state, not every progress update.
+  void _onModelStatus() {
+    final state = widget.model?.status.value.state;
+    if (state == null || state == _modelState) return;
+    _modelState = state;
+    StudyLog.instance.record(AssistModelState(state));
+  }
+
+  @override
   void dispose() {
+    widget.model?.status.removeListener(_onModelStatus);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _ask() async {
+    final model = widget.model;
     final text = _controller.text.trim();
-    if (text.isEmpty || _busy) return;
+    if (model == null || text.isEmpty || _busy) return;
     final exchange = _Exchange(text);
     setState(() {
       _exchanges.add(exchange);
@@ -78,23 +110,32 @@ class _AssistViewState extends State<AssistView> {
       _controller.clear();
     });
     _scrollToEnd();
+    StudyLog.instance.record(AssistPrompted(text));
 
     AssistResult result;
+    ModelTiming? timing;
+    var failed = false;
     try {
       final functions = HeuristicFunctions.declarationsFor(_heuristics);
-      final call = functions.isEmpty
-          ? null
-          : await widget.model.propose(text, functions);
+      ProposedCall? call;
+      if (functions.isNotEmpty) {
+        call = await model.propose(text, functions);
+        timing = model.lastTiming;
+      }
       result = HeuristicFunctions.interpret(
         call,
         _heuristics,
         widget.accessibility.settings,
       );
     } catch (e, s) {
-      // The user's words are not logged, only the failure.
+      // The app log gets the failure, never the user's words.
       Logs().w('Assistant request failed', e, s);
       result = const AssistNoSuggestion(RejectionReason.noCall);
+      failed = true;
     }
+    StudyLog.instance.record(
+      AssistAnswered(result, timing: timing, failed: failed),
+    );
     if (!mounted) return;
     if (result case AssistProposal(:final heuristic, :final from, :final to)) {
       final suggestion = Suggestion.fromHeuristic(
@@ -140,22 +181,30 @@ class _AssistViewState extends State<AssistView> {
   });
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<ModelStatus>(
-    valueListenable: widget.model.status,
-    builder: (context, status, _) => switch (status.state) {
-      ModelState.ready => _conversation(context),
-      _ => _statusPanel(context, status),
-    },
-  );
+  Widget build(BuildContext context) {
+    final model = widget.model;
+    if (model == null) return _statusPanel(context, null);
+    return ValueListenableBuilder<ModelStatus>(
+      valueListenable: model.status,
+      builder: (context, status, _) => switch (status.state) {
+        ModelState.ready => _conversation(context),
+        _ => _statusPanel(context, status),
+      },
+    );
+  }
 
-  Widget _statusPanel(BuildContext context, ModelStatus status) {
+  /// [status] is null when the assistant is off in this study condition.
+  Widget _statusPanel(BuildContext context, ModelStatus? status) {
     final theme = Theme.of(context);
     final l10n = PersonalizationL10n.of(context);
     final List<Widget> children;
-    switch (status.state) {
-      case ModelState.unavailable:
+    switch (status?.state) {
+      case null || ModelState.unavailable:
         children = [
-          Text(l10n.assistUnavailable, textAlign: TextAlign.center),
+          Text(
+            status == null ? l10n.assistOff : l10n.assistUnavailable,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 16),
           FilledButton.icon(
             key: const Key('assist_open_settings'),
@@ -172,12 +221,12 @@ class _AssistViewState extends State<AssistView> {
           const SizedBox(height: 16),
           FilledButton(
             key: const Key('assist_setup'),
-            onPressed: widget.model.prepare,
+            onPressed: widget.model?.prepare,
             child: Text(l10n.askSetup),
           ),
         ];
       case ModelState.preparing:
-        final progress = status.progress;
+        final progress = status?.progress;
         children = [
           LinearProgressIndicator(
             value: progress == null ? null : progress / 100,
@@ -191,7 +240,7 @@ class _AssistViewState extends State<AssistView> {
           const SizedBox(height: 16),
           TextButton(
             key: const Key('assist_retry'),
-            onPressed: widget.model.prepare,
+            onPressed: widget.model?.prepare,
             child: Text(l10n.tryAgain),
           ),
         ];

@@ -12,6 +12,8 @@ import '../accessibility_settings.dart';
 import '../heuristics/heuristic.dart';
 import '../heuristics/heuristics_engine.dart';
 import '../signals/interaction_signal.dart';
+import '../study/study_events.dart';
+import '../study/study_log.dart';
 
 /// A suggestion the user applied, with the settings it produced, so the card
 /// can offer undo for a while.
@@ -112,6 +114,9 @@ class SuggestionManager extends ChangeNotifier {
     if (suggestion == null) return;
     _current = null;
     _resolve(suggestion, cooldown: false);
+    StudyLog.instance.record(
+      SuggestionResolved(SuggestionOutcome.applied, suggestion),
+    );
     await accessibility.apply(suggestion.category, suggestion.to);
     _applied = AppliedSuggestion(suggestion, accessibility.settings);
     _undoTimer?.cancel();
@@ -124,6 +129,9 @@ class SuggestionManager extends ChangeNotifier {
   Future<void> undoApplied() async {
     final applied = _applied;
     if (applied == null) return;
+    StudyLog.instance.record(
+      SuggestionResolved(SuggestionOutcome.undone, applied.suggestion),
+    );
     if (accessibility.settings == applied.settingsAfter &&
         accessibility.canUndo) {
       await accessibility.undo();
@@ -145,6 +153,9 @@ class SuggestionManager extends ChangeNotifier {
     final suggestion = _current;
     if (suggestion == null) return;
     _current = null;
+    StudyLog.instance.record(
+      SuggestionResolved(SuggestionOutcome.declined, suggestion),
+    );
     _resolve(suggestion);
     notifyListeners();
   }
@@ -153,6 +164,9 @@ class SuggestionManager extends ChangeNotifier {
     final suggestion = _current;
     if (suggestion == null) return;
     _current = null;
+    StudyLog.instance.record(
+      SuggestionResolved(SuggestionOutcome.optedOut, suggestion),
+    );
     _resolve(suggestion);
     notifyListeners();
     await _store.setStringList(optOutKey, [...optedOut, suggestion.id]);

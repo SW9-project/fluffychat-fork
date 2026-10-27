@@ -49,6 +49,46 @@ class ModelStatus {
   bool get isUsable => state == ModelState.ready;
 }
 
+/// How long one [SettingsIntentModel.propose] took, for the study log and
+/// the model test harness.
+class ModelTiming {
+  /// From sending the prompt to the model's answer. Loading the model is not
+  /// included, see [loadMs].
+  final int totalMs;
+
+  /// Time to the first generated token as the runtime measured it, if it
+  /// reports it.
+  final double? timeToFirstTokenMs;
+
+  /// How long loading the model into memory took, when this request had to
+  /// load it.
+  final int? loadMs;
+
+  /// The hardware the model ran on, such as `gpu` or `cpu`, if known.
+  final String? backend;
+
+  final int? inputTokens;
+  final int? outputTokens;
+
+  const ModelTiming({
+    required this.totalMs,
+    this.timeToFirstTokenMs,
+    this.loadMs,
+    this.backend,
+    this.inputTokens,
+    this.outputTokens,
+  });
+
+  Map<String, Object?> toJson() => {
+    'total_ms': totalMs,
+    if (timeToFirstTokenMs != null) 'ttft_ms': timeToFirstTokenMs!.round(),
+    if (loadMs != null) 'load_ms': loadMs,
+    if (backend != null) 'backend': backend,
+    if (inputTokens != null) 'input_tokens': inputTokens,
+    if (outputTokens != null) 'output_tokens': outputTokens,
+  };
+}
+
 /// Turns what the user says or types into a proposed settings change. The
 /// rest of the app only knows this interface, so the model can be swapped.
 ///
@@ -67,6 +107,9 @@ abstract class SettingsIntentModel {
     String text,
     List<FunctionDeclaration> functions,
   );
+
+  /// The timing of the last [propose] that got an answer, or null.
+  ModelTiming? get lastTiming;
 
   /// Frees the loaded model's memory. The next [propose] loads it again.
   Future<void> release();

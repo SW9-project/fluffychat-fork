@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:convert';
+
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
@@ -9,11 +11,23 @@ import 'package:fluffychat/personalization/heuristics/heuristic.dart';
 import 'package:fluffychat/personalization/model/settings_functions.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/signals/interaction_signal.dart';
+import 'package:fluffychat/personalization/study/study_log.dart';
+import 'package:fluffychat/personalization/study/study_settings.dart';
 import 'package:fluffychat/personalization/suggestions/suggestion_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class MemoryStorage implements StudyLogStorage {
+  final List<String> lines = [];
+
+  @override
+  Future<void> append(String line) async => lines.add(line);
+
+  @override
+  Future<List<String>> readLines() async => [...lines];
+}
 
 class FakeModel implements SettingsIntentModel {
   final ValueNotifier<ModelStatus> _status;
@@ -21,6 +35,9 @@ class FakeModel implements SettingsIntentModel {
   int prepareCalls = 0;
   final List<String> prompts = [];
   final List<List<String>> offered = [];
+
+  @override
+  ModelTiming? lastTiming;
 
   FakeModel(ModelState state, {ProposedCall? Function(String)? answer})
     : _status = ValueNotifier(ModelStatus(state)),
@@ -89,9 +106,12 @@ void main() {
     settingsOpened = 0;
   });
 
-  tearDown(() => manager.dismissApplied());
+  tearDown(() {
+    manager.dismissApplied();
+    StudyLog.instance = null;
+  });
 
-  Future<void> pump(WidgetTester tester, FakeModel model) => tester.pumpWidget(
+  Future<void> pump(WidgetTester tester, FakeModel? model) => tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
         body: AssistView(
@@ -252,5 +272,105 @@ void main() {
     expect(model.prompts, isEmpty);
     expect(manager.current, isNull);
     expect(find.byKey(const Key('assist_apply')), findsNothing);
+  });
+
+  testWidgets('off in this study condition: no model, link to settings', (
+    tester,
+  ) async {
+    await pump(tester, null);
+    expect(find.textContaining('assistant is turned off'), findsOneWidget);
+    expect(find.byKey(const Key('assist_input')), findsNothing);
+    await tester.tap(find.byKey(const Key('assist_open_settings')));
+    expect(settingsOpened, 1);
+  });
+
+  group('study log', () {
+    late StudySettings settings;
+    late MemoryStorage storage;
+
+    setUp(() async {
+      settings = StudySettings(await SharedPreferences.getInstance());
+      await settings.update(settings.value.copyWith(logging: true));
+      storage = MemoryStorage();
+    });
+
+    // Made in the test body, so the log's writes run in the test's fake
+    // async zone.
+    void startLog() =>
+        StudyLog.instance = StudyLog(settings: settings, storage: storage);
+
+    List<Map<String, Object?>> events() => [
+      for (final line in storage.lines)
+        jsonDecode(line) as Map<String, Object?>,
+    ];
+
+    testWidgets('records the prompt, the answer with timing and the outcome', (
+      tester,
+    ) async {
+      startLog();
+      final model = picksButtons()
+        ..lastTiming = const ModelTiming(
+          totalMs: 900,
+          timeToFirstTokenMs: 410.4,
+          backend: 'gpu',
+        );
+      await pump(tester, model);
+      await ask(tester, 'the buttons are hard to hit');
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('assist_undo')));
+      await tester.pumpAndSettle();
+
+      expect(
+        [for (final e in events()) e['type']],
+        [
+          'assist_prompt',
+          'assist_proposal',
+          'suggestion_applied',
+          'suggestion_undone',
+        ],
+      );
+      expect(events()[0]['prompt'], 'the buttons are hard to hit');
+      expect(events()[1], {
+        't': isA<String>(),
+        'type': 'assist_proposal',
+        'heuristic': 'near-miss-buttons',
+        'category': 'button_scale',
+        'from': 1.0,
+        'to': 1.1,
+        'total_ms': 900,
+        'ttft_ms': 410,
+        'backend': 'gpu',
+      });
+      expect(events()[2], containsPair('to', 1.1));
+    });
+
+    testWidgets('records no suggestion with its reason', (tester) async {
+      startLog();
+      await pump(
+        tester,
+        FakeModel(
+          ModelState.ready,
+          answer: (text) => text == 'boom'
+              ? throw StateError('boom')
+              : const ProposedCall('delete_chat', {}),
+        ),
+      );
+      await ask(tester, 'delete my chats');
+      await ask(tester, 'boom');
+      expect([for (final e in events()) e['reason']].nonNulls.toList(), [
+        'unknownFunction',
+        'error',
+      ]);
+    });
+
+    testWidgets('records when the model changes state', (tester) async {
+      startLog();
+      final model = FakeModel(ModelState.notPrepared);
+      await pump(tester, model);
+      await tester.tap(find.byKey(const Key('assist_setup')));
+      await tester.pumpAndSettle();
+      expect(events().single, containsPair('state', 'ready'));
+    });
   });
 }
