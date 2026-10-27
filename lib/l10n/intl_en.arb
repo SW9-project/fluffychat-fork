@@ -2858,5 +2858,14 @@
     "outgoingCall": "Outgoing call",
     "ongoingCall": "Ongoing call",
     "noCallsYet": "No calls yet",
-    "callHistoryDescription": "Your voice and video calls will show up here."
+    "callHistoryDescription": "Your voice and video calls will show up here.",
+    "wallpaper": "Wallpaper",
+    "defaultWallpaper": "Default",
+    "blankWallpaper": "Blank",
+    "patternWallpaper": "Pattern",
+    "imageWallpaper": "Image",
+    "defaultWallpaperDescription": "Used in all chats that don't have a wallpaper of their own.",
+    "chatWallpapers": "Chat-specific wallpapers",
+    "setWallpaperForChat": "Set wallpaper for a chat",
+    "useDefaultWallpaper": "Use default wallpaper"
 }

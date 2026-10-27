@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import 'dart:ui' as ui;
-
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
@@ -15,11 +13,9 @@ import 'package:fluffychat/pages/chat/chat_background.dart';
 import 'package:fluffychat/pages/chat/chat_event_list.dart';
 import 'package:fluffychat/pages/chat/pinned_events.dart';
 import 'package:fluffychat/pages/chat/reply_display.dart';
-import 'package:fluffychat/utils/account_config.dart';
+import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call.dart';
 import 'package:fluffychat/widgets/chat_settings_popup_menu.dart';
-import 'package:fluffychat/widgets/matrix.dart';
-import 'package:fluffychat/widgets/mxc_image.dart';
 import 'package:fluffychat/widgets/pulsating_widget.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -41,8 +37,6 @@ class ChatView extends StatelessWidget {
     final hasActiveGroupCall = controller.room.hasActiveMatrixRtcCall;
 
     final scrollUpBannerEventId = controller.scrollUpBannerEventId;
-
-    final accountConfig = Matrix.of(context).client.applicationAccountConfig;
 
     return PopScope(
       canPop:
@@ -337,27 +331,15 @@ class ChatView extends StatelessWidget {
                     top: false,
                     child: Stack(
                       children: <Widget>[
-                        if (accountConfig.wallpaperUrl == null)
-                          const Positioned.fill(child: ChatBackground())
-                        else
-                          Opacity(
-                            opacity: accountConfig.wallpaperOpacity ?? 0.5,
-                            child: ImageFiltered(
-                              imageFilter: ui.ImageFilter.blur(
-                                sigmaX: accountConfig.wallpaperBlur ?? 0.0,
-                                sigmaY: accountConfig.wallpaperBlur ?? 0.0,
-                              ),
-                              child: MxcImage(
-                                cacheKey: accountConfig.wallpaperUrl.toString(),
-                                uri: accountConfig.wallpaperUrl,
-                                fit: BoxFit.cover,
-                                height: MediaQuery.sizeOf(context).height,
-                                width: MediaQuery.sizeOf(context).width,
-                                isThumbnail: false,
-                                placeholder: (_) => Container(),
-                              ),
+                        Positioned.fill(
+                          child: StreamBuilder(
+                            stream:
+                                controller.room.client.onChatWallpaperChanged,
+                            builder: (context, _) => ChatWallpaperBackground(
+                              wallpaper: controller.room.wallpaper,
                             ),
                           ),
+                        ),
                         GestureDetector(
                           onTap: controller.clearSingleSelectedEvent,
                           child: ChatEventList(controller: controller),

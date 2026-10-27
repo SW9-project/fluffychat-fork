@@ -3,19 +3,18 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import 'dart:ui';
-
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
-import 'package:fluffychat/pages/chat/events/state_message.dart';
-import 'package:fluffychat/utils/account_config.dart';
+import 'package:fluffychat/pages/chat_wallpaper/wallpaper_editor.dart';
+import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/color_value.dart';
+import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
 import 'package:fluffychat/widgets/matrix.dart';
-import 'package:fluffychat/widgets/mxc_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
@@ -146,189 +145,7 @@ class SettingsStyleView extends StatelessWidget {
                 ),
               ),
             ),
-            StreamBuilder(
-              stream: client.onSync.stream.where(
-                (syncUpdate) =>
-                    syncUpdate.accountData?.any(
-                      (accountData) =>
-                          accountData.type ==
-                          ApplicationAccountConfigExtension.accountDataKey,
-                    ) ??
-                    false,
-              ),
-              builder: (context, snapshot) {
-                final accountConfig = client.applicationAccountConfig;
-
-                return Column(
-                  mainAxisSize: .min,
-                  children: [
-                    MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        textScaler: TextScaler.linear(
-                          AppSettings.fontSizeFactor.value,
-                        ),
-                      ),
-                      child: AnimatedContainer(
-                        duration: FluffyThemes.animationDuration,
-                        curve: FluffyThemes.animationCurve,
-                        decoration: const BoxDecoration(),
-                        clipBehavior: Clip.hardEdge,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            if (accountConfig.wallpaperUrl != null)
-                              Opacity(
-                                opacity: controller.wallpaperOpacity,
-                                child: ImageFiltered(
-                                  imageFilter: ImageFilter.blur(
-                                    sigmaX: controller.wallpaperBlur,
-                                    sigmaY: controller.wallpaperBlur,
-                                  ),
-                                  child: MxcImage(
-                                    key: ValueKey(accountConfig.wallpaperUrl),
-                                    uri: accountConfig.wallpaperUrl,
-                                    fit: BoxFit.cover,
-                                    isThumbnail: true,
-                                    width: FluffyThemes.columnWidth * 2,
-                                    height: 212,
-                                  ),
-                                ),
-                              ),
-                            Column(
-                              mainAxisSize: .min,
-                              children: [
-                                const SizedBox(height: 16),
-                                StateMessage(
-                                  Event(
-                                    eventId: 'style_dummy',
-                                    room: Room(
-                                      id: '!style_dummy',
-                                      client: client,
-                                    ),
-                                    content: {'membership': 'join'},
-                                    type: EventTypes.RoomMember,
-                                    senderId: client.userID!,
-                                    originServerTs: DateTime.now(),
-                                    stateKey: client.userID,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: 12 + 12 + Avatar.defaultSize,
-                                    right: 12,
-                                    top: accountConfig.wallpaperUrl == null
-                                        ? 0
-                                        : 12,
-                                    bottom: 12,
-                                  ),
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: theme.bubbleColor,
-                                      borderRadius: BorderRadius.circular(
-                                        AppConfig.borderRadius,
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      child: Text(
-                                        'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor',
-                                        style: TextStyle(
-                                          color: theme.onBubbleColor,
-                                          fontSize: AppConfig.messageFontSize,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      right: 12,
-                                      left: 12,
-                                      top: accountConfig.wallpaperUrl == null
-                                          ? 0
-                                          : 12,
-                                      bottom: 12,
-                                    ),
-                                    child: Material(
-                                      color: theme
-                                          .colorScheme
-                                          .surfaceContainerHigh,
-                                      borderRadius: BorderRadius.circular(
-                                        AppConfig.borderRadius,
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
-                                        ),
-                                        child: Text(
-                                          'Lorem ipsum dolor sit amet',
-                                          style: TextStyle(
-                                            color: theme.colorScheme.onSurface,
-                                            fontSize: AppConfig.messageFontSize,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Divider(color: theme.dividerColor),
-                    ListTile(
-                      title: TextButton.icon(
-                        style: TextButton.styleFrom(
-                          backgroundColor: theme.colorScheme.secondaryContainer,
-                          foregroundColor:
-                              theme.colorScheme.onSecondaryContainer,
-                        ),
-                        onPressed: controller.setWallpaper,
-                        icon: const Icon(Icons.edit_outlined),
-                        label: Text(L10n.of(context).setWallpaper),
-                      ),
-                      trailing: accountConfig.wallpaperUrl == null
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.delete_outlined),
-                              color: theme.colorScheme.error,
-                              onPressed: controller.deleteChatWallpaper,
-                            ),
-                    ),
-                    if (accountConfig.wallpaperUrl != null) ...[
-                      ListTile(title: Text(L10n.of(context).opacity)),
-                      Slider.adaptive(
-                        min: 0.1,
-                        max: 1.0,
-                        divisions: 9,
-                        semanticFormatterCallback: (d) => d.toString(),
-                        value: controller.wallpaperOpacity,
-                        onChanged: controller.updateWallpaperOpacity,
-                        onChangeEnd: controller.saveWallpaperOpacity,
-                      ),
-                      ListTile(title: Text(L10n.of(context).blur)),
-                      Slider.adaptive(
-                        min: 0.0,
-                        max: 10.0,
-                        divisions: 10,
-                        semanticFormatterCallback: (d) => d.toString(),
-                        value: controller.wallpaperBlur,
-                        onChanged: controller.updateWallpaperBlur,
-                        onChangeEnd: controller.saveWallpaperBlur,
-                      ),
-                    ],
-                  ],
-                );
-              },
-            ),
+            const WallpaperEditor(),
             ListTile(
               title: Text(L10n.of(context).fontSize),
               trailing: Text('× ${AppSettings.fontSizeFactor.value}'),
@@ -341,9 +158,78 @@ class SettingsStyleView extends StatelessWidget {
               semanticFormatterCallback: (d) => d.toString(),
               onChanged: controller.changeFontSizeFactor,
             ),
+            Divider(color: theme.dividerColor),
+            ListTile(
+              title: Text(
+                L10n.of(context).chatWallpapers,
+                style: TextStyle(
+                  color: theme.colorScheme.secondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            StreamBuilder(
+              stream: client.onChatWallpaperChanged,
+              builder: (context, _) {
+                final rooms = client.rooms
+                    .where((room) => room.customWallpaper != null)
+                    .toList();
+                return Column(
+                  mainAxisSize: .min,
+                  children: [
+                    for (final room in rooms)
+                      _ChatWallpaperListTile(
+                        room: room,
+                        onReset: () => controller.resetChatWallpaper(room),
+                      ),
+                  ],
+                );
+              },
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: theme.colorScheme.surfaceContainer,
+                foregroundColor: theme.colorScheme.onSurface,
+                child: const Icon(Icons.add_outlined),
+              ),
+              title: Text(L10n.of(context).setWallpaperForChat),
+              onTap: controller.setChatWallpaper,
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ChatWallpaperListTile extends StatelessWidget {
+  final Room room;
+  final VoidCallback onReset;
+
+  const _ChatWallpaperListTile({required this.room, required this.onReset});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final displayname = room.getLocalizedDisplayname(
+      MatrixLocals(L10n.of(context)),
+    );
+    return ListTile(
+      leading: Avatar(
+        mxContent: room.avatar,
+        name: displayname,
+        size: Avatar.defaultSize * 0.75,
+      ),
+      title: Text(displayname, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(room.wallpaper.localizedName(L10n.of(context))),
+      trailing: IconButton(
+        tooltip: L10n.of(context).useDefaultWallpaper,
+        icon: const Icon(Icons.delete_outlined),
+        color: theme.colorScheme.error,
+        onPressed: onReset,
+      ),
+      onTap: () => context.push('/rooms/settings/style/wallpaper/${room.id}'),
     );
   }
 }

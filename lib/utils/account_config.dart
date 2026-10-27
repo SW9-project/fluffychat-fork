@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:matrix/matrix.dart';
 
 extension ApplicationAccountConfigExtension on Client {
@@ -23,46 +24,20 @@ extension ApplicationAccountConfigExtension on Client {
       userID!,
       accountDataKey,
       ApplicationAccountConfig(
-        wallpaperUrl: config.wallpaperUrl ?? currentConfig.wallpaperUrl,
-        wallpaperOpacity:
-            config.wallpaperOpacity ?? currentConfig.wallpaperOpacity,
-        wallpaperBlur: config.wallpaperBlur ?? currentConfig.wallpaperBlur,
+        wallpaper: config.wallpaper ?? currentConfig.wallpaper,
       ).toJson(),
     );
   }
 }
 
 class ApplicationAccountConfig {
-  final Uri? wallpaperUrl;
-  final double? wallpaperOpacity;
-  final double? wallpaperBlur;
+  /// The default wallpaper for all chats without a wallpaper of their own.
+  final ChatWallpaper? wallpaper;
 
-  const ApplicationAccountConfig({
-    this.wallpaperUrl,
-    this.wallpaperOpacity,
-    this.wallpaperBlur,
-  });
-
-  static double _sanitizedOpacity(double? opacity) {
-    if (opacity == null) return 1;
-    if (opacity > 1 || opacity < 0) return 1;
-    return opacity;
-  }
+  const ApplicationAccountConfig({this.wallpaper});
 
   factory ApplicationAccountConfig.fromJson(Map<String, dynamic> json) =>
-      ApplicationAccountConfig(
-        wallpaperUrl: json['wallpaper_url'] is String
-            ? Uri.tryParse(json['wallpaper_url'])
-            : null,
-        wallpaperOpacity: _sanitizedOpacity(
-          json.tryGet<double>('wallpaper_opacity'),
-        ),
-        wallpaperBlur: json.tryGet<double>('wallpaper_blur'),
-      );
+      ApplicationAccountConfig(wallpaper: ChatWallpaper.tryFromJson(json));
 
-  Map<String, dynamic> toJson() => {
-    'wallpaper_url': wallpaperUrl?.toString(),
-    'wallpaper_opacity': wallpaperOpacity,
-    'wallpaper_blur': wallpaperBlur,
-  };
+  Map<String, dynamic> toJson() => {...?wallpaper?.toJson()};
 }

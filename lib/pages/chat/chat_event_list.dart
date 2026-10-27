@@ -13,7 +13,7 @@ import 'package:fluffychat/pages/chat/encryption_info.dart';
 import 'package:fluffychat/pages/chat/events/message.dart';
 import 'package:fluffychat/pages/chat/seen_by_row.dart';
 import 'package:fluffychat/pages/chat/typing_indicators.dart';
-import 'package:fluffychat/utils/account_config.dart';
+import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/filtered_timeline_extension.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -110,7 +110,7 @@ class ChatEventList extends StatelessWidget {
     }
 
     final hasWallpaper =
-        controller.room.client.applicationAccountConfig.wallpaperUrl != null;
+        controller.room.wallpaper.type == ChatWallpaperType.image;
 
     return SelectionArea(
       child: MediaQuery(

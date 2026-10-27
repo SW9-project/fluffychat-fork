@@ -4,12 +4,58 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:fluffychat/config/themes.dart';
+import 'package:fluffychat/utils/chat_wallpaper.dart';
+import 'package:fluffychat/widgets/mxc_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Default chat wallpaper in the style of Telegram: A soft four color
+/// Fills the available space with the given [wallpaper]. Draws nothing for
+/// [ChatWallpaperType.none] so that the background of the page stays blank.
+class ChatWallpaperBackground extends StatelessWidget {
+  final ChatWallpaper wallpaper;
+  final bool isThumbnail;
+
+  const ChatWallpaperBackground({
+    required this.wallpaper,
+    this.isThumbnail = false,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final url = wallpaper.url;
+    return switch (wallpaper.type) {
+      ChatWallpaperType.none => const SizedBox.expand(),
+      ChatWallpaperType.pattern => const ChatBackground(),
+      ChatWallpaperType.image => LayoutBuilder(
+        builder: (context, constraints) => Opacity(
+          opacity: wallpaper.opacity,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(
+              sigmaX: wallpaper.blur,
+              sigmaY: wallpaper.blur,
+            ),
+            child: MxcImage(
+              key: ValueKey('$url-$isThumbnail'),
+              cacheKey: isThumbnail ? null : url.toString(),
+              uri: url,
+              fit: BoxFit.cover,
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              isThumbnail: isThumbnail,
+              placeholder: (_) => const SizedBox.expand(),
+            ),
+          ),
+        ),
+      ),
+    };
+  }
+}
+
+/// Chat wallpaper pattern in the style of Telegram: A soft four color
 /// gradient with a pattern of small doodles on top.
 class ChatBackground extends StatelessWidget {
   const ChatBackground({super.key});

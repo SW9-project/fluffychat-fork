@@ -8,6 +8,7 @@ import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_details/chat_details.dart';
 import 'package:fluffychat/pages/chat_details/participant_list_item.dart';
 import 'package:fluffychat/pages/settings/settings.dart';
+import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/verified_room_extension.dart';
@@ -359,8 +360,30 @@ class ChatDetailsView extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                         ],
+                        Divider(color: theme.dividerColor),
+                        StreamBuilder(
+                          stream: room.client.onChatWallpaperChanged,
+                          builder: (context, _) => ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainer,
+                              foregroundColor: iconColor,
+                              child: const Icon(Icons.wallpaper_outlined),
+                            ),
+                            title: Text(L10n.of(context).wallpaper),
+                            subtitle: Text(
+                              room.customWallpaper?.localizedName(
+                                    L10n.of(context),
+                                  ) ??
+                                  L10n.of(context).defaultWallpaper,
+                            ),
+                            onTap: () => context.push(
+                              '/rooms/${room.id}/details/wallpaper',
+                            ),
+                            trailing: const Icon(Icons.chevron_right_outlined),
+                          ),
+                        ),
                         if (!room.isDirectChat) ...[
-                          Divider(color: theme.dividerColor),
                           ListTile(
                             leading: CircleAvatar(
                               backgroundColor:

@@ -2689,5 +2689,50 @@
     "@callHistoryDescription": {
         "type": "String",
         "placeholders": {}
+    },
+    "wallpaper": "Fondo de pantalla",
+    "@wallpaper": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "defaultWallpaper": "Predeterminado",
+    "@defaultWallpaper": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "blankWallpaper": "En blanco",
+    "@blankWallpaper": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "patternWallpaper": "Patrón",
+    "@patternWallpaper": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "imageWallpaper": "Imagen",
+    "@imageWallpaper": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "defaultWallpaperDescription": "Se usa en todos los chats que no tienen un fondo propio.",
+    "@defaultWallpaperDescription": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "chatWallpapers": "Fondos de chats concretos",
+    "@chatWallpapers": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "setWallpaperForChat": "Poner fondo a un chat",
+    "@setWallpaperForChat": {
+        "type": "String",
+        "placeholders": {}
+    },
+    "useDefaultWallpaper": "Usar fondo predeterminado",
+    "@useDefaultWallpaper": {
+        "type": "String",
+        "placeholders": {}
     }
 }

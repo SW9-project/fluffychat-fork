@@ -18,6 +18,7 @@ import 'package:fluffychat/pages/chat_list/chat_list.dart';
 import 'package:fluffychat/pages/chat_members/chat_members.dart';
 import 'package:fluffychat/pages/chat_permissions_settings/chat_permissions_settings.dart';
 import 'package:fluffychat/pages/chat_search/chat_search_page.dart';
+import 'package:fluffychat/pages/chat_wallpaper/chat_wallpaper_page.dart';
 import 'package:fluffychat/pages/device_settings/device_settings.dart';
 import 'package:fluffychat/pages/intro/intro_page_presenter.dart';
 import 'package:fluffychat/pages/invitation_selection/invitation_selection.dart';
@@ -264,6 +265,19 @@ abstract class AppRoutes {
                   path: 'style',
                   pageBuilder: (context, state) =>
                       defaultPageBuilder(context, state, const SettingsStyle()),
+                  routes: [
+                    GoRoute(
+                      path: 'wallpaper/:roomid',
+                      pageBuilder: (context, state) => defaultPageBuilder(
+                        context,
+                        state,
+                        ChatWallpaperPage(
+                          roomId: state.pathParameters['roomid']!,
+                        ),
+                      ),
+                      redirect: loggedOutRedirect,
+                    ),
+                  ],
                   redirect: loggedOutRedirect,
                 ),
                 GoRoute(
@@ -449,6 +463,17 @@ abstract class AppRoutes {
                     ChatDetails(roomId: state.pathParameters['roomid']!),
                   ),
                   routes: [
+                    GoRoute(
+                      path: 'wallpaper',
+                      pageBuilder: (context, state) => defaultPageBuilder(
+                        context,
+                        state,
+                        ChatWallpaperPage(
+                          roomId: state.pathParameters['roomid']!,
+                        ),
+                      ),
+                      redirect: loggedOutRedirect,
+                    ),
                     GoRoute(
                       path: 'access',
                       pageBuilder: (context, state) => defaultPageBuilder(
