@@ -126,7 +126,7 @@ Flow, in the Assist tab (from the `ui-enhancements` navigation):
 
 Design:
 
-- **Heuristics are the model's functions.** Each heuristic in `assets/personalization_heuristics.json` has a `rule`: one plain English sentence on the problem it addresses and the change that helps. Each heuristic with a rule becomes one function, `heuristic_<id>`, whose description is the rule and whose only parameter is `steps` (1 to 3). Which setting changes and in which direction come from the heuristic's `change`, never from the model. The old `adjust_*` functions are not offered; `SettingsCallValidator` still checks the resulting change against the allowed ranges.
+- **Heuristics are the model's functions.** Each heuristic in `assets/personalization_heuristics.json` has a `rule`: one plain English sentence on the problem it addresses and the change that helps. Each heuristic with a rule becomes one function, `heuristic_<id>`, whose description is the rule and whose only parameter is `steps` (1 to 3). Which setting changes and in which direction come from the heuristic's `change`, never from the model. A `direction` parameter was tried after the code review and removed (see "Code review fixes"). The old `adjust_*` functions are not offered; `SettingsCallValidator` still checks the resulting change against the allowed ranges.
 - **No invented changes.** No call, an unknown function or unusable arguments show "I don't have a suggestion for that" and a link to the manual Accessibility settings.
 - **No unprompted suggestions.** Interaction signals, the heuristics engine and the overlay suggestion card are disconnected but kept in the repo, marked as disabled. The `condition` fields in the heuristics file are unused.
 - **The model is confined to the Assist tab.** The tab creates the model when it opens and disposes it when it closes; no engine starts at app start. Each prompt goes to a fresh chat with only the prompt text and the heuristic functions, never rooms, events, timelines or messages. `function_gemma_model.dart` is the only file that imports `flutter_edge_ai`.
@@ -177,9 +177,25 @@ Tasks:
 - Logging is off until the researcher turns it on in the study screen, after the participant agreed. The ethics question below stays open.
 - The log keeps the words participants type in the Assist tab, so the model can be checked against real requests. Prompts can describe health or disabilities, so the consent must cover them. The log never keeps message text: for a message with meaning it keeps the intent, the urgency and how many times it mentions.
 - Hidden study screen: hold the title of the Accessibility page for three seconds. It sets the condition (with a confirmation) and the participant code, turns logging on and off, shows the latest events, and saves the log through the system save dialog. Nothing is uploaded.
-- Format: one JSON object per line in the app's private storage, only ever appended, with UTC timestamps. An export starts with a header line: participant code, condition, app version and device.
-- Events: `logging_started`, `logging_stopped`, `condition_changed`, `log_exported`, `assist_opened`, `assist_model_state`, `assist_prompt`, `assist_proposal` / `assist_at_limit` / `assist_no_suggestion` (with time to first token, total time and tokens), `suggestion_applied` / `_declined` / `_undone` / `_opted_out`, `settings_changed` (slider, apply, reset or undo, with each value's from and to), `meaning_changed`, `meaning_removed`, `meaning_sent`, `meaning_settings`.
+- Format: one JSON object per line in the app's private storage, with UTC timestamps and the participant code on every line. The app only appends; the study screen can **Save and clear** (cleared only after the file is saved, for the next participant) or **Delete log** (for a participant who withdraws), both with a confirmation, and the next log starts with `log_cleared`. An export starts with a header line: participant code, condition, app version and device.
+- Events: `logging_started`, `logging_stopped`, `condition_changed`, `log_exported`, `assist_opened`, `assist_model_state`, `assist_prompt`, `assist_proposal` / `assist_at_limit` / `assist_no_suggestion` (with time to first token, total time and tokens), `suggestion_applied` / `_declined` / `_undone` / `_opted_out` / `_superseded` (a new prompt replaced it) / `_abandoned` (the participant left the tab without answering), `log_cleared`, `settings_changed` (slider, apply, reset or undo, with each value's from and to), `meaning_changed`, `meaning_removed`, `meaning_sent`, `meaning_settings`.
+- A `meaning_sent` without a `meaning_changed` before it means the sender did not correct the proposal, not that they confirmed it: annotation is on by default.
+- Before each session the researcher taps Set up in the Assist tab, so the model copy (about 40 s on the S22 Ultra) is not part of the session. Every participant who gets the app must also receive the Gemma Terms of Use (see `assets/models/README.md`).
 - Harness: `integration_test/personalization_model_test.dart` reports per phrase the outcome, the time to first token as LiteRT-LM measures it (FunctionGemma's tool call is not streamed), the total time and the token counts, plus a `[phrases-csv]` line for a spreadsheet. The summary gives accuracy per language and the median, p90 and maximum. Loading the model is reported once, apart from the totals.
+
+## Code review fixes (Oct 27, 2026)
+
+From the review of Phases 0 to 5 at `bc3f965`:
+
+1. The two placeholder descriptions no longer claim the app watched taps or zooming; they describe the change ("Bigger buttons are easier to hit. Make the buttons bigger?").
+2. The before/after preview stacks the two samples, so on a phone they no longer shrink to the same width.
+3. Tried and reverted: a required `direction` parameter (bigger or smaller), with no suggestion when it contradicted the heuristic. On the S22 Ultra it lowered the phrase test from 16 of 22 to 12 of 22, and to 13 of 22 with a clearer description, because the model writes the problem as the direction ("too small" becomes `smaller`) and calls functions less often. So "the letters are too big" can still get a proposal for bigger text; the preview and the Apply step catch it. A real fix needs a "make smaller" heuristic from the literature, or a bigger model.
+4. Clock times from 1 to 12 without am/pm keep only the sender's words; a named day is still resolved to its date. "at" counts as a time marker only with minutes or am/pm (in Danish it means "that" or "to").
+5. "ses", "have" and "will" are no longer question words.
+6. The study log has the participant code on every line, and the study screen can save and clear or delete it.
+7. Proposals replaced by a new prompt or left open when the tab closes are logged as superseded or abandoned.
+
+Also: after Apply, the Assist tab points to the Accessibility settings to change it back, and the error dialog no longer has a Report button, which sent the error to upstream FluffyChat's GitHub. Not changed, for the team to decide: `undoSeconds` (placeholder), touch area instead of icon size for missed taps, and the slider lag check on a cheap phone.
 
 ## Open questions
 

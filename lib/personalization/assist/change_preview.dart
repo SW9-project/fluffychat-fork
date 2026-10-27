@@ -29,27 +29,23 @@ class ChangePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = PersonalizationL10n.of(context);
-    Widget column(String label, double value, {bool highlight = false}) =>
-        Expanded(
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              Text(
-                '$label  × ${value.toStringAsFixed(1)}',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: highlight ? FontWeight.bold : null,
-                  color: highlight ? theme.colorScheme.primary : null,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Scale down instead of overflowing on narrow screens.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: _Sample(category: category, value: value),
-              ),
-            ],
+    // Each side gets the full width, one above the other, and text wraps
+    // instead of shrinking: side by side on a phone, both samples would be
+    // shrunk to the same width and look the same size.
+    Widget side(String label, double value, {bool highlight = false}) => Column(
+      crossAxisAlignment: .start,
+      children: [
+        Text(
+          '$label  × ${value.toStringAsFixed(1)}',
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: highlight ? FontWeight.bold : null,
+            color: highlight ? theme.colorScheme.primary : null,
           ),
-        );
+        ),
+        const SizedBox(height: 8),
+        _Sample(category: category, value: value),
+      ],
+    );
 
     return Container(
       key: const Key('change_preview'),
@@ -58,15 +54,15 @@ class ChangePreview extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppConfig.borderRadius / 2),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: .start,
         children: [
-          column(l10n.previewNow, from),
+          side(l10n.previewNow, from),
           Padding(
-            padding: const EdgeInsets.only(top: 24),
-            child: Icon(Icons.arrow_forward, color: theme.colorScheme.primary),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Icon(Icons.arrow_downward, color: theme.colorScheme.primary),
           ),
-          column(l10n.previewSuggested, to, highlight: true),
+          side(l10n.previewSuggested, to, highlight: true),
         ],
       ),
     );

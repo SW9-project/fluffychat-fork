@@ -24,6 +24,9 @@ class MemoryStorage implements StudyLogStorage {
 
   @override
   Future<List<String>> readLines() async => [...lines];
+
+  @override
+  Future<void> clear() async => lines.clear();
 }
 
 void main() {
@@ -158,6 +161,86 @@ void main() {
     );
     expect(types().last, 'log_exported');
     expect(find.textContaining('/storage/study-log-P_07-'), findsOneWidget);
+  });
+
+  group('clearing', () {
+    late List<String> saved;
+
+    Future<void> pumpWithEvents(WidgetTester tester) async {
+      startLog();
+      await settings.update(
+        settings.value.copyWith(logging: true, participant: 'P01'),
+      );
+      log.record(const LoggingStarted(StudyCondition.assist));
+      log.record(const AssistPrompted('my eyes are bad'));
+      saved = [];
+      await tester.pumpWidget(
+        app(
+          StudyScreen(
+            save: (name, bytes) async {
+              saved.add(utf8.decode(bytes));
+              return '/storage/$name';
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> tapAction(WidgetTester tester, String key) async {
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.tap(find.byKey(Key(key)));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('save and clear clears only after the file is saved', (
+      tester,
+    ) async {
+      await pumpWithEvents(tester);
+      await tapAction(tester, 'study_save_and_clear');
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(saved, isEmpty);
+      expect(storage.lines, hasLength(2));
+
+      await tapAction(tester, 'study_save_and_clear');
+      await tester.tap(find.byKey(const Key('study_confirm')));
+      await tester.pumpAndSettle();
+      expect(saved.single, contains('my eyes are bad'));
+      expect(storage.lines, hasLength(1));
+      final cleared = jsonDecode(storage.lines.single) as Map<String, Object?>;
+      expect(cleared['type'], 'log_cleared');
+      expect(cleared['events'], 2);
+      expect(cleared['saved'], true);
+    });
+
+    testWidgets('a cancelled save keeps the log', (tester) async {
+      startLog();
+      await settings.update(settings.value.copyWith(logging: true));
+      log.record(const AssistPrompted('keep me'));
+      await tester.pumpWidget(
+        app(StudyScreen(save: (name, bytes) async => null)),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('study_save_and_clear')));
+      await tester.tap(find.byKey(const Key('study_save_and_clear')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('study_confirm')));
+      await tester.pumpAndSettle();
+      expect(types(), ['assist_prompt']);
+    });
+
+    testWidgets('delete removes the log without saving it', (tester) async {
+      await pumpWithEvents(tester);
+      await tapAction(tester, 'study_delete');
+      await tester.tap(find.byKey(const Key('study_confirm')));
+      await tester.pumpAndSettle();
+      expect(saved, isEmpty);
+      expect(types(), ['log_cleared']);
+      expect(jsonDecode(storage.lines.single)['saved'], false);
+      expect(storage.lines.join(), isNot(contains('my eyes are bad')));
+      expect(find.text('The log was cleared.'), findsOneWidget);
+    });
   });
 
   testWidgets('holding the entry for three seconds opens the screen', (

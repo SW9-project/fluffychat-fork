@@ -32,7 +32,9 @@ class MeaningTime {
   String toString() => 'MeaningTime($text, $at)';
 }
 
-/// What a message means, as confirmed by its sender. It describes meaning,
+/// What a message means, as sent: proposed by simple rules and possibly
+/// changed by the sender. A meaning the sender left as proposed was not
+/// corrected, which is not the same as confirmed. It describes meaning,
 /// never presentation: each receiver decides how to show it from their own
 /// settings.
 ///

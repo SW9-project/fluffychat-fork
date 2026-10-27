@@ -102,11 +102,29 @@ class SuggestionManager extends ChangeNotifier {
   /// open suggestion and ignores rate limits, because the user started it.
   /// It still needs [apply], like every other suggestion.
   void proposeUserRequest(Suggestion suggestion) {
+    final open = _current;
+    if (open != null) {
+      StudyLog.instance.record(
+        SuggestionResolved(SuggestionOutcome.superseded, open),
+      );
+    }
     _undoTimer?.cancel();
     _undoTimer = null;
     _applied = null;
     _current = suggestion;
     notifyListeners();
+  }
+
+  /// Closes the open suggestion without an answer, when the place showing it
+  /// goes away, such as the Assist tab. Nothing shows it any more, so
+  /// listeners are not told, and no cooldown starts.
+  void abandonOpen() {
+    final open = _current;
+    if (open == null) return;
+    _current = null;
+    StudyLog.instance.record(
+      SuggestionResolved(SuggestionOutcome.abandoned, open),
+    );
   }
 
   Future<void> apply() async {

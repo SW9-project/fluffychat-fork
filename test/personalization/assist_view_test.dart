@@ -27,6 +27,9 @@ class MemoryStorage implements StudyLogStorage {
 
   @override
   Future<List<String>> readLines() async => [...lines];
+
+  @override
+  Future<void> clear() async => lines.clear();
 }
 
 class FakeModel implements SettingsIntentModel {
@@ -218,6 +221,25 @@ void main() {
     expect(accessibility.settings.buttonScale, 1.1);
   });
 
+  testWidgets('after apply, points to the Accessibility settings', (
+    tester,
+  ) async {
+    // Tall enough to show the whole answer above the input row.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pump(tester, picksButtons());
+    await ask(tester, 'the buttons are hard to hit');
+    expect(find.textContaining('change it back'), findsNothing);
+    await tester.tap(find.byKey(const Key('assist_apply')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('change it back'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('assist_open_settings')));
+    expect(settingsOpened, 1);
+    // Ends the undo period, so no timer outlives the test.
+    manager.dismissApplied();
+  });
+
   testWidgets('no thanks changes nothing', (tester) async {
     await pump(tester, picksButtons());
     await ask(tester, 'the buttons are hard to hit');
@@ -334,6 +356,7 @@ void main() {
       expect(events()[1], {
         't': isA<String>(),
         'type': 'assist_proposal',
+        'participant': '',
         'heuristic': 'near-miss-buttons',
         'category': 'button_scale',
         'from': 1.0,
@@ -362,6 +385,35 @@ void main() {
         'unknownFunction',
         'error',
       ]);
+    });
+
+    testWidgets('a new prompt supersedes an open proposal', (tester) async {
+      startLog();
+      await pump(tester, picksButtons());
+      await ask(tester, 'the buttons are hard to hit');
+      await ask(tester, 'the buttons are still too small');
+      expect(
+        [for (final e in events()) e['type']],
+        [
+          'assist_prompt',
+          'assist_proposal',
+          'assist_prompt',
+          'assist_proposal',
+          // Logged when the new proposal replaces it: until then the old one
+          // could still be answered.
+          'suggestion_superseded',
+        ],
+      );
+    });
+
+    testWidgets('leaving the tab abandons an open proposal', (tester) async {
+      startLog();
+      await pump(tester, picksButtons());
+      await ask(tester, 'the buttons are hard to hit');
+      await tester.pumpWidget(const SizedBox());
+      expect(manager.current, isNull);
+      expect(events().last['type'], 'suggestion_abandoned');
+      expect(accessibility.settings, AccessibilitySettings.defaults);
     });
 
     testWidgets('records when the model changes state', (tester) async {

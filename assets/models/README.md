@@ -12,10 +12,11 @@ Fetch it before building a release or study APK:
 A build without the file works normally; the "Tell the app what is hard"
 feature is then hidden.
 
-The model only runs on Android 11 (API 30) or later, in an arm64 app process.
-On an x86_64 emulator, build an arm64-only APK
-(`flutter build apk --target-platform android-arm64`): the emulator translates
-it.
+The model only runs on Android 11 (API 30) or later, in an arm64 app process
+on an arm64 device. The app reports the model as unavailable on x86 devices,
+including the x86_64 emulator: there LiteRT crashes under ARM translation
+(`function_gemma_model.dart`, `isSupported`). Test the model on a real arm64
+phone.
 
 ## License
 

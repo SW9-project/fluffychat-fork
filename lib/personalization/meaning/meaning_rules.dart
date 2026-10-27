@@ -34,11 +34,13 @@ abstract final class MeaningRules {
     'glem ikke',
   ];
 
+  // Not "will", "have" or "ses": "Will do", "Have a nice day" and "Ses i
+  // morgen" are not questions. With a question mark they still are.
   static const _questionWords = {
     'what', 'when', 'where', 'who', 'why', 'how', 'which', 'is', 'are', //
-    'do', 'does', 'did', 'can', 'could', 'will', 'would', 'should', 'have',
-    'has', 'hvad', 'hvornår', 'hvor', 'hvem', 'hvorfor', 'hvordan',
-    'hvilken', 'hvilke', 'er', 'har', 'skal', 'kan', 'vil', 'kommer', 'ses',
+    'do', 'does', 'did', 'can', 'could', 'would', 'should', 'has', 'hvad',
+    'hvornår', 'hvor', 'hvem', 'hvorfor', 'hvordan', 'hvilken', 'hvilke',
+    'er', 'har', 'skal', 'kan', 'vil', 'kommer',
   };
 
   static MessageIntent intentOf(String text) {
@@ -117,24 +119,36 @@ abstract final class MeaningRules {
       days.add((start: m.start, end: m.end, date: date));
     }
 
-    final clocks = <({int start, int end, int hour, int minute})>[];
+    final clocks =
+        <({int start, int end, int hour, int minute, bool ambiguous})>[];
     for (final m in _time.allMatches(text)) {
-      final prefix = m.group(1);
+      final prefix = m.group(1)?.toLowerCase();
       final separator = m.group(3);
       final suffix = m.group(5)?.toLowerCase();
-      // A bare number is not a time: it needs a prefix, minutes after a
-      // colon, or am/pm. Minutes after a dot need a prefix ("kl. 10.30"),
-      // because "3.50" is more often a price.
+      // A bare number is not a time: it needs "kl." or "klokken", minutes
+      // after a colon, or am/pm. Minutes after a dot need a prefix
+      // ("kl. 10.30"), because "3.50" is more often a price. "at" alone is
+      // not enough: in Danish it means "that" or "to" ("at 2 af os").
       final hasMinutes = m.group(4) != null;
       final isTime =
-          prefix != null || suffix != null || (hasMinutes && separator == ':');
+          suffix != null ||
+          (prefix != null && prefix != 'at') ||
+          (hasMinutes && (separator == ':' || prefix == 'at'));
       if (!isTime) continue;
       var hour = int.parse(m.group(2)!);
       final minute = hasMinutes ? int.parse(m.group(4)!) : 0;
       if (suffix == 'pm' && hour < 12) hour += 12;
       if (suffix == 'am' && hour == 12) hour = 0;
       if (hour > 23) continue;
-      clocks.add((start: m.start, end: m.end, hour: hour, minute: minute));
+      clocks.add((
+        start: m.start,
+        end: m.end,
+        hour: hour,
+        minute: minute,
+        // "at 3" or "kl. 9.30" can be morning or afternoon. The receiver
+        // then sees only the sender's words, never a guessed clock time.
+        ambiguous: suffix == null && hour >= 1 && hour <= 12,
+      ));
     }
 
     String iso(DateTime d, [int? hour, int? minute]) {
@@ -148,8 +162,9 @@ abstract final class MeaningRules {
     for (final day in days) {
       // The closest unused clock time within a few characters of the day
       // belongs to it.
-      int distance(({int start, int end, int hour, int minute}) c) =>
-          min((c.start - day.end).abs(), (day.start - c.end).abs());
+      int distance(
+        ({int start, int end, int hour, int minute, bool ambiguous}) c,
+      ) => min((c.start - day.end).abs(), (day.start - c.end).abs());
       var clockIndex = -1;
       for (var i = 0; i < clocks.length; i++) {
         if (usedClocks.contains(i) || distance(clocks[i]) > 12) continue;
@@ -167,7 +182,7 @@ abstract final class MeaningRules {
           start: start,
           time: MeaningTime(
             text.substring(start, end).trim(),
-            at: iso(day.date, c.hour, c.minute),
+            at: c.ambiguous ? iso(day.date) : iso(day.date, c.hour, c.minute),
           ),
         ));
       } else {
@@ -187,7 +202,7 @@ abstract final class MeaningRules {
         start: c.start,
         time: MeaningTime(
           text.substring(c.start, c.end).trim(),
-          at: iso(today, c.hour, c.minute),
+          at: c.ambiguous ? null : iso(today, c.hour, c.minute),
         ),
       ));
     }

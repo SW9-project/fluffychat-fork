@@ -93,6 +93,11 @@ class _AssistViewState extends State<AssistView> {
 
   @override
   void dispose() {
+    // A proposal left open here has nowhere else to be answered.
+    final open = widget.manager.current;
+    if (open != null && _exchanges.any((e) => e.suggestion == open)) {
+      widget.manager.abandonOpen();
+    }
     widget.model?.status.removeListener(_onModelStatus);
     _controller.dispose();
     _scrollController.dispose();
@@ -420,6 +425,15 @@ class _AssistViewState extends State<AssistView> {
             ChangePreview(category: category, from: from, to: to),
             const SizedBox(height: 12),
             actions,
+            // Undo here lasts only a moment and goes with the tab.
+            if (exchange.outcome == _Outcome.applied) ...[
+              const SizedBox(height: 8),
+              Text(l10n.changeBackInSettings),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: settingsLink,
+              ),
+            ],
           ],
         );
     }

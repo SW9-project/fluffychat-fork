@@ -88,6 +88,9 @@ void main() {
       ('Husk at tage medicin', MessageIntent.request),
       ('Kan du ringe til mig?', MessageIntent.request),
       ('I am home now', MessageIntent.information),
+      ('Ses i morgen', MessageIntent.information),
+      ('Have a nice day', MessageIntent.information),
+      ('Will do', MessageIntent.information),
       ('Jeg er hjemme', MessageIntent.information),
       ('', MessageIntent.information),
     ]) {
@@ -112,25 +115,26 @@ void main() {
 
   group('MeaningRules times', () {
     for (final (text, expected) in [
-      (
-        'Shall we meet tomorrow at 10?',
-        [('tomorrow at 10', '2026-10-28T10:00')],
-      ),
       ('Ses vi i morgen kl. 14?', [('i morgen kl. 14', '2026-10-28T14:00')]),
       ('Dinner at 7pm', [('at 7pm', '2026-10-27T19:00')]),
-      ('Lægen kl. 9.30', [('kl. 9.30', '2026-10-27T09:30')]),
-      ('The bus leaves at 10:45', [('at 10:45', '2026-10-27T10:45')]),
+      ('The train leaves at 15:30', [('at 15:30', '2026-10-27T15:30')]),
       ('See you on Friday', [('on Friday', '2026-10-30')]),
       ('Vi ses på mandag', [('på mandag', '2026-11-02')]),
       ('See you next Tuesday', [('next Tuesday', '2026-11-03')]),
-      ('It costs 3.50', <(String, String)>[]),
-      ('I am 85 years old', <(String, String)>[]),
+      ('It costs 3.50', <(String, String?)>[]),
+      ('I am 85 years old', <(String, String?)>[]),
+      // "at" without minutes or am/pm is not a time.
+      ('Come at 3', <(String, String?)>[]),
+      ('Det er godt at 2 af os kommer', <(String, String?)>[]),
+      ('Shall we meet tomorrow at 10?', [('tomorrow', '2026-10-28')]),
+      // Hours 1 to 12 without am/pm keep only the sender's words; a named
+      // day is still resolved.
+      ('Lægen kl. 9.30', [('kl. 9.30', null)]),
+      ('The bus leaves at 10:45', [('at 10:45', null)]),
+      ('Vi kommer i morgen kl. 3', [('i morgen kl. 3', '2026-10-28')]),
       (
         'Today at 9 and Thursday kl 16',
-        [
-          ('Today at 9', '2026-10-27T09:00'),
-          ('Thursday kl 16', '2026-10-29T16:00'),
-        ],
+        [('Today', '2026-10-27'), ('Thursday kl 16', '2026-10-29T16:00')],
       ),
     ]) {
       test('"$text"', () {

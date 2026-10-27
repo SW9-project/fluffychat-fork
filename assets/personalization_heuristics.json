@@ -30,8 +30,8 @@
       "change": { "category": "button", "steps": 1 },
       "cooldownMinutes": 30,
       "description": {
-        "en": "Some taps land just next to the buttons. Make the buttons bigger?",
-        "da": "Nogle tryk rammer lige ved siden af knapperne. Skal knapperne gøres større?"
+        "en": "Bigger buttons are easier to hit. Make the buttons bigger?",
+        "da": "Større knapper er nemmere at ramme. Skal knapperne gøres større?"
       }
     },
     {
@@ -49,8 +49,8 @@
       "change": { "category": "text", "steps": 1 },
       "cooldownMinutes": 30,
       "description": {
-        "en": "It looks like you tried to zoom in on the messages. Make the text bigger?",
-        "da": "Det ser ud til, at du prøvede at zoome ind på beskederne. Skal teksten gøres større?"
+        "en": "Bigger text is easier to read. Make the text bigger?",
+        "da": "Større tekst er nemmere at læse. Skal teksten gøres større?"
       }
     }
   ]

@@ -68,6 +68,15 @@ class PersonalizationL10n {
   final String studyParticipant;
   final String Function(int count) studyEvents;
   final String studySave;
+  final String studySaveAndClear;
+  final String studySaveAndClearConfirm;
+  final String studySaveAndClearInfo;
+  final String studyDelete;
+  final String studyDeleteConfirm;
+  final String studyDeleteInfo;
+  final String studyDeleteAction;
+  final String studyCleared;
+  final String changeBackInSettings;
   final String studyLatest;
   final String studyNoEvents;
   final Map<ScaleCategory, String> categoryTitles;
@@ -132,6 +141,15 @@ class PersonalizationL10n {
     required this.studyParticipant,
     required this.studyEvents,
     required this.studySave,
+    required this.studySaveAndClear,
+    required this.studySaveAndClearConfirm,
+    required this.studySaveAndClearInfo,
+    required this.studyDelete,
+    required this.studyDeleteConfirm,
+    required this.studyDeleteInfo,
+    required this.studyDeleteAction,
+    required this.studyCleared,
+    required this.changeBackInSettings,
     required this.studyLatest,
     required this.studyNoEvents,
     required this.categoryTitles,
@@ -223,6 +241,20 @@ class PersonalizationL10n {
     studyParticipant: 'Participant code',
     studyEvents: _studyEventsEn,
     studySave: 'Save log file',
+    studySaveAndClear: 'Save and clear',
+    studySaveAndClearConfirm: 'Save and clear the log?',
+    studySaveAndClearInfo:
+        'The log is cleared only after the file is saved. Use this when a '
+        'participant is done.',
+    studyDelete: 'Delete log',
+    studyDeleteConfirm: 'Delete the log?',
+    studyDeleteInfo:
+        'All recorded events on this phone are deleted and cannot be '
+        'restored. Use this when a participant withdraws.',
+    studyDeleteAction: 'Delete',
+    studyCleared: 'The log was cleared.',
+    changeBackInSettings:
+        'You can also change it back in the Accessibility settings.',
     studyLatest: 'Latest events',
     studyNoEvents: 'Nothing recorded yet.',
     categoryTitles: {
@@ -319,6 +351,20 @@ class PersonalizationL10n {
     studyParticipant: 'Deltagerkode',
     studyEvents: _studyEventsDa,
     studySave: 'Gem logfil',
+    studySaveAndClear: 'Gem og ryd',
+    studySaveAndClearConfirm: 'Gem og ryd loggen?',
+    studySaveAndClearInfo:
+        'Loggen ryddes først, når filen er gemt. Brug det, når en deltager '
+        'er færdig.',
+    studyDelete: 'Slet loggen',
+    studyDeleteConfirm: 'Slet loggen?',
+    studyDeleteInfo:
+        'Alle optagede hændelser på telefonen slettes og kan ikke gendannes. '
+        'Brug det, hvis en deltager trækker sig.',
+    studyDeleteAction: 'Slet',
+    studyCleared: 'Loggen blev ryddet.',
+    changeBackInSettings:
+        'Du kan også ændre det tilbage i tilgængelighedsindstillingerne.',
     studyLatest: 'Seneste hændelser',
     studyNoEvents: 'Intet optaget endnu.',
     categoryTitles: {
