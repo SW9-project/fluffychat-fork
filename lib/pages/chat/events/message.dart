@@ -1095,31 +1095,41 @@ class _MessageMeta extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = TextStyle(fontSize: 12, color: color);
     final status = event.status;
-    return Row(
-      mainAxisSize: .min,
-      children: [
-        if (isEdited) Text('${L10n.of(context).edited} ', style: style),
-        Text(
-          selected
-              ? event.originServerTs.localizedDetailedTime(context)
-              : event.originServerTs.localizedTimeOfDay(context),
-          style: style,
-        ),
-        if (ownMessage) ...[
-          const SizedBox(width: 3),
-          Icon(
-            status.isError
-                ? Icons.error_outline
-                : status.isSending
-                ? Icons.schedule
-                : event.isReadByOthers
-                ? Icons.done_all
-                : Icons.done,
-            size: 16,
-            color: status.isError ? Theme.of(context).colorScheme.error : color,
+    // A single rich text instead of a Row, so that the detailed time of a
+    // selected message wraps in narrow bubbles instead of overflowing.
+    return Text.rich(
+      TextSpan(
+        children: [
+          if (isEdited) TextSpan(text: '${L10n.of(context).edited} '),
+          TextSpan(
+            text: selected
+                ? event.originServerTs.localizedDetailedTime(context)
+                : event.originServerTs.localizedTimeOfDay(context),
           ),
+          if (ownMessage)
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 3),
+                child: Icon(
+                  status.isError
+                      ? Icons.error_outline
+                      : status.isSending
+                      ? Icons.schedule
+                      : event.isReadByOthers
+                      ? Icons.done_all
+                      : Icons.done,
+                  size: 16,
+                  color: status.isError
+                      ? Theme.of(context).colorScheme.error
+                      : color,
+                ),
+              ),
+            ),
         ],
-      ],
+      ),
+      style: style,
+      textAlign: TextAlign.end,
     );
   }
 }

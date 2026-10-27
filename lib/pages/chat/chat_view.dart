@@ -178,10 +178,12 @@ class ChatView extends StatelessWidget {
                                         : Icons.push_pin_outlined,
                                   ),
                                   const SizedBox(width: 12),
-                                  Text(
-                                    controller.isSelectedEventPinned
-                                        ? L10n.of(context).unpinMessage
-                                        : L10n.of(context).pinMessage,
+                                  Flexible(
+                                    child: Text(
+                                      controller.isSelectedEventPinned
+                                          ? L10n.of(context).unpinMessage
+                                          : L10n.of(context).pinMessage,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -196,7 +198,9 @@ class ChatView extends StatelessWidget {
                                 children: [
                                   const Icon(Icons.download_outlined),
                                   const SizedBox(width: 12),
-                                  Text(L10n.of(context).downloadFile),
+                                  Flexible(
+                                    child: Text(L10n.of(context).downloadFile),
+                                  ),
                                 ],
                               ),
                             ),
@@ -211,7 +215,9 @@ class ChatView extends StatelessWidget {
                                     color: Colors.red,
                                   ),
                                   const SizedBox(width: 12),
-                                  Text(L10n.of(context).reportMessage),
+                                  Flexible(
+                                    child: Text(L10n.of(context).reportMessage),
+                                  ),
                                 ],
                               ),
                             ),

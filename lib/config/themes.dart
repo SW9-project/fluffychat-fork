@@ -106,6 +106,13 @@ abstract class FluffyThemes {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         shape: const StadiumBorder(),
+        // Grow with the icon, keeping the Material 3 padding around it: 16
+        // for regular buttons and 8 for small ones.
+        iconSize: a11y.icon(),
+        sizeConstraints: BoxConstraints.tight(Size.square(a11y.icon() + 32)),
+        smallSizeConstraints: BoxConstraints.tight(
+          Size.square(a11y.icon() + 16),
+        ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
