@@ -101,7 +101,7 @@ Tasks:
 3. **Functions from settings.** Generate the function declarations from the Phase 1 settings definition: one function per category, with the allowed range. One source of truth means the model can never be offered a setting the app does not have.
 4. **Validation.** Parse the call, check the function name and value against the allowlist, clamp or reject. A rejected call shows a fallback: "I didn't catch that" plus a shortcut to the manual settings screen.
 5. **Confirmation.** A valid call reuses the Phase 2 suggestion card: preview, apply, undo.
-6. **Model delivery.** Download on first use from a URL we control (our own server, no Hugging Face token in the app), with progress shown. Before the model is ready, the input is hidden and everything else works.
+6. **Model delivery.** Download on first use from a URL we control (a public GitHub release, no token in the app), with progress shown, and check its SHA-256 before use. Before the model is ready, the input is hidden and everything else works. See `assets/models/README.md`.
 7. **Lazy loading.** Load the model only when the user opens the input, and release it after a period of no use, to save memory and battery.
 
 Two known pitfalls:
@@ -130,7 +130,7 @@ Design:
 - **No invented changes.** No call, an unknown function or unusable arguments show "I don't have a suggestion for that" and a link to the manual Accessibility settings.
 - **No unprompted suggestions.** Interaction signals, the heuristics engine and the overlay suggestion card are disconnected but kept in the repo, marked as disabled. The `condition` fields in the heuristics file are unused.
 - **The model is confined to the Assist tab.** The tab creates the model when it opens and disposes it when it closes; no engine starts at app start. Each prompt goes to a fresh chat with only the prompt text and the heuristic functions, never rooms, events, timelines or messages. `function_gemma_model.dart` is the only file that imports `flutter_edge_ai`.
-- **States.** Model unavailable (the tab explains this and links to manual settings), not prepared, preparing with progress, failed with retry, ready.
+- **States.** Model unavailable (the tab explains this and links to manual settings), not prepared, preparing with progress, verifying the checksum, failed with retry, ready. A download goes on when the tab closes, and the tab shows it again on return.
 
 **Open:** the two heuristics and their rules are still placeholders until the team adds literature-based ones. With only two heuristics, most prompts correctly get no suggestion.
 
@@ -180,7 +180,7 @@ Tasks:
 - Format: one JSON object per line in the app's private storage, with UTC timestamps and the participant code on every line. The app only appends; the study screen can **Save and clear** (cleared only after the file is saved, for the next participant) or **Delete log** (for a participant who withdraws), both with a confirmation, and the next log starts with `log_cleared`. An export starts with a header line: participant code, condition, app version and device.
 - Events: `logging_started`, `logging_stopped`, `condition_changed`, `log_exported`, `assist_opened`, `assist_model_state`, `assist_prompt`, `assist_proposal` / `assist_at_limit` / `assist_no_suggestion` (with time to first token, total time and tokens), `suggestion_applied` / `_declined` / `_undone` / `_opted_out` / `_superseded` (a new prompt replaced it) / `_abandoned` (the participant left the tab without answering), `log_cleared`, `settings_changed` (slider, apply, reset or undo, with each value's from and to), `meaning_changed`, `meaning_removed`, `meaning_sent`, `meaning_settings`.
 - A `meaning_sent` without a `meaning_changed` before it means the sender did not correct the proposal, not that they confirmed it: annotation is on by default.
-- Before each session the researcher taps Set up in the Assist tab, so the model copy (about 40 s on the S22 Ultra) is not part of the session. Every participant who gets the app must also receive the Gemma Terms of Use (see `assets/models/README.md`).
+- Study phones run a study build (`scripts/build_study_apk.sh`), which holds the model, so a session does not depend on Wi-Fi and the phone contacts no download server. Before each session the researcher taps Set up in the Assist tab, so the model copy (about 40 s on the S22 Ultra) and its checksum are not part of the session. Every participant who gets the app must also receive the Gemma Terms of Use (see `assets/models/README.md`).
 - Harness: `integration_test/personalization_model_test.dart` reports per phrase the outcome, the time to first token as LiteRT-LM measures it (FunctionGemma's tool call is not streamed), the total time and the token counts, plus a `[phrases-csv]` line for a spreadsheet. The summary gives accuracy per language and the median, p90 and maximum. Loading the model is reported once, apart from the totals.
 
 ## Code review fixes (Oct 27, 2026)
@@ -206,7 +206,7 @@ These need answers from Simon or the team. CC must not decide them.
 - [ ] Which UI elements are in scope for resizing in the first version?
 - [ ] Will participants interact in Danish, English or both? This decides the test phrase list and any fine-tuning data.
 - [x] Namespace string for the message metadata: `dk.aau.sw9.meaning` (decided Oct 26, 2026).
-- [ ] Model delivery: download from our own server on first use, or bundle it in the APK for the study build?
+- [x] Model delivery: both. A public GitHub release, downloaded when the user taps Set up, and a study build with the model inside (decided Nov 4, 2026).
 - [ ] Is the study event log covered by the ethics and consent plan as described in Phase 5? Until this is answered, logging stays off until the researcher turns it on, and the log also keeps Assist prompts (see the Phase 5 decisions).
 - [ ] Phase order: is Phase 4 (metadata) needed for the first study, or can it come after?
 
