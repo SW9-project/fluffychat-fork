@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:collection/collection.dart';
 
@@ -13,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:matrix/matrix.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'model_installer.dart';
 import 'model_release.dart';
@@ -92,8 +94,13 @@ class FunctionGemmaModel implements SettingsIntentModel {
     return manifest.listAssets().contains(currentModel.assetPath);
   }
 
+  /// One download attempt, so no retries by the plugin. On a phone that lost
+  /// its network during a download, they ran next to each other and wrote one
+  /// corrupt file (seen on the S22). A dropped connection now fails the install,
+  /// and the user tries again.
   static Future<void> _initEngine() => _engineInit ??= FlutterEdgeAi.initialize(
     inferenceEngines: [const LiteRtLmEngine()],
+    maxDownloadRetries: 1,
   );
 
   Future<void> _checkAvailability() async {
@@ -229,6 +236,14 @@ class _EdgeAiFiles implements ModelFiles {
   }
 
   @override
+  Future<void> ensureReachable(ModelRelease file) async {
+    if (bundledModel) return;
+    await InternetAddress.lookup(
+      Uri.parse(file.url).host,
+    ).timeout(const Duration(seconds: 10));
+  }
+
+  @override
   Future<void> install(
     ModelRelease file,
     void Function(int percent) onProgress,
@@ -255,4 +270,23 @@ class _EdgeAiFiles implements ModelFiles {
 
   @override
   Future<List<String>> installed() => FlutterEdgeAi.listInstalledModels();
+
+  /// The downloader's temporary files are named like
+  /// `com.bbflight.background_downloader1084602916`, also with a minus sign
+  /// before the digits. Nothing else in the app uses that downloader, and its
+  /// own storage has other names.
+  static final _temporaryFile = RegExp(
+    r'^com\.bbflight\.background_downloader-?\d+$',
+  );
+
+  @override
+  Future<void> removeLeftovers() async {
+    final folder = await getApplicationSupportDirectory();
+    await for (final entity in folder.list()) {
+      if (entity is File &&
+          _temporaryFile.hasMatch(entity.uri.pathSegments.last)) {
+        await entity.delete();
+      }
+    }
+  }
 }

@@ -19,6 +19,11 @@ abstract class ModelFiles {
   /// file's checksum.
   Future<bool> isInstalled(String fileName);
 
+  /// Throws when [file] cannot be reached. Offline, the plugin's download waits
+  /// at 0% with no word to the user, so the installer asks first. A study build
+  /// needs no network.
+  Future<void> ensureReachable(ModelRelease file);
+
   /// Downloads [file], or copies it from the assets in a study build. A file
   /// that is already installed from the same source is kept.
   Future<void> install(
@@ -33,6 +38,11 @@ abstract class ModelFiles {
 
   /// The names of everything the plugin has installed.
   Future<List<String>> installed();
+
+  /// Deletes the temporary files of downloads that did not finish. A dropped
+  /// download leaves one behind, up to the size of the model, and the next
+  /// attempt does not use it.
+  Future<void> removeLeftovers();
 }
 
 class ModelChecksumException implements Exception {
@@ -109,6 +119,8 @@ class ModelInstaller {
     try {
       final preferences = await SharedPreferences.getInstance();
       await preferences.remove(verifiedKey);
+      await _removeLeftovers();
+      await files.ensureReachable(file);
       await files.install(
         file,
         (percent) =>
@@ -122,10 +134,20 @@ class ModelInstaller {
       }
       await preferences.setString(verifiedKey, file.sha256);
       await _removeEarlierFiles();
+      await _removeLeftovers();
       status.value = const ModelStatus(ModelState.ready);
     } catch (e, s) {
       Logs().e('Unable to install the on-device model', e, s);
       status.value = ModelStatus(ModelState.failed, error: e);
+    }
+  }
+
+  /// Failing here never fails the install.
+  Future<void> _removeLeftovers() async {
+    try {
+      await files.removeLeftovers();
+    } catch (e, s) {
+      Logs().w('Unable to remove a dropped download', e, s);
     }
   }
 

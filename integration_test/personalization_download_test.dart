@@ -15,6 +15,12 @@
 // plugin does not resume downloads from Hugging Face, so that run says nothing
 // about resuming.
 //
+// With --dart-define=SW9_TEST_MANUAL=true it only taps Set up and reports each
+// change with its time, for up to six minutes. If that fails it taps Try again
+// once, 45 seconds in. It ends with the files it finds, to show what a failed
+// download leaves behind. That is for cutting the network during the download, or
+// throughout. On a phone that keeps Wi-Fi on in airplane mode, that takes both.
+//
 // Build for an arm64 phone with this file as entry point, as the phrase harness
 // (personalization_model_test.dart).
 
@@ -38,9 +44,11 @@ import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _useBaseline = bool.fromEnvironment('SW9_TEST_BASELINE');
+const _manual = bool.fromEnvironment('SW9_TEST_MANUAL');
 
 const _baseline = ModelRelease(
   url:
@@ -98,6 +106,66 @@ void main() {
         ),
       ),
     );
+
+    if (_manual) {
+      final model = FunctionGemmaModel(file: file);
+      await tester.runAsync(
+        () => _waitFor(model, (s) => s.state != ModelState.unavailable),
+      );
+      await showTab(model);
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('assist_setup')));
+      final clock = Stopwatch()..start();
+      String? last;
+      var triedAgain = false;
+      while (clock.elapsed < const Duration(minutes: 6)) {
+        final status = model.status.value;
+        final line = '${status.state.name} ${status.progress ?? ''}';
+        if (line != last) {
+          _report('manual: ${clock.elapsed} $line, error: ${status.error}');
+        }
+        last = line;
+        if (status.state == ModelState.ready) break;
+        if (status.state == ModelState.failed) {
+          if (triedAgain) break;
+          if (clock.elapsed > const Duration(seconds: 45)) {
+            await tester.pump();
+            _report('manual: ${clock.elapsed} tapping Try again');
+            await tester.tap(find.byKey(const Key('assist_retry')));
+            triedAgain = true;
+          }
+        }
+        await tester.pump();
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 200)),
+        );
+      }
+      final end = model.status.value;
+      _report(
+        'manual: ended ${end.state.name} ${end.progress ?? ''} after '
+        '${clock.elapsed}, error: ${end.error}',
+      );
+      await tester.runAsync(() async {
+        if (end.state == ModelState.ready) {
+          final path = await FlutterEdgeAi.getModelPath(file.fileName);
+          _report('manual: sha256 ${await sha256OfFile(path)}');
+        }
+        for (final root in [
+          await getApplicationSupportDirectory(),
+          await getTemporaryDirectory(),
+        ]) {
+          await for (final entity in root.list(recursive: true)) {
+            if (entity is! File) continue;
+            final size = await entity.length();
+            if (size > 1000000) _report('manual: file $size ${entity.path}');
+          }
+        }
+      });
+      await showTab(null);
+      model.dispose();
+      _report('DONE');
+      return;
+    }
 
     // A wrong checksum: the whole file comes down, fails and goes again.
     final wrong = FunctionGemmaModel(

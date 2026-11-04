@@ -32,9 +32,14 @@ class FakeFiles implements ModelFiles {
   Completer<void>? gate;
   Object? failWith;
 
+  /// Set when the file cannot be reached.
+  Object? unreachable;
+
   int installs = 0;
   final Set<String> names = {};
   final List<String> failToRemove = [];
+  int leftoverRemovals = 0;
+  bool failToRemoveLeftovers = false;
 
   FakeFiles(this.folder);
 
@@ -46,6 +51,12 @@ class FakeFiles implements ModelFiles {
 
   @override
   Future<bool> isInstalled(String fileName) async => names.contains(fileName);
+
+  @override
+  Future<void> ensureReachable(ModelRelease file) async {
+    final failure = unreachable;
+    if (failure != null) throw failure;
+  }
 
   @override
   Future<void> install(
@@ -74,6 +85,12 @@ class FakeFiles implements ModelFiles {
 
   @override
   Future<List<String>> installed() async => names.toList();
+
+  @override
+  Future<void> removeLeftovers() async {
+    leftoverRemovals++;
+    if (failToRemoveLeftovers) throw StateError('cannot remove');
+  }
 }
 
 Future<void> _until(bool Function() condition) async {
@@ -207,6 +224,45 @@ void main() {
       final reopened = await opened();
       expect(reopened.status.value.state, ModelState.notPrepared);
       reopened.dispose();
+    });
+  });
+
+  test('offline, Set up fails at once and starts no download', () async {
+    files.unreachable = const SocketException('no network');
+    final model = await opened();
+    await model.prepare();
+
+    expect(model.status.value.state, ModelState.failed);
+    expect(model.status.value.error, isA<SocketException>());
+    expect(files.installs, 0);
+
+    files.unreachable = null;
+    await model.prepare();
+    expect(files.installs, 1);
+    expect(model.status.value.state, ModelState.ready);
+    model.dispose();
+  });
+
+  group('dropped downloads', () {
+    test('their files go before each attempt and after a good one', () async {
+      files.failWith = const SocketException('no network');
+      final model = await opened();
+      await model.prepare();
+      expect(files.leftoverRemovals, 1);
+
+      files.failWith = null;
+      await model.prepare();
+      expect(files.leftoverRemovals, 3);
+      expect(model.status.value.state, ModelState.ready);
+      model.dispose();
+    });
+
+    test('files that cannot be removed do not fail the install', () async {
+      files.failToRemoveLeftovers = true;
+      final model = await opened();
+      await model.prepare();
+      expect(model.status.value.state, ModelState.ready);
+      model.dispose();
     });
   });
 

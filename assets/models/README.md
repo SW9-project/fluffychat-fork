@@ -18,6 +18,13 @@ it is deleted, and the tab offers to try again.
 The tab can be left during the download. The download goes on, and the tab shows it
 again on return. The check runs once per install, not each time the tab opens.
 
+Without internet, Set up fails at once and says so. A connection that drops during the
+download fails it too, and **Try again** starts it from the beginning. So the plugin gets
+one attempt per tap: when it retried by itself after a network drop on the S22, two
+downloads ran side by side and wrote a corrupt file, which the check caught. For the same
+reason nothing is resumed. A dropped attempt's temporary file is deleted before the next
+attempt.
+
 A download shows GitHub the phone's IP address. No user data is sent, and inference
 stays on the device.
 
