@@ -32,6 +32,7 @@ import 'package:fluffychat/personalization/model/heuristic_functions.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/personalization_layer.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -73,6 +74,18 @@ void main() {
       await model.prepare();
       expect(model.status.value.state, ModelState.ready);
       prepare.stop();
+
+      // A file that is already installed is not installed again, and the
+      // plugin restores the model that was active last. So a build with another
+      // file can silently run the previous model until the app's data is
+      // cleared: fail rather than report numbers for the wrong one.
+      final activeFiles = [
+        for (final f in FlutterEdgeAi.activeModelSpec?.files ?? const [])
+          f.filename,
+      ];
+      report('[phrases] active model files: $activeFiles');
+      report('[phrases] this build expects: ${FunctionGemmaModel.fileName}');
+      expect(activeFiles, contains(FunctionGemmaModel.fileName));
 
       final counts = {for (final o in Outcome.values) o: 0};
       final correct = <String, int>{};
