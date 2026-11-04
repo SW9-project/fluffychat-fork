@@ -18,8 +18,16 @@ Its results and limits are in the model card:
 `docs/model_cards/functiongemma-270M-sw9-pilot1.md` in the
 `functiongemma-heuristics` repository.
 
-The file is not published. Build it in that repository (`eval/convert.sh`) and copy
-it here. sha256:
+The file is not in git and not public. It is attached to the `pilot1` release of that
+private repository. This downloads it and checks its sha256, and needs the GitHub CLI
+and access to the repository:
+
+```sh
+./scripts/fetch_personalization_model.sh
+```
+
+To build it yourself instead, use `eval/convert.sh` in that repository and copy the
+result here. sha256:
 
 ```
 834126ed04d2cba810eb2de65da6dc580983afa6d25be3518157d1dfbb27cc74
@@ -40,7 +48,7 @@ x86_64 emulator: there LiteRT crashes under ARM translation
 ## The baseline
 
 ```sh
-./scripts/fetch_personalization_model.sh
+./scripts/fetch_personalization_model.sh --baseline
 ```
 
 downloads the base model into `baseline/`. Flutter does not bundle subfolders of
