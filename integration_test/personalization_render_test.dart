@@ -10,8 +10,8 @@
 // request (tools_json, constrained decoding, no system message), renders the
 // user's message with litert_lm_conversation_render_message_to_string and
 // tokenizes the result with the file's own tokenizer. It also makes a few real
-// requests through FunctionGemmaModel's path, to record what the plugin
-// returns and how many tokens the model really got.
+// requests on each file through FunctionGemmaModel's path, to record what the
+// plugin returns, on which backend, and how many tokens the model really got.
 //
 // Model files: the one FunctionGemmaModel installs, and any .litertlm pushed to
 // the app's external files folder.
@@ -46,12 +46,16 @@ import 'package:path_provider/path_provider.dart';
 
 import 'personalization_render_cases.dart';
 
-/// Texts sent through the real chat path.
+/// Texts sent through the real chat path, on every file.
 const _realRequests = [
   'The screen is hard to use today',
   'Skærmen er svær at bruge i dag, æøå ÆØÅ',
   "What's the weather tomorrow?",
   'Hvad er klokken?',
+  'The buttons are too small',
+  'Make the text bigger please',
+  'Gør skriften større',
+  'Knapperne er for små',
 ];
 
 /// Pieces of the format, to compare the file's tokenizer with the one training
@@ -99,8 +103,9 @@ void main() {
       model.dispose();
 
       final outFolder = (await getExternalStorageDirectory())!;
+      final installed = await _installedFile();
       final files = {
-        await _installedFile(),
+        installed,
         for (final f in outFolder.listSync())
           if (f is File && f.path.endsWith('.litertlm')) f.path,
       };
@@ -114,14 +119,25 @@ void main() {
         final name = path.split('/').last;
         print('[render] $name: rendering ${cases.length} cases');
         final results = _renderAll(bindings, path, cache, cases, appFunctions);
+        // A pushed file becomes the active model from here on: clear the app's
+        // data before relying on what is installed.
+        if (path != installed) {
+          await FlutterEdgeAi.installModel(
+            modelType: ModelType.functionGemma,
+            fileType: ModelFileType.litertlm,
+          ).fromFile(path).install();
+        }
+        final answers = path == installed
+            ? real
+            : await _realChats(appFunctions);
         final out = File('${outFolder.path}/render_$name.json');
         await out.writeAsString(
           const JsonEncoder.withIndent(' ').convert({
             'file': name,
             'size_bytes': await File(path).length(),
-            'installed': path == await _installedFile(),
+            'installed': path == installed,
             'active_asset': FunctionGemmaModel.assetPath,
-            'real_requests': path == await _installedFile() ? real : null,
+            'real_requests': answers,
             ...results,
           }),
         );
@@ -170,8 +186,10 @@ Future<List<Map<String, Object?>>> _realChats(
       maxOutputTokens: 128,
     );
     final session = chat.session;
+    final stopwatch = Stopwatch()..start();
     await chat.addQueryChunk(Message(text: text, isUser: true));
     final response = await chat.generateChatResponse();
+    final totalMs = stopwatch.elapsedMilliseconds;
     SessionMetrics? afterAnswer;
     try {
       afterAnswer = chat.session.getSessionMetrics();
@@ -184,6 +202,8 @@ Future<List<Map<String, Object?>>> _realChats(
       'session_was_recreated': !identical(session, chat.session),
       'input_tokens': afterAnswer?.inputTokens,
       'output_tokens': afterAnswer?.outputTokens,
+      'backend': model.activeBackend?.name,
+      'total_ms': totalMs,
     });
     print('[render] real: ${results.last}');
     await chat.close();
