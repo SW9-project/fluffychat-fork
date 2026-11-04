@@ -78,6 +78,29 @@ void main() {
         isNot(contains(startsWith('adjust_'))),
       );
     });
+
+    // The bundled model is fine-tuned on these exact words. When they change,
+    // the model must be trained again (assets/models/README.md).
+    test('the functions are the ones the bundled model was trained on', () {
+      final trainedOn = jsonDecode(
+        File(
+          'test/personalization/fixtures/pilot1_functions.json',
+        ).readAsStringSync(),
+      );
+      expect(
+        jsonDecode(
+          jsonEncode([
+            for (final f in functions)
+              {
+                'name': f.name,
+                'description': f.description,
+                'parameters': f.parameters,
+              },
+          ]),
+        ),
+        trainedOn,
+      );
+    });
   });
 
   test('a heuristic without a rule is not offered', () {
@@ -126,6 +149,15 @@ void main() {
               as AssistProposal;
       expect(result.heuristic, same(buttons));
       expect(result.category, ScaleCategory.button);
+      expect(result.from, 1.0);
+      expect(result.to, 1.1);
+    });
+
+    test('a call with no arguments is one step', () {
+      final result =
+          interpret(const ProposedCall('heuristic_near_miss_buttons', {}))
+              as AssistProposal;
+      expect(result.heuristic, same(buttons));
       expect(result.from, 1.0);
       expect(result.to, 1.1);
     });

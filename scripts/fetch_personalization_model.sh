@@ -3,13 +3,15 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-# Downloads the on-device FunctionGemma model into assets/models so it is
-# bundled into the app. See assets/models/README.md for the license terms.
+# Downloads the base FunctionGemma model, kept for comparison, into
+# assets/models/baseline, which is not bundled into the app. The file the app
+# runs is built by the functiongemma-heuristics repository. See
+# assets/models/README.md for how to get it and for the license terms.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-file="assets/models/functiongemma-270M-it.litertlm"
+file="assets/models/baseline/functiongemma-270M-it.litertlm"
 url="https://huggingface.co/sasha-denisov/function-gemma-270M-it/resolve/main/functiongemma-270M-it.litertlm"
 sha256="680fead1cca41a23220c904500a515d06e41f5c66d130aa4a9cc5905ec529a8e"
 
@@ -26,6 +28,7 @@ if [[ -f "$file" && "$(checksum "$file")" == "$sha256" ]]; then
   exit 0
 fi
 
+mkdir -p "$(dirname "$file")"
 echo "Downloading FunctionGemma 270M (about 284 MB)..."
 curl --fail --location --progress-bar --output "$file.part" "$url"
 

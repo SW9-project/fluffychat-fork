@@ -25,8 +25,9 @@ import 'settings_intent_model.dart';
 /// A build without it, a device below Android 11 (API 30) or a process that is
 /// not arm64 reports [ModelState.unavailable], and the app works without it.
 class FunctionGemmaModel implements SettingsIntentModel {
-  static const assetPath = 'assets/models/functiongemma-270M-it.litertlm';
-  static const fileName = 'functiongemma-270M-it.litertlm';
+  static const assetPath =
+      'assets/models/functiongemma-270M-sw9-pilot1.litertlm';
+  static const fileName = 'functiongemma-270M-sw9-pilot1.litertlm';
 
   /// The loaded model is freed after this long without a request.
   static const idleTimeout = Duration(minutes: 2);

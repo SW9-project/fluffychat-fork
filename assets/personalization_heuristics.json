@@ -1,34 +1,21 @@
 {
   "version": 1,
   "placeholder": true,
-  "note": "PLACEHOLDER VALUES. Every threshold, rule and text below only shows the format. Since Phase 3b the model reads each heuristic's rule and proposes its change; the condition fields are unused. Replace them with values from the literature review before any study. Signals and counts never leave the device.",
-  "signals": {
-    "nearMissDistance": 16,
-    "repeatedTapWindowMs": 600,
-    "repeatedTapDistance": 24,
-    "pinchMinChange": 0.15,
-    "windowMinutes": 10,
-    "maxEvents": 500
-  },
+  "note": "Generated from the functiongemma-heuristics catalog (catalog version 1) by tools/export_app.py. Do not edit by hand.",
   "suggestions": {
     "undoSeconds": 10
   },
   "heuristics": [
     {
       "id": "near-miss-buttons",
-      "source": "TBD from literature review",
+      "source": "",
       "placeholder": true,
       "rule": "When buttons are hard to hit or taps land next to them, make the buttons bigger.",
-      "condition": {
-        "type": "share",
-        "signal": "nearMiss",
-        "of": ["hit", "nearMiss"],
-        "targetKind": "button",
-        "minShare": 0.25,
-        "minEvents": 8
+      "change": {
+        "setting": "button_size",
+        "category": "button",
+        "steps": 1
       },
-      "change": { "category": "button", "steps": 1 },
-      "cooldownMinutes": 30,
       "description": {
         "en": "Bigger buttons are easier to hit. Make the buttons bigger?",
         "da": "Større knapper er nemmere at ramme. Skal knapperne gøres større?"
@@ -36,18 +23,14 @@
     },
     {
       "id": "text-zoom",
-      "source": "TBD from literature review",
+      "source": "",
       "placeholder": true,
       "rule": "When text is hard to read or the user tries to zoom in on messages, make the text bigger.",
-      "condition": {
-        "type": "count",
-        "signal": "pinch",
-        "targetKind": "text",
-        "minCount": 3,
-        "withinMinutes": 5
+      "change": {
+        "setting": "text_size",
+        "category": "text",
+        "steps": 1
       },
-      "change": { "category": "text", "steps": 1 },
-      "cooldownMinutes": 30,
       "description": {
         "en": "Bigger text is easier to read. Make the text bigger?",
         "da": "Større tekst er nemmere at læse. Skal teksten gøres større?"

@@ -328,3 +328,5 @@ macos/FluffyChat.pkg
 # On-device model files are too large for git, see assets/models/README.md
 assets/models/*.litertlm
 assets/models/*.part
+assets/models/baseline/*.litertlm
+assets/models/baseline/*.part

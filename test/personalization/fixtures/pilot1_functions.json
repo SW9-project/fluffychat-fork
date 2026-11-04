@@ -1,0 +1,34 @@
+[
+  {
+    "name": "heuristic_near_miss_buttons",
+    "description": "When buttons are hard to hit or taps land next to them, make the buttons bigger.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "How much to change: 1 is a little, 3 is a lot. Use 1 when unsure."
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "heuristic_text_zoom",
+    "description": "When text is hard to read or the user tries to zoom in on messages, make the text bigger.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "How much to change: 1 is a little, 3 is a lot. Use 1 when unsure."
+        }
+      },
+      "required": []
+    }
+  }
+]

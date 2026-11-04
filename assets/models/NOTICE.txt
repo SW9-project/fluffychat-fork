@@ -1,0 +1,15 @@
+Gemma is provided under and subject to the Gemma Terms of Use found at ai.google.dev/gemma/terms
+
+Use is also subject to the Gemma Prohibited Use Policy:
+https://ai.google.dev/gemma/prohibited_use_policy
+
+functiongemma-270M-sw9-pilot1.litertlm is a modified version of FunctionGemma 270M
+(google/functiongemma-270m-it): the SW9 project fine-tuned it and converted it to
+LiteRT-LM. It is a pilot, not for a study.
+
+The fine-tuning data includes utterances from MASSIVE 1.1 by Amazon, which includes
+text from SLURP, both licensed under the Creative Commons Attribution 4.0
+International License: https://creativecommons.org/licenses/by/4.0/
+We used the plain utterance text of the en-US and da-DK locales, sampled and filtered
+it, and labelled it as requests the app's assistant should not act on. This use does
+not imply endorsement by Amazon or by the SLURP authors.
