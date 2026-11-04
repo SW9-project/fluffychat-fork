@@ -14,31 +14,40 @@ import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:matrix/matrix.dart';
 
+import 'model_installer.dart';
+import 'model_release.dart';
 import 'process_abi.dart';
 import 'settings_functions.dart';
 import 'settings_intent_model.dart';
 
 /// [SettingsIntentModel] backed by FunctionGemma 270M through flutter_edge_ai
-/// and the LiteRT-LM engine. Runs fully on the device.
+/// and the LiteRT-LM engine. Inference runs fully on the device.
 ///
-/// The model file is bundled as an app asset (see `assets/models/README.md`).
-/// A build without it, a device below Android 11 (API 30) or a process that is
-/// not arm64 reports [ModelState.unavailable], and the app works without it.
+/// The model file is downloaded when the user taps Set up, or comes from the
+/// assets in a study build (see `assets/models/README.md`). A device below
+/// Android 11 (API 30), a process that is not arm64 or a study build without the
+/// file reports [ModelState.unavailable], and the app works without it.
 class FunctionGemmaModel implements SettingsIntentModel {
-  static const assetPath =
-      'assets/models/functiongemma-270M-sw9-pilot1.litertlm';
-  static const fileName = 'functiongemma-270M-sw9-pilot1.litertlm';
+  /// The file this build runs.
+  static String get fileName => currentModel.fileName;
 
   /// The loaded model is freed after this long without a request.
   static const idleTimeout = Duration(minutes: 2);
 
   static Future<void>? _engineInit;
 
+  /// One per file, for as long as the app runs. See [ModelInstaller].
+  static final Map<String, ModelInstaller> _installers = {};
+
+  final ModelRelease _file;
+  final ModelFiles _files;
+  final Future<bool> Function() _supported;
+
   final ValueNotifier<ModelStatus> _status = ValueNotifier(
     ModelStatus.unavailable,
   );
+  ModelInstaller? _installer;
   InferenceModel? _model;
-  Future<void>? _preparing;
   ModelTiming? _lastTiming;
 
   /// Completes once the initial status is known.
@@ -46,9 +55,18 @@ class FunctionGemmaModel implements SettingsIntentModel {
   Timer? _idleTimer;
   bool _disposed = false;
 
-  FunctionGemmaModel() {
+  FunctionGemmaModel({
+    ModelRelease file = currentModel,
+    @visibleForTesting ModelFiles? files,
+    @visibleForTesting Future<bool> Function()? supported,
+  }) : _file = file,
+       _files = files ?? const _EdgeAiFiles(),
+       _supported = supported ?? isSupported {
     _availability = _checkAvailability();
   }
+
+  @visibleForTesting
+  static void forgetInstallers() => _installers.clear();
 
   @override
   ValueListenable<ModelStatus> get status => _status;
@@ -60,7 +78,7 @@ class FunctionGemmaModel implements SettingsIntentModel {
     if (!_disposed) _status.value = status;
   }
 
-  /// The LiteRT-LM engine needs Android 11 and an arm64 process, and this
+  /// The LiteRT-LM engine needs Android 11 and an arm64 process, and a study
   /// build must contain the model file.
   static Future<bool> isSupported() async {
     if (!PlatformInfos.isAndroid || !isAndroidArm64Process) return false;
@@ -69,8 +87,9 @@ class FunctionGemmaModel implements SettingsIntentModel {
     // An arm64 process on an x86 device runs under ARM translation, where
     // LiteRT's CPU detection crashes the app (seen on the x86_64 emulator).
     if (info.supportedAbis.firstOrNull != 'arm64-v8a') return false;
+    if (!bundledModel) return true;
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-    return manifest.listAssets().contains(assetPath);
+    return manifest.listAssets().contains(currentModel.assetPath);
   }
 
   static Future<void> _initEngine() => _engineInit ??= FlutterEdgeAi.initialize(
@@ -79,46 +98,27 @@ class FunctionGemmaModel implements SettingsIntentModel {
 
   Future<void> _checkAvailability() async {
     try {
-      if (!await isSupported()) return;
-      await _initEngine();
-      final installed = await FlutterEdgeAi.isModelInstalled(fileName);
-      _setStatus(
-        ModelStatus(installed ? ModelState.ready : ModelState.notPrepared),
-      );
+      if (!await _supported()) return;
+      final installer = _installers['${_file.url}#${_file.sha256}'] ??=
+          ModelInstaller(file: _file, files: _files);
+      await installer.refresh();
+      if (_disposed) return;
+      _installer = installer;
+      installer.status.addListener(_followInstaller);
+      _followInstaller();
     } catch (e, s) {
       Logs().w('On-device model unavailable', e, s);
       _setStatus(ModelStatus.unavailable);
     }
   }
 
-  @override
-  Future<void> prepare() =>
-      _preparing ??= _prepare().whenComplete(() => _preparing = null);
+  void _followInstaller() => _setStatus(_installer!.status.value);
 
-  /// Copies the bundled model into the app's model storage on first use.
-  Future<void> _prepare() async {
+  /// Only this starts a download: the user taps Set up, nothing else does.
+  @override
+  Future<void> prepare() async {
     await _availability;
-    final state = _status.value.state;
-    if (state == ModelState.unavailable || state == ModelState.ready) return;
-    _setStatus(const ModelStatus(ModelState.preparing, progress: 0));
-    try {
-      await _initEngine();
-      await FlutterEdgeAi.installModel(
-            modelType: ModelType.functionGemma,
-            fileType: ModelFileType.litertlm,
-          )
-          .fromAsset(assetPath)
-          .withProgress(
-            (percent) => _setStatus(
-              ModelStatus(ModelState.preparing, progress: percent),
-            ),
-          )
-          .install();
-      _setStatus(const ModelStatus(ModelState.ready));
-    } catch (e, s) {
-      Logs().e('Unable to prepare the on-device model', e, s);
-      _setStatus(ModelStatus(ModelState.failed, error: e));
-    }
+    await _installer?.install();
   }
 
   Future<InferenceModel> _load() async {
@@ -135,7 +135,6 @@ class FunctionGemmaModel implements SettingsIntentModel {
     List<FunctionDeclaration> functions,
   ) async {
     await _availability;
-    if (_status.value.state != ModelState.ready) await prepare();
     if (_status.value.state != ModelState.ready) {
       throw StateError('The on-device model is not ready');
     }
@@ -213,7 +212,47 @@ class FunctionGemmaModel implements SettingsIntentModel {
   @override
   void dispose() {
     _disposed = true;
+    _installer?.status.removeListener(_followInstaller);
     release();
     _status.dispose();
   }
+}
+
+/// [ModelFiles] on the plugin.
+class _EdgeAiFiles implements ModelFiles {
+  const _EdgeAiFiles();
+
+  @override
+  Future<bool> isInstalled(String fileName) async {
+    await FunctionGemmaModel._initEngine();
+    return FlutterEdgeAi.isModelInstalled(fileName);
+  }
+
+  @override
+  Future<void> install(
+    ModelRelease file,
+    void Function(int percent) onProgress,
+  ) async {
+    await FunctionGemmaModel._initEngine();
+    final installation = FlutterEdgeAi.installModel(
+      modelType: ModelType.functionGemma,
+      fileType: ModelFileType.litertlm,
+    );
+    await (bundledModel
+            ? installation.fromAsset(file.assetPath)
+            : installation.fromNetwork(file.url))
+        .withProgress(onProgress)
+        .install();
+  }
+
+  @override
+  Future<String> pathOf(String fileName) =>
+      FlutterEdgeAi.getModelPath(fileName);
+
+  @override
+  Future<void> remove(String fileName) =>
+      FlutterEdgeAi.uninstallModel(fileName);
+
+  @override
+  Future<List<String>> installed() => FlutterEdgeAi.listInstalledModels();
 }

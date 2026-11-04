@@ -10,6 +10,7 @@ import 'dart:ui';
 import 'package:collection/collection.dart';
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/model/model_licenses.dart';
 import 'package:fluffychat/utils/client_manager.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/notification_background_handler.dart';
@@ -64,6 +65,7 @@ void main(List<String> args) => runZonedGuarded(() async {
   // To make sure that the parts of flutter needed are started up already, we need to ensure that the
   // widget bindings are initialized already.
   WidgetsFlutterBinding.ensureInitialized();
+  registerModelLicenses();
 
   final store = await AppSettings.init();
   Logs().i('Welcome to ${AppSettings.applicationName.value} <3');

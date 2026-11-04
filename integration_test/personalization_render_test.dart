@@ -84,7 +84,7 @@ void main() {
 
   testWidgets('render prompts', (tester) async {
     if (!await FunctionGemmaModel.isSupported()) {
-      print('[render] SKIPPED: needs Android 11+, arm64 and the model file');
+      print('[render] SKIPPED: needs Android 11+ and arm64');
       return;
     }
     await tester.runAsync(() async {
@@ -136,7 +136,7 @@ void main() {
             'file': name,
             'size_bytes': await File(path).length(),
             'installed': path == installed,
-            'active_asset': FunctionGemmaModel.assetPath,
+            'active_file': FunctionGemmaModel.fileName,
             'real_requests': answers,
             ...results,
           }),

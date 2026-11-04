@@ -13,8 +13,8 @@
 // once, not in the totals. `[phrases-csv]` lines can be pasted into a
 // spreadsheet.
 //
-// Needs an arm64 process on Android 11+ and the bundled model file
-// (scripts/fetch_personalization_model.sh). On a phone:
+// Needs an arm64 process on Android 11+. The first run downloads the model, so
+// it needs internet access too, unless this is a study build. On a phone:
 //   flutter test integration_test/personalization_model_test.dart -d <id>
 // On an x86_64 emulator, build an arm64 APK with this file as entry point:
 //   flutter build apk --debug --target-platform android-arm64 \
@@ -46,7 +46,7 @@ void main() {
   testWidgets('FunctionGemma phrase list', (tester) async {
     if (!await FunctionGemmaModel.isSupported()) {
       // ignore: avoid_print
-      print('[phrases] SKIPPED: needs Android 11+, arm64 and the model file');
+      print('[phrases] SKIPPED: needs Android 11+ and arm64');
       return;
     }
 

@@ -25,8 +25,11 @@ enum ModelState {
   /// The model can run but is not prepared yet (first use).
   notPrepared,
 
-  /// The model file is being prepared. See [ModelStatus.progress].
+  /// The model file is being downloaded or copied. See [ModelStatus.progress].
   preparing,
+
+  /// The model file is there, and its checksum is being checked.
+  verifying,
 
   /// Ready to take requests. The model is loaded on demand.
   ready,

@@ -79,9 +79,9 @@ void main() {
       );
     });
 
-    // The bundled model is fine-tuned on these exact words. When they change,
+    // The model is fine-tuned on these exact words. When they change,
     // the model must be trained again (assets/models/README.md).
-    test('the functions are the ones the bundled model was trained on', () {
+    test('the functions are the ones the model was trained on', () {
       final trainedOn = jsonDecode(
         File(
           'test/personalization/fixtures/pilot1_functions.json',

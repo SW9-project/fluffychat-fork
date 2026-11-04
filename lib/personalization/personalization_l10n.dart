@@ -27,10 +27,15 @@ class PersonalizationL10n {
   final String assistIntro;
   final String assistUnavailable;
   final String assistSetupInfo;
+  final String Function(int megabytes) assistDownloadInfo;
+  final String assistModelTerms;
+  final String assistReadTerms;
   final String openAccessibilitySettings;
   final String askSetup;
   final String Function(int percent) askSettingUp;
+  final String askVerifying;
   final String askFailed;
+  final String askFailedDownload;
   final String tryAgain;
   final String askHint;
   final String ask;
@@ -100,10 +105,15 @@ class PersonalizationL10n {
     required this.assistIntro,
     required this.assistUnavailable,
     required this.assistSetupInfo,
+    required this.assistDownloadInfo,
+    required this.assistModelTerms,
+    required this.assistReadTerms,
     required this.openAccessibilitySettings,
     required this.askSetup,
     required this.askSettingUp,
+    required this.askVerifying,
     required this.askFailed,
+    required this.askFailedDownload,
     required this.tryAgain,
     required this.askHint,
     required this.ask,
@@ -185,10 +195,19 @@ class PersonalizationL10n {
         'sizes yourself.',
     assistSetupInfo:
         'The assistant needs to be set up once. It runs only on this phone.',
+    assistDownloadInfo: _assistDownloadInfoEn,
+    assistModelTerms:
+        'The assistant uses Gemma, which is provided under and subject to the '
+        'Gemma Terms of Use. Their use restrictions apply to you too.',
+    assistReadTerms: 'Read the terms',
     openAccessibilitySettings: 'Open accessibility settings',
     askSetup: 'Set up',
     askSettingUp: _askSettingUpEn,
+    askVerifying: 'Checking the assistant…',
     askFailed: 'The assistant could not be set up.',
+    askFailedDownload:
+        'The assistant could not be set up. Check the internet connection and '
+        'try again.',
     tryAgain: 'Try again',
     askHint: 'For example: the buttons are too small',
     ask: 'Ask',
@@ -296,10 +315,20 @@ class PersonalizationL10n {
         'ændre størrelserne.',
     assistSetupInfo:
         'Assistenten skal klargøres én gang. Den kører kun på denne telefon.',
+    assistDownloadInfo: _assistDownloadInfoDa,
+    assistModelTerms:
+        'Assistenten bruger Gemma, som stilles til rådighed under og er '
+        'underlagt Gemma Terms of Use. Deres brugsbegrænsninger gælder også '
+        'for dig.',
+    assistReadTerms: 'Læs vilkårene',
     openAccessibilitySettings: 'Åbn tilgængelighedsindstillinger',
     askSetup: 'Klargør',
     askSettingUp: _askSettingUpDa,
+    askVerifying: 'Kontrollerer assistenten…',
     askFailed: 'Assistenten kunne ikke klargøres.',
+    askFailedDownload:
+        'Assistenten kunne ikke klargøres. Tjek internetforbindelsen, og prøv '
+        'igen.',
     tryAgain: 'Prøv igen',
     askHint: 'For eksempel: knapperne er for små',
     ask: 'Spørg',
@@ -390,6 +419,14 @@ String _changedToEn(String category, String value) =>
 
 String _changedToDa(String category, String value) =>
     '$category er nu × $value';
+
+String _assistDownloadInfoEn(int megabytes) =>
+    'The assistant needs to be set up once. This downloads about $megabytes '
+    'MB, so use Wi-Fi if you can. It runs only on this phone.';
+
+String _assistDownloadInfoDa(int megabytes) =>
+    'Assistenten skal klargøres én gang. Det henter cirka $megabytes MB, så '
+    'brug gerne wifi. Den kører kun på denne telefon.';
 
 String _askSettingUpEn(int percent) => 'Setting up… $percent%';
 

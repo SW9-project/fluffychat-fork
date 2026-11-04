@@ -1,11 +1,12 @@
 Gemma is provided under and subject to the Gemma Terms of Use found at ai.google.dev/gemma/terms
 
-Use is also subject to the Gemma Prohibited Use Policy:
+A copy of those terms comes with this notice, as GEMMA_TERMS.txt. Their use restrictions
+and the Gemma Prohibited Use Policy apply to anyone who receives or uses this model:
 https://ai.google.dev/gemma/prohibited_use_policy
 
 functiongemma-270M-sw9-pilot1.litertlm is a modified version of FunctionGemma 270M
 (google/functiongemma-270m-it): the SW9 project fine-tuned it and converted it to
-LiteRT-LM. It is a pilot, not for a study.
+LiteRT-LM. It is a pilot test model, not for a study.
 
 The fine-tuning data includes utterances from MASSIVE 1.1 by Amazon, which includes
 text from SLURP, both licensed under the Creative Commons Attribution 4.0
@@ -13,3 +14,11 @@ International License: https://creativecommons.org/licenses/by/4.0/
 We used the plain utterance text of the en-US and da-DK locales, sampled and filtered
 it, and labelled it as requests the app's assistant should not act on. This use does
 not imply endorsement by Amazon or by the SLURP authors.
+
+MASSIVE: Jack FitzGerald et al., 2022. MASSIVE: A 1M-Example Multilingual Natural
+Language Understanding Dataset with 51 Typologically-Diverse Languages. arXiv:2204.08582.
+https://amazon-massive-nlu-dataset.s3.amazonaws.com/amazon-massive-dataset-1.1.tar.gz
+
+SLURP: Emanuele Bastianelli, Andrea Vanzo, Pawel Swietojanski and Verena Rieser, 2020.
+SLURP: A Spoken Language Understanding Resource Package. EMNLP 2020, pages 7252-7262.
+doi:10.18653/v1/2020.emnlp-main.588

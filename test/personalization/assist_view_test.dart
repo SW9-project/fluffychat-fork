@@ -161,8 +161,43 @@ void main() {
   testWidgets('failed: retry prepares again', (tester) async {
     final model = FakeModel(ModelState.failed);
     await pump(tester, model);
+    expect(find.textContaining('internet connection'), findsOneWidget);
     await tester.tap(find.byKey(const Key('assist_retry')));
     expect(model.prepareCalls, 1);
+  });
+
+  testWidgets('not prepared: says how much it downloads', (tester) async {
+    await pump(tester, FakeModel(ModelState.notPrepared));
+    expect(find.textContaining('downloads about 285 MB'), findsOneWidget);
+    expect(find.textContaining('Wi-Fi'), findsOneWidget);
+  });
+
+  testWidgets('not prepared: nothing downloads until the tap', (tester) async {
+    final model = FakeModel(ModelState.notPrepared);
+    await pump(tester, model);
+    await tester.pump();
+    expect(model.prepareCalls, 0);
+  });
+
+  testWidgets('not prepared: tells who is bound by the terms, and links them', (
+    tester,
+  ) async {
+    await pump(tester, FakeModel(ModelState.notPrepared));
+    expect(find.textContaining('Gemma Terms of Use'), findsOneWidget);
+    expect(find.textContaining('use restrictions apply'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('assist_terms')));
+    await tester.pumpAndSettle();
+    expect(find.byType(LicensePage), findsOneWidget);
+  });
+
+  testWidgets('verifying: shows that it is checking, with no input', (
+    tester,
+  ) async {
+    await pump(tester, FakeModel(ModelState.verifying));
+    await tester.pump();
+    expect(find.text('Checking the assistant…'), findsOneWidget);
+    expect(find.byKey(const Key('assist_input')), findsNothing);
+    expect(find.byKey(const Key('assist_setup')), findsNothing);
   });
 
   testWidgets('the model gets only the prompt and the heuristic functions', (

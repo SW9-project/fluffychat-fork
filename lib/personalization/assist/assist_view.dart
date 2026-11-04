@@ -10,6 +10,7 @@ import 'package:matrix/matrix.dart';
 import '../accessibility_controller.dart';
 import '../heuristics/heuristic.dart';
 import '../model/heuristic_functions.dart';
+import '../model/model_release.dart';
 import '../model/settings_call_validator.dart';
 import '../model/settings_intent_model.dart';
 import '../personalization_l10n.dart';
@@ -222,8 +223,24 @@ class _AssistViewState extends State<AssistView> {
         children = [
           Text(l10n.assistIntro, textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          Text(l10n.assistSetupInfo, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
+          Text(
+            bundledModel
+                ? l10n.assistSetupInfo
+                : l10n.assistDownloadInfo(currentModel.megabytes),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.assistModelTerms,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall,
+          ),
+          TextButton(
+            key: const Key('assist_terms'),
+            onPressed: () => showLicensePage(context: context),
+            child: Text(l10n.assistReadTerms),
+          ),
+          const SizedBox(height: 8),
           FilledButton(
             key: const Key('assist_setup'),
             onPressed: widget.model?.prepare,
@@ -239,9 +256,18 @@ class _AssistViewState extends State<AssistView> {
           const SizedBox(height: 8),
           Text(l10n.askSettingUp(progress ?? 0)),
         ];
+      case ModelState.verifying:
+        children = [
+          const LinearProgressIndicator(),
+          const SizedBox(height: 8),
+          Text(l10n.askVerifying),
+        ];
       case ModelState.failed:
         children = [
-          Text(l10n.askFailed, textAlign: TextAlign.center),
+          Text(
+            bundledModel ? l10n.askFailed : l10n.askFailedDownload,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 16),
           TextButton(
             key: const Key('assist_retry'),
