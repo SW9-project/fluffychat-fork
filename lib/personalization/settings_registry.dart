@@ -29,9 +29,10 @@ import 'accessibility_settings.dart';
 /// 4. Add the setting's title to `categoryTitles` in
 ///    `personalization_l10n.dart` (English and Danish) and a sample to
 ///    `assist/change_preview.dart`.
-/// 5. Run `dart run tool/export_assist_eval.dart` to refresh the evaluation
-///    fixture in `llm-proxy/eval/fixtures/`, then
-///    `flutter test test/personalization` (a test fails while it is stale).
+/// 5. Refresh the evaluation fixture in `llm-proxy/eval/fixtures/` with
+///    `UPDATE_ASSIST_FIXTURE=1 flutter test test/personalization/assist_eval_fixture_test.dart`,
+///    then run `flutter test test/personalization` (a test fails while the
+///    fixture is stale).
 ///
 /// Only number settings exist so far. A yes/no or choice setting needs a new
 /// subclass of [SettingDefinition] with its own value schema, a case in the
