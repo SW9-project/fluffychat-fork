@@ -8,7 +8,7 @@ Draft for review. Nothing here is approved until Simon signs off; Claude Code (C
 
 Decisions already made:
 
-- **All inference runs on the client.** No message content or interaction data leaves the device for AI purposes. This keeps Matrix end-to-end encryption (E2EE) intact.
+- **All inference runs on the client.** No message content or interaction data leaves the device for AI purposes. This keeps Matrix end-to-end encryption (E2EE) intact. *Changed for the Assist tab by Phase 6 (Nov 8, 2026): it may ask an online model through our proxy.*
 - **Heuristics first, model second.** Expert heuristics from the literature review decide *when* to suggest a change and *what* the change is. The model does only light, real-time language work.
 - **Premade descriptions per heuristic.** The model does not generate explanation text in this version.
 - **First feature: user-resizable UI elements**, as the literature review identified.
@@ -26,7 +26,7 @@ The heuristics and the model both feed the same suggestion card, so the user con
 
 These apply to every phase. CC must treat them as rules, not suggestions.
 
-1. **No data leaves the device for AI.** No network calls for inference, no remote analytics, no crash reporters that capture message text. Interaction signals stay local.
+1. **No data leaves the device for AI.** No network calls for inference, no remote analytics, no crash reporters that capture message text. Interaction signals stay local. *Phase 6 exception: the Assist tab sends the typed prompt and the size settings to our proxy; see Phase 6 for exactly what is sent.*
 2. **Accessibility settings stay local in phase 1.** Matrix account data is not end-to-end encrypted, so syncing settings there would let the server see them. Settings can reveal disabilities, which is sensitive. Server sync is a later, separate decision.
 3. **Message metadata lives inside the encrypted message content**, under our own namespace. Never in relations or room state, which stay in plaintext.
 4. **The model never applies a change directly.** Every model output is parsed, checked against an allowlist of functions and value ranges, and shown to the user for confirmation.
@@ -197,6 +197,61 @@ From the review of Phases 0 to 5 at `bc3f965`:
 
 Also: after Apply, the Assist tab points to the Accessibility settings to change it back, and the error dialog no longer has a Report button, which sent the error to upstream FluffyChat's GitHub. Not changed, for the team to decide: `undoSeconds` (placeholder), touch area instead of icon size for missed taps, and the slider lag check on a cheap phone.
 
+## Phase 6: Online model in the Assist tab, on-device model as fallback
+
+Nov 8, 2026 · decided by @Simon Langbakke
+
+**Goal:** better understanding of natural language than the 270M on-device model (16 of 22 phrases on the S22 Ultra). The Assist tab now asks a bigger model on a free API tier, through our own proxy next to Synapse. The on-device pilot model stays as the offline fallback.
+
+**What changes from earlier decisions.** Phase 6 wins over the following:
+
+- **Hard constraint 1 and "All inference runs on the client".** These no longer hold for the Assist tab. The constraint still holds for everything else in the app.
+  - **What leaves the phone:** the text typed in the Assist tab, at most the one exchange before it when the assistant asked a question, the current values of the five size settings, the system prompt, and the tool schemas.
+  - **Before sending,** the app removes Matrix IDs, room aliases, links and e-mail addresses from the text.
+  - **What never leaves the phone:** messages, rooms, contacts, timelines, interaction signals.
+  - **Enforcement:** `AssistRequest` has no field for anything else, and `RemoteAssistBackend` is the only code that builds the request. A test fails if anything outside the Assist tab creates a backend.
+  - **Not covered:** names typed as plain words in a prompt cannot be told apart from other words, so they are sent.
+- **Constraint 2 (settings can reveal disabilities).** The five size values now reach the proxy and Groq with every Assist request. They are not stored in Matrix account data, so constraint 2 itself holds.
+- **Phase 3b, "the model only picks a heuristic".** This now applies only to the on-device model.
+  - The online model gets one `set_<setting>` tool per setting in `lib/personalization/settings_registry.dart`. Each tool takes three required parameters: `value`, `heuristic` (which heuristic justifies the change, from an enum) and `rationale` (one plain sentence shown to the user).
+  - The on-device pilot keeps its `heuristic_*` functions unchanged, because it was fine-tuned on those exact words.
+- **"Premade descriptions, the model writes no text".** The online model's `rationale` is shown instead of the premade description. The app cleans it up and cuts it to 200 characters. Without a rationale, the premade text is shown.
+  - The online model may also answer with one short question when a request is unclear. Its next request includes that question and the user's answer.
+- **Study builds and Wi-Fi.** With a proxy URL set, a session uses Wi-Fi. The app falls back to the on-device model when the proxy can't be reached, when every provider fails (`ASSIST_FALLBACK`), or when the user hits the rate limit. Only if that model is set up.
+
+**How it works.**
+
+1. The app asks Synapse for a Matrix **OpenID token**, not the access token, and sends it to `llm-proxy/`.
+2. The proxy checks the token at `/_matrix/federation/v1/openid/userinfo` and accepts only users on our homeserver. It allows 10 requests per minute per user.
+3. The proxy tries each provider in `config/providers.json` in order. For now that is only Groq with `openai/gpt-oss-20b`.
+4. API keys exist only in the proxy's environment.
+5. The proxy logs a hashed user ID, the provider, latency, token counts and the tools called. It logs prompt text only with `STUDY_LOGGING=true`.
+6. The app checks every tool call with `AssistValidator`: unknown tools or heuristics are rejected, and values are clamped to the allowed range. A valid call goes through the existing preview, Apply and Undo flow.
+7. Undo now keeps the last 20 changes, so the Undo button on the Accessibility page can go back through all of them.
+8. Each answer is marked "Online assistant" or "On this phone".
+
+**Heuristics for the online model** live in `assets/assist/heuristics.md`, which the team edits.
+
+- It holds the system prompt and the heuristics per category.
+- It reuses `near-miss-buttons` and `text-zoom` from `assets/personalization_heuristics.json` with the same ids, so the study log matches.
+- The other five heuristics are placeholders, so that every setting has at least one heuristic.
+- A request comes to about 1,500 tokens. The budget is 2,500, and the app and the proxy log a warning above it.
+
+**Evaluation.** `llm-proxy/eval/` sends 31 generated requests in English and Danish through the proxy and reports:
+
+- the valid tool-call rate
+- the correct setting and direction
+- invalid and out-of-range proposals
+- latency per provider
+
+Its prompt and tools come from a fixture that a test keeps equal to the app's.
+
+**Not done here:**
+
+- Mistral is left out because its free tier requires opting in to training on our requests.
+- There is no study condition that forces the on-device model, for comparing the two.
+- The Synapse and reverse-proxy setup on the home server is not done (see `llm-proxy/README.md`).
+
 ## Open questions
 
 These need answers from Simon or the team. CC must not decide them.
@@ -209,6 +264,10 @@ These need answers from Simon or the team. CC must not decide them.
 - [x] Model delivery: both. A public GitHub release, downloaded when the user taps Set up, and a study build with the model inside (decided Nov 4, 2026).
 - [ ] Is the study event log covered by the ethics and consent plan as described in Phase 5? Until this is answered, logging stays off until the researcher turns it on, and the log also keeps Assist prompts (see the Phase 5 decisions).
 - [ ] Phase order: is Phase 4 (metadata) needed for the first study, or can it come after?
+- [ ] Ethics and consent for Phase 6: Assist prompts and the size settings now reach Groq (a US company) through our proxy, and with `STUDY_LOGGING=true` the proxy also stores the prompts on our server. Does the consent cover this?
+- [ ] Mistral as a second provider: its free tier requires opting in to training on requests. Allowed once consent covers it?
+- [ ] Should the study compare the online and the on-device model? That needs a third study condition that forces the on-device model.
+- [ ] Which heuristics replace the placeholders in `assets/assist/heuristics.md`, and should `tools/export_app.py` in the heuristics catalog generate that file too, so the two heuristic files cannot drift?
 
 ## Claude Code handoff
 
