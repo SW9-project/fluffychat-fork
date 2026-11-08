@@ -380,7 +380,9 @@ class _AssistViewState extends State<AssistView> {
             Text(l10n.thinking),
           ],
         );
-      case AssistNoSuggestion():
+      case AssistMessage(:final text):
+        return Text(text);
+      case AssistUnavailable() || AssistNoSuggestion():
         return Column(
           key: const Key('assist_no_suggestion'),
           crossAxisAlignment: .start,

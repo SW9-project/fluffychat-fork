@@ -18,6 +18,12 @@ enum RejectionReason {
 
   /// The setting is already at its minimum or maximum.
   alreadyAtLimit,
+
+  /// The online model named a heuristic that is not offered for the tool.
+  unknownHeuristic,
+
+  /// The proposed value is the current value.
+  noChange,
 }
 
 sealed class ValidationResult {

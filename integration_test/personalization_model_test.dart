@@ -116,7 +116,7 @@ void main() {
           AssistProposal(:final heuristic) => HeuristicFunctions.nameFor(
             heuristic,
           ),
-          AssistAtLimit() || AssistNoSuggestion() => null,
+          _ => null,
         };
         final outcome = proposed == null
             ? (phrase.accept.isEmpty ? Outcome.correct : Outcome.rejected)

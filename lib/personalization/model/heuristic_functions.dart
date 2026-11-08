@@ -5,41 +5,13 @@
 import 'package:collection/collection.dart';
 
 import '../accessibility_settings.dart';
+import '../assist/assist_result.dart';
 import '../heuristics/heuristic.dart';
 import 'settings_call_validator.dart';
 import 'settings_functions.dart';
 import 'settings_intent_model.dart';
 
-/// What the Assist tab does with the model's answer to one prompt.
-sealed class AssistResult {
-  const AssistResult();
-}
-
-/// The model picked a heuristic and its change is within the allowed range.
-class AssistProposal extends AssistResult {
-  final Heuristic heuristic;
-  final ScaleCategory category;
-  final double from;
-  final double to;
-
-  const AssistProposal(this.heuristic, this.category, this.from, this.to);
-}
-
-/// The model picked a heuristic, but its setting cannot change further.
-class AssistAtLimit extends AssistResult {
-  final Heuristic heuristic;
-  final ScaleCategory category;
-
-  const AssistAtLimit(this.heuristic, this.category);
-}
-
-/// No call, an unknown function or unusable arguments. The app never invents
-/// a change in this case.
-class AssistNoSuggestion extends AssistResult {
-  final RejectionReason reason;
-
-  const AssistNoSuggestion(this.reason);
-}
+export '../assist/assist_result.dart';
 
 /// The heuristics are the model's knowledge: each heuristic with a `rule` is
 /// offered as one function, and the model only picks which one fits the

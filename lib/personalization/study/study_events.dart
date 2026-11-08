@@ -15,8 +15,10 @@ import 'study_settings.dart';
 ///
 /// Events hold ids, enums, numbers and booleans. The only text is what the
 /// participant typed to the assistant ([AssistPrompted]), which the team
-/// decided to keep. Message text is never part of an event: [MeaningSent]
-/// keeps the kind of meaning and how many times it mentions, not the words.
+/// decided to keep, and what the online assistant answered ([AssistAnswered]:
+/// its question or rationale). Message text is never part of an event:
+/// [MeaningSent] keeps the kind of meaning and how many times it mentions,
+/// not the words.
 sealed class StudyEvent {
   const StudyEvent();
 
@@ -130,21 +132,30 @@ class AssistPrompted extends StudyEvent {
   Map<String, Object?> get data => {'prompt': prompt};
 }
 
-/// The assistant's answer to a prompt, with the model's timing.
+/// The assistant's answer to a prompt, with the model's timing and which
+/// assistant answered.
 class AssistAnswered extends StudyEvent {
   final AssistResult result;
   final ModelTiming? timing;
+  final AssistSource? source;
 
   /// The request failed with an error, which the tab shows as no suggestion.
   final bool failed;
 
-  const AssistAnswered(this.result, {this.timing, this.failed = false});
+  const AssistAnswered(
+    this.result, {
+    this.timing,
+    this.source,
+    this.failed = false,
+  });
 
   @override
   String get type => switch (result) {
     AssistProposal() => 'assist_proposal',
     AssistAtLimit() => 'assist_at_limit',
     AssistNoSuggestion() => 'assist_no_suggestion',
+    AssistMessage() => 'assist_message',
+    AssistUnavailable() => 'assist_unavailable',
   };
 
   @override
@@ -155,12 +166,16 @@ class AssistAnswered extends StudyEvent {
         :final category,
         :final from,
         :final to,
+        :final rationale,
+        :final clamped,
       ) =>
         {
           'heuristic': heuristic.id,
           'category': category.id,
           'from': from,
           'to': to,
+          'rationale': ?rationale,
+          if (clamped) 'clamped': true,
         },
       AssistAtLimit(:final heuristic, :final category) => {
         'heuristic': heuristic.id,
@@ -169,8 +184,11 @@ class AssistAnswered extends StudyEvent {
       AssistNoSuggestion(:final reason) => {
         'reason': failed ? 'error' : reason.name,
       },
+      AssistMessage(:final text) => {'reply': text},
+      AssistUnavailable(:final reason) => {'reason': reason.name},
     },
     ...?timing?.toJson(),
+    ...?source?.toJson(),
   };
 }
 
