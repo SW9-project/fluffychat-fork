@@ -18,6 +18,7 @@ import 'dart:io';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
+import 'package:fluffychat/personalization/assist/local_gemma_backend.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
 import 'package:fluffychat/personalization/meaning/annotated_send.dart';
 import 'package:fluffychat/personalization/meaning/meaning_draft.dart';
@@ -138,7 +139,10 @@ void main() {
         supportedLocales: L10n.supportedLocales,
         home: Scaffold(
           body: AssistView(
-            model: _Model(),
+            backend: LocalGemmaBackend(
+              _Model(),
+              heuristics: () => manager.config.heuristics,
+            ),
             manager: manager,
             accessibility: accessibility,
             onOpenAccessibilitySettings: () {},

@@ -31,6 +31,7 @@ import 'dart:io';
 
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
+import 'package:fluffychat/personalization/assist/local_gemma_backend.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
 import 'package:fluffychat/personalization/model/function_gemma_model.dart';
 import 'package:fluffychat/personalization/model/heuristic_functions.dart';
@@ -98,7 +99,10 @@ void main() {
           body: model == null
               ? const SizedBox.expand()
               : AssistView(
-                  model: model,
+                  backend: LocalGemmaBackend(
+                    model,
+                    heuristics: () => manager.config.heuristics,
+                  ),
                   manager: manager,
                   accessibility: accessibility,
                   onOpenAccessibilitySettings: () {},

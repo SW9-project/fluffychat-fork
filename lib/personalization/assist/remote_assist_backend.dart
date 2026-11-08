@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -79,6 +80,12 @@ class RemoteAssistBackend extends AssistBackend {
   /// The proxy URL from `--dart-define=ASSIST_PROXY_URL=...`. Empty means
   /// the online assistant is off.
   static const configuredUrl = String.fromEnvironment('ASSIST_PROXY_URL');
+
+  /// The proxy URL from the build, else from config.json or MDM
+  /// (`assistProxyUrl`). Null when none is set or it is not HTTPS.
+  static Uri? configuredEndpoint() => parseEndpoint(
+    configuredUrl.isNotEmpty ? configuredUrl : AppSettings.assistProxyUrl.value,
+  );
 
   /// Parses [url] and accepts only HTTPS, or plain HTTP to this machine or
   /// the Android emulator's host for development.

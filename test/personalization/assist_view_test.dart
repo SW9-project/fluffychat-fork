@@ -6,8 +6,13 @@ import 'dart:convert';
 
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
+import 'package:fluffychat/personalization/assist/assist_backend.dart';
+import 'package:fluffychat/personalization/assist/assist_result.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
+import 'package:fluffychat/personalization/assist/hybrid_assist_backend.dart';
+import 'package:fluffychat/personalization/assist/local_gemma_backend.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
+import 'package:fluffychat/personalization/model/settings_call_validator.dart';
 import 'package:fluffychat/personalization/model/settings_functions.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/signals/interaction_signal.dart';
@@ -72,6 +77,34 @@ class FakeModel implements SettingsIntentModel {
   void dispose() {}
 }
 
+class FakeRemote extends AssistBackend {
+  AssistResult Function(AssistRequest request) answer = (_) =>
+      const AssistNoSuggestion(RejectionReason.noCall);
+  Object? failWith;
+  final List<AssistRequest> requests = [];
+
+  static final _ready = ValueNotifier(const ModelStatus(ModelState.ready));
+
+  @override
+  ValueListenable<ModelStatus> get status => _ready;
+
+  @override
+  Future<void> prepare() async {}
+
+  @override
+  Future<AssistOutcome> ask(AssistRequest request) async {
+    requests.add(request);
+    if (failWith case final e?) throw e;
+    return AssistOutcome(
+      answer(request),
+      const AssistSource(AssistBackendKind.remote, provider: 'groq'),
+    );
+  }
+
+  @override
+  void dispose() {}
+}
+
 final _buttonsHeuristic = Heuristic(
   id: 'near-miss-buttons',
   source: '',
@@ -114,17 +147,26 @@ void main() {
     StudyLog.instance = null;
   });
 
-  Future<void> pump(WidgetTester tester, FakeModel? model) => tester.pumpWidget(
-    MaterialApp(
-      home: Scaffold(
-        body: AssistView(
-          model: model,
-          manager: manager,
-          accessibility: accessibility,
-          onOpenAccessibilitySettings: () => settingsOpened++,
+  Future<void> pumpBackend(WidgetTester tester, AssistBackend? backend) =>
+      tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssistView(
+              backend: backend,
+              manager: manager,
+              accessibility: accessibility,
+              onOpenAccessibilitySettings: () => settingsOpened++,
+            ),
+          ),
         ),
-      ),
-    ),
+      );
+
+  /// The on-device model alone, as before the online assistant.
+  Future<void> pump(WidgetTester tester, FakeModel? model) => pumpBackend(
+    tester,
+    model == null
+        ? null
+        : LocalGemmaBackend(model, heuristics: () => manager.config.heuristics),
   );
 
   Future<void> ask(WidgetTester tester, String text) async {
@@ -399,6 +441,7 @@ void main() {
         'total_ms': 900,
         'ttft_ms': 410,
         'backend': 'gpu',
+        'answered_by': 'local',
       });
       expect(events()[2], containsPair('to', 1.1));
     });
@@ -451,6 +494,27 @@ void main() {
       expect(accessibility.settings, AccessibilitySettings.defaults);
     });
 
+    testWidgets('records which assistant answered', (tester) async {
+      startLog();
+      final remote = FakeRemote()
+        ..answer = (_) => const AssistMessage('Which part?');
+      await pumpBackend(
+        tester,
+        HybridAssistBackend(
+          remote: remote,
+          local: LocalGemmaBackend(
+            FakeModel(ModelState.notPrepared),
+            heuristics: () => manager.config.heuristics,
+          ),
+        ),
+      );
+      await ask(tester, 'too small');
+      final answer = events().firstWhere((e) => e['type'] == 'assist_message');
+      expect(answer['answered_by'], 'remote');
+      expect(answer['provider'], 'groq');
+      expect(answer['reply'], 'Which part?');
+    });
+
     testWidgets('records when the model changes state', (tester) async {
       startLog();
       final model = FakeModel(ModelState.notPrepared);
@@ -458,6 +522,164 @@ void main() {
       await tester.tap(find.byKey(const Key('assist_setup')));
       await tester.pumpAndSettle();
       expect(events().single, containsPair('state', 'ready'));
+    });
+  });
+  group('online assistant', () {
+    late FakeRemote remote;
+    late FakeModel local;
+
+    HybridAssistBackend hybrid() => HybridAssistBackend(
+      remote: remote,
+      local: LocalGemmaBackend(
+        local,
+        heuristics: () => manager.config.heuristics,
+      ),
+    );
+
+    setUp(() {
+      remote = FakeRemote();
+      local = FakeModel(
+        ModelState.ready,
+        answer: (_) => const ProposedCall('heuristic_near_miss_buttons', {}),
+      );
+    });
+
+    AssistResult proposal({
+      double to = 1.3,
+      String? rationale = 'Bigger buttons are easier to hit.',
+      bool clamped = false,
+    }) => AssistProposal(
+      _buttonsHeuristic,
+      ScaleCategory.button,
+      accessibility.settings.buttonScale,
+      to,
+      rationale: rationale,
+      clamped: clamped,
+    );
+
+    testWidgets('shows the rationale, the preview and who answered', (
+      tester,
+    ) async {
+      remote.answer = (_) => proposal();
+      await pumpBackend(tester, hybrid());
+      await ask(tester, 'I keep missing the buttons');
+      expect(find.text('Bigger buttons are easier to hit.'), findsOneWidget);
+      expect(find.byKey(const Key('change_preview')), findsOneWidget);
+      expect(find.byKey(const Key('assist_source_remote')), findsOneWidget);
+      expect(find.text('Online assistant'), findsOneWidget);
+      expect(accessibility.settings.buttonScale, 1.0);
+
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(accessibility.settings.buttonScale, 1.3);
+      await tester.tap(find.byKey(const Key('assist_undo')));
+      await tester.pumpAndSettle();
+      expect(accessibility.settings.buttonScale, 1.0);
+    });
+
+    testWidgets('falls back to the premade text without a rationale', (
+      tester,
+    ) async {
+      remote.answer = (_) => proposal(rationale: null);
+      await pumpBackend(tester, hybrid());
+      await ask(tester, 'buttons');
+      expect(find.text('Buttons can be made bigger.'), findsOneWidget);
+    });
+
+    testWidgets('says when a value was clamped', (tester) async {
+      remote.answer = (_) => proposal(to: 2.0, clamped: true);
+      await pumpBackend(tester, hybrid());
+      await ask(tester, 'make the buttons enormous');
+      expect(find.text('That is as far as it can go.'), findsOneWidget);
+    });
+
+    testWidgets('a question is shown and sent with the next prompt', (
+      tester,
+    ) async {
+      remote.answer = (request) => request.previous == null
+          ? const AssistMessage('Which part is too small?')
+          : proposal();
+      await pumpBackend(tester, hybrid());
+      await ask(tester, 'it is too small');
+      expect(find.text('Which part is too small?'), findsOneWidget);
+      expect(manager.current, isNull);
+
+      await ask(tester, 'the buttons');
+      final second = remote.requests.last;
+      expect(second.prompt, 'the buttons');
+      expect(second.previous!.prompt, 'it is too small');
+      expect(second.previous!.reply, 'Which part is too small?');
+      expect(find.byKey(const Key('assist_apply')), findsOneWidget);
+
+      // After a proposal, the next prompt starts fresh.
+      await ask(tester, 'thanks');
+      expect(remote.requests.last.previous, isNull);
+    });
+
+    testWidgets('uses the on-device model when the proxy says to', (
+      tester,
+    ) async {
+      remote.failWith = const AssistBackendUnavailable('fallback');
+      await pumpBackend(tester, hybrid());
+      await ask(tester, 'the buttons are hard to hit');
+      expect(local.prompts, ['the buttons are hard to hit']);
+      expect(find.byKey(const Key('assist_source_local')), findsOneWidget);
+      expect(find.text('On this phone'), findsOneWidget);
+      expect(find.byKey(const Key('assist_apply')), findsOneWidget);
+    });
+
+    testWidgets('offline without the on-device model: says so, offers setup', (
+      tester,
+    ) async {
+      local = FakeModel(ModelState.notPrepared);
+      remote.failWith = const AssistBackendUnavailable(
+        'network',
+        network: true,
+      );
+      await pumpBackend(tester, hybrid());
+      expect(find.byKey(const Key('assist_input')), findsOneWidget);
+      expect(find.byKey(const Key('assist_offline_row')), findsOneWidget);
+
+      await ask(tester, 'the buttons are hard to hit');
+      expect(find.byKey(const Key('assist_unavailable')), findsOneWidget);
+      expect(find.textContaining('be reached right now'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('assist_offline_setup')));
+      await tester.pumpAndSettle();
+      expect(local.prepareCalls, 0);
+      await tester.tap(find.byKey(const Key('assist_offline_confirm')));
+      await tester.pumpAndSettle();
+      expect(local.prepareCalls, 1);
+      expect(find.byKey(const Key('assist_offline_row')), findsNothing);
+    });
+
+    testWidgets('rate limited: asks to wait', (tester) async {
+      local = FakeModel(ModelState.notPrepared);
+      remote.failWith = const AssistBackendUnavailable(
+        'rate_limited',
+        rateLimited: true,
+      );
+      await pumpBackend(tester, hybrid());
+      await ask(tester, 'buttons');
+      expect(find.textContaining('Wait a minute'), findsOneWidget);
+    });
+
+    testWidgets('a value equal to the current one says so', (tester) async {
+      remote.answer = (_) => const AssistNoSuggestion(RejectionReason.noChange);
+      await pumpBackend(tester, hybrid());
+      await ask(tester, 'buttons');
+      expect(find.text('It already has that size.'), findsOneWidget);
+    });
+
+    testWidgets('sends only the prompt and the settings', (tester) async {
+      remote.answer = (_) => const AssistMessage('Okay');
+      await accessibility.apply(ScaleCategory.text, 1.2);
+      await pumpBackend(tester, hybrid());
+      await ask(tester, '  bigger text please  ');
+      final request = remote.requests.single;
+      expect(request.prompt, 'bigger text please');
+      expect(request.settings.textScale, 1.2);
+      expect(request.previous, isNull);
     });
   });
 }

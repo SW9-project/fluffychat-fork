@@ -82,6 +82,16 @@ class PersonalizationL10n {
   final String studyDeleteAction;
   final String studyCleared;
   final String changeBackInSettings;
+  final String assistOnlineUnavailable;
+  final String assistRateLimited;
+  final String assistNoChange;
+  final String assistClamped;
+  final String assistGenericReason;
+  final String answeredOnline;
+  final String answeredOnDevice;
+  final String offlineNotSetUp;
+  final String offlineFailed;
+  final String offlineSetupTitle;
   final String studyLatest;
   final String studyNoEvents;
   final Map<ScaleCategory, String> categoryTitles;
@@ -160,6 +170,16 @@ class PersonalizationL10n {
     required this.studyDeleteAction,
     required this.studyCleared,
     required this.changeBackInSettings,
+    required this.assistOnlineUnavailable,
+    required this.assistRateLimited,
+    required this.assistNoChange,
+    required this.assistClamped,
+    required this.assistGenericReason,
+    required this.answeredOnline,
+    required this.answeredOnDevice,
+    required this.offlineNotSetUp,
+    required this.offlineFailed,
+    required this.offlineSetupTitle,
     required this.studyLatest,
     required this.studyNoEvents,
     required this.categoryTitles,
@@ -274,6 +294,17 @@ class PersonalizationL10n {
     studyCleared: 'The log was cleared.',
     changeBackInSettings:
         'You can also undo it later with Undo in the Accessibility settings.',
+    assistOnlineUnavailable: "The online assistant can't be reached right now.",
+    assistRateLimited:
+        'You have asked a lot in a short time. Wait a minute and try again.',
+    assistNoChange: 'It already has that size.',
+    assistClamped: 'That is as far as it can go.',
+    assistGenericReason: 'This change may help.',
+    answeredOnline: 'Online assistant',
+    answeredOnDevice: 'On this phone',
+    offlineNotSetUp: 'The assistant on this phone is not set up.',
+    offlineFailed: 'The assistant on this phone could not be set up.',
+    offlineSetupTitle: 'Assistant on this phone',
     studyLatest: 'Latest events',
     studyNoEvents: 'Nothing recorded yet.',
     categoryTitles: {
@@ -395,6 +426,17 @@ class PersonalizationL10n {
     changeBackInSettings:
         'Du kan også fortryde det senere med Fortryd i '
         'tilgængelighedsindstillingerne.',
+    assistOnlineUnavailable: 'Den online assistent kan ikke nås lige nu.',
+    assistRateLimited:
+        'Du har spurgt om meget på kort tid. Vent et minut, og prøv igen.',
+    assistNoChange: 'Den har allerede den størrelse.',
+    assistClamped: 'Længere kan det ikke komme.',
+    assistGenericReason: 'Denne ændring kan måske hjælpe.',
+    answeredOnline: 'Online assistent',
+    answeredOnDevice: 'På denne telefon',
+    offlineNotSetUp: 'Assistenten på denne telefon er ikke sat op.',
+    offlineFailed: 'Assistenten på denne telefon kunne ikke sættes op.',
+    offlineSetupTitle: 'Assistent på denne telefon',
     studyLatest: 'Seneste hændelser',
     studyNoEvents: 'Intet optaget endnu.',
     categoryTitles: {

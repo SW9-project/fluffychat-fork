@@ -4,11 +4,11 @@
 
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/themes.dart';
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
 import '../accessibility_controller.dart';
-import '../heuristics/heuristic.dart';
 import '../model/heuristic_functions.dart';
 import '../model/model_release.dart';
 import '../model/settings_call_validator.dart';
@@ -18,28 +18,31 @@ import '../study/study_events.dart';
 import '../study/study_log.dart';
 import '../suggestions/suggestion.dart';
 import '../suggestions/suggestion_manager.dart';
+import 'assist_backend.dart';
 import 'change_preview.dart';
 
-/// The Assist tab: the user describes a problem with the UI, the on-device
-/// model picks the heuristic that fits, and the tab shows its change with a
-/// preview. Nothing changes until the user taps Apply, and Undo is offered
+/// The Assist tab: the user describes a problem with the UI, an assistant
+/// proposes the change that fits, and the tab shows it with a preview.
+/// Nothing changes until the user taps Apply, and Undo is offered
 /// afterwards.
 ///
-/// Each prompt is sent to the model on its own, together with the heuristic
-/// functions. Earlier prompts, chats and messages are never sent.
+/// The assistant is an [AssistBackend]: the online model through our proxy,
+/// with the on-device model as fallback. Each request carries only the
+/// prompt, at most the one exchange before it when that ended in a question,
+/// and the accessibility settings ([AssistRequest]). Chats and messages are
+/// never sent. Every answer is checked by our own code before it is shown.
 ///
-/// The study log (Phase 5) records each prompt and the answer, with the
-/// model's timing, when the researcher turned logging on.
+/// The study log (Phase 5) records each prompt and the answer, with timing
+/// and which assistant answered, when the researcher turned logging on.
 class AssistView extends StatefulWidget {
-  /// The on-device model, or null when the assistant is off in the current
-  /// study condition.
-  final SettingsIntentModel? model;
+  /// The assistant, or null when it is off in the current study condition.
+  final AssistBackend? backend;
   final SuggestionManager manager;
   final AccessibilityController accessibility;
   final VoidCallback onOpenAccessibilitySettings;
 
   const AssistView({
-    required this.model,
+    required this.backend,
     required this.manager,
     required this.accessibility,
     required this.onOpenAccessibilitySettings,
@@ -55,6 +58,7 @@ enum _Outcome { applied, declined, undone }
 class _Exchange {
   final String prompt;
   AssistResult? result;
+  AssistSource? source;
   Suggestion? suggestion;
   _Outcome? outcome;
 
@@ -68,25 +72,27 @@ class _AssistViewState extends State<AssistView> {
   bool _busy = false;
   ModelState? _modelState;
 
-  List<Heuristic> get _heuristics => widget.manager.config.heuristics;
+  /// The on-device model's state is what the study log has always recorded.
+  ValueListenable<ModelStatus>? _modelStatusOf(AssistBackend? backend) =>
+      backend?.offlineStatus ?? backend?.status;
 
   @override
   void initState() {
     super.initState();
-    widget.model?.status.addListener(_onModelStatus);
+    _modelStatusOf(widget.backend)?.addListener(_onModelStatus);
   }
 
   @override
   void didUpdateWidget(AssistView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.model == widget.model) return;
-    oldWidget.model?.status.removeListener(_onModelStatus);
-    widget.model?.status.addListener(_onModelStatus);
+    if (oldWidget.backend == widget.backend) return;
+    _modelStatusOf(oldWidget.backend)?.removeListener(_onModelStatus);
+    _modelStatusOf(widget.backend)?.addListener(_onModelStatus);
   }
 
   /// Records when the model changes state, not every progress update.
   void _onModelStatus() {
-    final state = widget.model?.status.value.state;
+    final state = _modelStatusOf(widget.backend)?.value.state;
     if (state == null || state == _modelState) return;
     _modelState = state;
     StudyLog.instance.record(AssistModelState(state));
@@ -99,16 +105,31 @@ class _AssistViewState extends State<AssistView> {
     if (open != null && _exchanges.any((e) => e.suggestion == open)) {
       widget.manager.abandonOpen();
     }
-    widget.model?.status.removeListener(_onModelStatus);
+    _modelStatusOf(widget.backend)?.removeListener(_onModelStatus);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  /// The exchange before this one, when the assistant answered it with a
+  /// question, so the user's reply can be understood.
+  AssistTurn? get _openQuestion {
+    final last = _exchanges.lastOrNull;
+    return switch (last?.result) {
+      AssistMessage(:final text) => AssistTurn(last!.prompt, text),
+      _ => null,
+    };
+  }
+
   Future<void> _ask() async {
-    final model = widget.model;
+    final backend = widget.backend;
     final text = _controller.text.trim();
-    if (model == null || text.isEmpty || _busy) return;
+    if (backend == null || text.isEmpty || _busy) return;
+    final request = AssistRequest(
+      text,
+      widget.accessibility.settings,
+      previous: _openQuestion,
+    );
     final exchange = _Exchange(text);
     setState(() {
       _exchanges.add(exchange);
@@ -119,20 +140,14 @@ class _AssistViewState extends State<AssistView> {
     StudyLog.instance.record(AssistPrompted(text));
 
     AssistResult result;
+    AssistSource? source;
     ModelTiming? timing;
     var failed = false;
     try {
-      final functions = HeuristicFunctions.declarationsFor(_heuristics);
-      ProposedCall? call;
-      if (functions.isNotEmpty) {
-        call = await model.propose(text, functions);
-        timing = model.lastTiming;
-      }
-      result = HeuristicFunctions.interpret(
-        call,
-        _heuristics,
-        widget.accessibility.settings,
-      );
+      final outcome = await backend.ask(request);
+      result = outcome.result;
+      source = outcome.source;
+      timing = outcome.timing;
     } catch (e, s) {
       // The app log gets the failure, never the user's words.
       Logs().w('Assistant request failed', e, s);
@@ -140,7 +155,7 @@ class _AssistViewState extends State<AssistView> {
       failed = true;
     }
     StudyLog.instance.record(
-      AssistAnswered(result, timing: timing, failed: failed),
+      AssistAnswered(result, timing: timing, source: source, failed: failed),
     );
     if (!mounted) return;
     if (result case AssistProposal(:final heuristic, :final from, :final to)) {
@@ -154,6 +169,7 @@ class _AssistViewState extends State<AssistView> {
     }
     setState(() {
       exchange.result = result;
+      exchange.source = source;
       _busy = false;
     });
     _scrollToEnd();
@@ -186,12 +202,56 @@ class _AssistViewState extends State<AssistView> {
     );
   });
 
+  /// Asks before downloading the on-device model, because the download is
+  /// large and the model comes with its own terms.
+  Future<void> _confirmOfflineSetup() async {
+    final l10n = PersonalizationL10n.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.offlineSetupTitle),
+        content: Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
+          children: [
+            Text(
+              bundledModel
+                  ? l10n.assistSetupInfo
+                  : l10n.assistDownloadInfo(currentModel.megabytes),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.assistModelTerms,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            TextButton(
+              onPressed: () => showLicensePage(context: context),
+              child: Text(l10n.assistReadTerms),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.notNow),
+          ),
+          FilledButton(
+            key: const Key('assist_offline_confirm'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.askSetup),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await widget.backend?.prepare();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final model = widget.model;
-    if (model == null) return _statusPanel(context, null);
+    final backend = widget.backend;
+    if (backend == null) return _statusPanel(context, null);
     return ValueListenableBuilder<ModelStatus>(
-      valueListenable: model.status,
+      valueListenable: backend.status,
       builder: (context, status, _) => switch (status.state) {
         ModelState.ready => _conversation(context),
         _ => _statusPanel(context, status),
@@ -243,7 +303,7 @@ class _AssistViewState extends State<AssistView> {
           const SizedBox(height: 8),
           FilledButton(
             key: const Key('assist_setup'),
-            onPressed: widget.model?.prepare,
+            onPressed: widget.backend?.prepare,
             child: Text(l10n.askSetup),
           ),
         ];
@@ -271,7 +331,7 @@ class _AssistViewState extends State<AssistView> {
           const SizedBox(height: 16),
           TextButton(
             key: const Key('assist_retry'),
-            onPressed: widget.model?.prepare,
+            onPressed: widget.backend?.prepare,
             child: Text(l10n.tryAgain),
           ),
         ];
@@ -303,6 +363,7 @@ class _AssistViewState extends State<AssistView> {
   Widget _conversation(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = PersonalizationL10n.of(context);
+    final offline = widget.backend?.offlineStatus;
     return Column(
       children: [
         Expanded(
@@ -315,12 +376,20 @@ class _AssistViewState extends State<AssistView> {
                 _AssistantBubble(child: Text(l10n.assistIntro)),
                 for (final exchange in _exchanges) ...[
                   _UserBubble(text: exchange.prompt),
-                  _AssistantBubble(child: _answer(context, exchange)),
+                  _AssistantBubble(
+                    source: exchange.result == null ? null : exchange.source,
+                    child: _answer(context, exchange),
+                  ),
                 ],
               ],
             ),
           ),
         ),
+        if (offline != null)
+          ValueListenableBuilder<ModelStatus>(
+            valueListenable: offline,
+            builder: (context, status, _) => _offlineRow(context, status),
+          ),
         SafeArea(
           top: false,
           child: Padding(
@@ -358,6 +427,50 @@ class _AssistViewState extends State<AssistView> {
     );
   }
 
+  /// A quiet line above the input while the on-device fallback is not
+  /// ready, with a way to set it up.
+  Widget _offlineRow(BuildContext context, ModelStatus status) {
+    final theme = Theme.of(context);
+    final l10n = PersonalizationL10n.of(context);
+    final style = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final (String text, Widget? action) = switch (status.state) {
+      ModelState.ready || ModelState.unavailable => ('', null),
+      ModelState.notPrepared => (
+        l10n.offlineNotSetUp,
+        TextButton(
+          key: const Key('assist_offline_setup'),
+          onPressed: _confirmOfflineSetup,
+          child: Text(l10n.askSetup),
+        ),
+      ),
+      ModelState.preparing => (l10n.askSettingUp(status.progress ?? 0), null),
+      ModelState.verifying => (l10n.askVerifying, null),
+      ModelState.failed => (
+        l10n.offlineFailed,
+        TextButton(
+          key: const Key('assist_offline_retry'),
+          onPressed: widget.backend?.prepare,
+          child: Text(l10n.tryAgain),
+        ),
+      ),
+    };
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      key: const Key('assist_offline_row'),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Icon(Icons.phone_android_outlined, size: 16, color: style?.color),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: style)),
+          ?action,
+        ],
+      ),
+    );
+  }
+
   Widget _answer(BuildContext context, _Exchange exchange) {
     final l10n = PersonalizationL10n.of(context);
     final language = Localizations.localeOf(context).languageCode;
@@ -366,6 +479,11 @@ class _AssistViewState extends State<AssistView> {
       onPressed: widget.onOpenAccessibilitySettings,
       icon: const Icon(Icons.accessibility_new_outlined),
       label: Text(l10n.openAccessibilitySettings),
+    );
+    Widget withSettingsLink(String text, {Key? key}) => Column(
+      key: key,
+      crossAxisAlignment: .start,
+      children: [Text(text), settingsLink],
     );
     switch (exchange.result) {
       case null:
@@ -381,28 +499,36 @@ class _AssistViewState extends State<AssistView> {
           ],
         );
       case AssistMessage(:final text):
-        return Text(text);
-      case AssistUnavailable() || AssistNoSuggestion():
-        return Column(
+        return Text(text, key: const Key('assist_message'));
+      case AssistUnavailable(:final reason):
+        return withSettingsLink(switch (reason) {
+          AssistUnavailableReason.offline => l10n.assistOnlineUnavailable,
+          AssistUnavailableReason.rateLimited => l10n.assistRateLimited,
+        }, key: const Key('assist_unavailable'));
+      case AssistNoSuggestion(:final reason):
+        return withSettingsLink(
+          reason == RejectionReason.noChange
+              ? l10n.assistNoChange
+              : l10n.noSuggestion,
           key: const Key('assist_no_suggestion'),
-          crossAxisAlignment: .start,
-          children: [Text(l10n.noSuggestion), settingsLink],
         );
       case AssistAtLimit(:final category):
-        return Column(
-          crossAxisAlignment: .start,
-          children: [
-            Text(l10n.alreadyAtLimit(l10n.categoryTitles[category]!)),
-            settingsLink,
-          ],
+        return withSettingsLink(
+          l10n.alreadyAtLimit(l10n.categoryTitles[category]!),
         );
       case AssistProposal(
         :final heuristic,
         :final category,
         :final from,
         :final to,
+        :final rationale,
+        :final clamped,
       ):
         final suggestion = exchange.suggestion!;
+        final premade = heuristic.description(language);
+        final reason =
+            rationale ??
+            (premade.isNotEmpty ? premade : l10n.assistGenericReason);
         final changed = l10n.changedTo(
           l10n.categoryTitles[category]!,
           to.toStringAsFixed(1),
@@ -448,12 +574,16 @@ class _AssistViewState extends State<AssistView> {
         return Column(
           crossAxisAlignment: .stretch,
           children: [
-            Text(heuristic.description(language)),
+            Text(reason, key: const Key('assist_reason')),
+            if (clamped) ...[
+              const SizedBox(height: 4),
+              Text(l10n.assistClamped),
+            ],
             const SizedBox(height: 12),
             ChangePreview(category: category, from: from, to: to),
             const SizedBox(height: 12),
             actions,
-            // Undo here lasts only a moment and goes with the tab.
+            // Undo here lasts only a moment; the settings page keeps it.
             if (exchange.outcome == _Outcome.applied) ...[
               const SizedBox(height: 8),
               Text(l10n.changeBackInSettings),
@@ -494,21 +624,60 @@ class _UserBubble extends StatelessWidget {
 class _AssistantBubble extends StatelessWidget {
   final Widget child;
 
-  const _AssistantBubble({required this.child});
+  /// Which assistant answered, shown as a small label under the bubble.
+  final AssistSource? source;
+
+  const _AssistantBubble({required this.child, this.source});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = PersonalizationL10n.of(context);
+    final source = this.source;
+    final labelStyle = theme.textTheme.labelSmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return Align(
       alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(right: 24, bottom: 16),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(AppConfig.borderRadius),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 24, bottom: 16),
+        child: Column(
+          crossAxisAlignment: .start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(AppConfig.borderRadius),
+              ),
+              child: child,
+            ),
+            if (source != null)
+              Padding(
+                key: Key('assist_source_${source.kind.name}'),
+                padding: const EdgeInsets.only(left: 8, top: 4),
+                child: Row(
+                  mainAxisSize: .min,
+                  children: [
+                    Icon(
+                      source.kind == AssistBackendKind.remote
+                          ? Icons.cloud_outlined
+                          : Icons.phone_android_outlined,
+                      size: 12,
+                      color: labelStyle?.color,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      source.kind == AssistBackendKind.remote
+                          ? l10n.answeredOnline
+                          : l10n.answeredOnDevice,
+                      style: labelStyle,
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
-        child: child,
       ),
     );
   }
