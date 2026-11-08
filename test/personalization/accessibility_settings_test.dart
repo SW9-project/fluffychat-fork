@@ -171,14 +171,36 @@ void main() {
       expect(controller.canUndo, isFalse);
     });
 
-    test('undo only covers the last change', () async {
-      final controller = AccessibilityController(await _store());
+    test('undo walks back through every change, newest first', () async {
+      final store = await _store();
+      final controller = AccessibilityController(store);
       await controller.apply(ScaleCategory.button, 1.5);
       await controller.apply(ScaleCategory.avatar, 1.8);
+      await controller.reset();
+
+      await controller.undo();
+      expect(controller.settings.avatarScale, 1.8);
+      expect(controller.settings.buttonScale, 1.5);
       await controller.undo();
       expect(controller.settings.avatarScale, 1.0);
       expect(controller.settings.buttonScale, 1.5);
+      await controller.undo();
+      expect(controller.settings, AccessibilitySettings.defaults);
+      expect(store.getDouble(ScaleCategory.button.storageKey), 1.0);
       expect(controller.canUndo, isFalse);
+    });
+
+    test('keeps at most maxUndo changes', () async {
+      final controller = AccessibilityController(await _store());
+      for (var i = 0; i < AccessibilityController.maxUndo + 5; i++) {
+        await controller.apply(ScaleCategory.text, i.isEven ? 1.5 : 1.2);
+      }
+      var undos = 0;
+      while (controller.canUndo) {
+        await controller.undo();
+        undos++;
+      }
+      expect(undos, AccessibilityController.maxUndo);
     });
 
     test('a slider drag is one undo step and saves only at the end', () async {

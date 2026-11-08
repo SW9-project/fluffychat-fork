@@ -29,14 +29,18 @@ class SettingsCommit {
 }
 
 /// Holds the current [AccessibilitySettings], stores them locally and keeps
-/// the last change in memory so it can be undone.
+/// the last [maxUndo] changes in memory, so every change made in this session
+/// can be undone one by one, whether it came from a slider, Reset or an
+/// Assist proposal.
 ///
 /// Settings are only ever written to SharedPreferences on this device, never
 /// to Matrix account data.
 class AccessibilityController extends ChangeNotifier {
   final SharedPreferences _store;
   AccessibilitySettings _settings;
-  AccessibilitySettings? _undo;
+
+  /// Earlier settings, oldest first.
+  final List<AccessibilitySettings> _history = [];
   AccessibilitySettings? _editStart;
   final StreamController<SettingsCommit> _commits =
       StreamController.broadcast();
@@ -47,9 +51,11 @@ class AccessibilityController extends ChangeNotifier {
     if (!AccessibilitySettings.isStored(_store)) _settings.save(_store);
   }
 
+  static const maxUndo = 20;
+
   AccessibilitySettings get settings => _settings;
 
-  bool get canUndo => _undo != null;
+  bool get canUndo => _history.isNotEmpty;
 
   /// Every kept change, for the study log. A slider drag is one change; the
   /// previews while it runs are not.
@@ -87,11 +93,11 @@ class AccessibilityController extends ChangeNotifier {
     AccessibilitySettings.defaults,
   );
 
+  /// Reverts the most recent change that is not undone yet.
   Future<void> undo() async {
-    final previous = _undo;
-    if (previous == null) return;
+    if (_history.isEmpty) return;
+    final previous = _history.removeLast();
     final undone = _settings;
-    _undo = null;
     _settings = previous;
     notifyListeners();
     _commits.add(SettingsCommit(SettingsChangeKind.undo, undone, previous));
@@ -104,7 +110,8 @@ class AccessibilityController extends ChangeNotifier {
     AccessibilitySettings next,
   ) async {
     if (previous == next) return;
-    _undo = previous;
+    _history.add(previous);
+    if (_history.length > maxUndo) _history.removeAt(0);
     _settings = next;
     notifyListeners();
     _commits.add(SettingsCommit(kind, previous, next));

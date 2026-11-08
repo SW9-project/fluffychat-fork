@@ -265,10 +265,10 @@ void main() {
     addTearDown(tester.view.reset);
     await pump(tester, picksButtons());
     await ask(tester, 'the buttons are hard to hit');
-    expect(find.textContaining('change it back'), findsNothing);
+    expect(find.textContaining('undo it later'), findsNothing);
     await tester.tap(find.byKey(const Key('assist_apply')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('change it back'), findsOneWidget);
+    expect(find.textContaining('undo it later'), findsOneWidget);
     await tester.tap(find.byKey(const Key('assist_open_settings')));
     expect(settingsOpened, 1);
     // Ends the undo period, so no timer outlives the test.

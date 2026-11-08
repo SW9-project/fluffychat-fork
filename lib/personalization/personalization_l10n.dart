@@ -273,7 +273,7 @@ class PersonalizationL10n {
     studyDeleteAction: 'Delete',
     studyCleared: 'The log was cleared.',
     changeBackInSettings:
-        'You can also change it back in the Accessibility settings.',
+        'You can also undo it later with Undo in the Accessibility settings.',
     studyLatest: 'Latest events',
     studyNoEvents: 'Nothing recorded yet.',
     categoryTitles: {
@@ -393,7 +393,8 @@ class PersonalizationL10n {
     studyDeleteAction: 'Slet',
     studyCleared: 'Loggen blev ryddet.',
     changeBackInSettings:
-        'Du kan også ændre det tilbage i tilgængelighedsindstillingerne.',
+        'Du kan også fortryde det senere med Fortryd i '
+        'tilgængelighedsindstillingerne.',
     studyLatest: 'Seneste hændelser',
     studyNoEvents: 'Intet optaget endnu.',
     categoryTitles: {
