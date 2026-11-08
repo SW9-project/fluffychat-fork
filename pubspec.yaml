@@ -118,6 +118,7 @@ flutter:
     - assets/logo/mini/
     - assets/sounds/
     - assets/models/
+    - assets/assist/
     - assets/vodozemac/0.8.1/
 
 hooks:
