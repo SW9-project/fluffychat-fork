@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 SW9-project contributors
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Runs next to Synapse. The proxy publishes no port: the reverse proxy that
+# already fronts Synapse reaches it over Synapse's Docker network, and the
+# proxy reaches Synapse's openid/userinfo endpoint over the same network.
+# See README.md, "Home server setup".
+
+services:
+  llm-proxy:
+    build: .
+    image: sw9-llm-proxy:latest
+    container_name: llm-proxy
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "8080"
+    expose:
+      - "8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - synapse
+
+networks:
+  synapse:
+    external: true
+    name: ${SYNAPSE_NETWORK:-synapse}
