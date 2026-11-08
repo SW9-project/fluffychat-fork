@@ -72,3 +72,11 @@ path = [
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026-Present Christian Kußowski"
 SPDX-License-Identifier = "LicenseRef-All-Rights-Reserved"
+# LLM proxy for the Assist widget (configs, lockfile, docs)
+[[annotations]]
+path = [
+    "llm-proxy/**"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 SW9-project contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

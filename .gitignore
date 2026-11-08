@@ -330,3 +330,14 @@ assets/models/*.litertlm
 assets/models/*.part
 assets/models/baseline/*.litertlm
 assets/models/baseline/*.part
+
+# Secrets: API keys live only in the proxy's environment, see llm-proxy/README.md
+.env
+**/.env
+!**/.env.example
+
+# LLM proxy build output and evaluation results
+llm-proxy/node_modules/
+llm-proxy/dist/
+llm-proxy/coverage/
+llm-proxy/eval/results/
