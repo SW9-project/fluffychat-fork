@@ -83,12 +83,7 @@ enum AppSettings<T> {
   knownErrorHashes<List<String>>('chat.fluffy.known_crash_hashes', []),
   checkForUpdates<bool>('chat.fluffy.check_for_updates', true),
   lastUpdateCheckDate<String>('chat.fluffy.last_update_check_date', ''),
-  fallbackLiveKitInstance<String>('chat.fluffy.fallback_live_kit_instance', ''),
-
-  /// SW9 fork: URL of the Assist LLM proxy (llm-proxy/README.md). Set it in
-  /// config.json or MDM as `assistProxyUrl`, or at build time with
-  /// a --dart-define (see RemoteAssistBackend). Empty: on-device only.
-  assistProxyUrl<String>('chat.fluffy.assist_proxy_url', '');
+  fallbackLiveKitInstance<String>('chat.fluffy.fallback_live_kit_instance', '');
 
   final String key;
   final T _defaultValue;

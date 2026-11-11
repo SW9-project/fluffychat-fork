@@ -74,7 +74,7 @@ class AssistUnavailable extends AssistResult {
 
 /// Which assistant answered, shown subtly under the answer and logged.
 enum AssistBackendKind {
-  /// The online model, through our proxy.
+  /// The online model (Groq for now; see `groq_assist_backend.dart`).
   remote,
 
   /// The on-device model.
@@ -84,7 +84,7 @@ enum AssistBackendKind {
 class AssistSource {
   final AssistBackendKind kind;
 
-  /// The proxy's provider and model, for [AssistBackendKind.remote].
+  /// The online provider and model, for [AssistBackendKind.remote].
   final String? provider;
   final String? model;
 

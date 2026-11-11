@@ -147,19 +147,23 @@ void main() {
     StudyLog.instance = null;
   });
 
-  Future<void> pumpBackend(WidgetTester tester, AssistBackend? backend) =>
-      tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AssistView(
-              backend: backend,
-              manager: manager,
-              accessibility: accessibility,
-              onOpenAccessibilitySettings: () => settingsOpened++,
-            ),
-          ),
+  Future<void> pumpBackend(
+    WidgetTester tester,
+    AssistBackend? backend, {
+    String? devWarning,
+  }) => tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: AssistView(
+          backend: backend,
+          manager: manager,
+          accessibility: accessibility,
+          devWarning: devWarning,
+          onOpenAccessibilitySettings: () => settingsOpened++,
         ),
-      );
+      ),
+    ),
+  );
 
   /// The on-device model alone, as before the online assistant.
   Future<void> pump(WidgetTester tester, FakeModel? model) => pumpBackend(
@@ -179,6 +183,27 @@ void main() {
     ModelState.ready,
     answer: (_) => const ProposedCall('heuristic_near_miss_buttons', {}),
   );
+
+  testWidgets('a debug build shows why the online assistant is off', (
+    tester,
+  ) async {
+    await pumpBackend(
+      tester,
+      HybridAssistBackend(
+        local: LocalGemmaBackend(
+          picksButtons(),
+          heuristics: () => manager.config.heuristics,
+        ),
+      ),
+      devWarning: 'GROQ_MODEL not set.',
+    );
+    expect(find.byKey(const Key('assist_dev_warning')), findsOneWidget);
+    expect(find.text('Developer: GROQ_MODEL not set.'), findsOneWidget);
+    expect(find.byKey(const Key('assist_input')), findsOneWidget);
+
+    await pumpBackend(tester, null);
+    expect(find.byKey(const Key('assist_dev_warning')), findsNothing);
+  });
 
   testWidgets('unavailable: explains and links to manual settings', (
     tester,

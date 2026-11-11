@@ -26,11 +26,11 @@ import 'change_preview.dart';
 /// Nothing changes until the user taps Apply, and Undo is offered
 /// afterwards.
 ///
-/// The assistant is an [AssistBackend]: the online model through our proxy,
-/// with the on-device model as fallback. Each request carries only the
-/// prompt, at most the one exchange before it when that ended in a question,
-/// and the accessibility settings ([AssistRequest]). Chats and messages are
-/// never sent. Every answer is checked by our own code before it is shown.
+/// The assistant is an [AssistBackend]: the online model, with the
+/// on-device model as fallback. Each request carries only the prompt, at most
+/// the one exchange before it when that ended in a question, and the
+/// accessibility settings ([AssistRequest]). Chats and messages are never
+/// sent. Every answer is checked by our own code before it is shown.
 ///
 /// The study log (Phase 5) records each prompt and the answer, with timing
 /// and which assistant answered, when the researcher turned logging on.
@@ -41,11 +41,16 @@ class AssistView extends StatefulWidget {
   final AccessibilityController accessibility;
   final VoidCallback onOpenAccessibilitySettings;
 
+  /// Why the online assistant is off in this build. Shown above the tab in
+  /// debug builds only; release builds never show it.
+  final String? devWarning;
+
   const AssistView({
     required this.backend,
     required this.manager,
     required this.accessibility,
     required this.onOpenAccessibilitySettings,
+    this.devWarning,
     super.key,
   });
 
@@ -248,6 +253,18 @@ class _AssistViewState extends State<AssistView> {
 
   @override
   Widget build(BuildContext context) {
+    final body = _body(context);
+    final warning = widget.devWarning;
+    if (!kDebugMode || warning == null) return body;
+    return Column(
+      children: [
+        _DevWarning(text: warning),
+        Expanded(child: body),
+      ],
+    );
+  }
+
+  Widget _body(BuildContext context) {
     final backend = widget.backend;
     if (backend == null) return _statusPanel(context, null);
     return ValueListenableBuilder<ModelStatus>(
@@ -600,6 +617,44 @@ class _AssistViewState extends State<AssistView> {
           ],
         );
     }
+  }
+}
+
+/// A developer-only note, in English, about how this build is set up.
+class _DevWarning extends StatelessWidget {
+  final String text;
+
+  const _DevWarning({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      key: const Key('assist_dev_warning'),
+      color: theme.colorScheme.tertiaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          crossAxisAlignment: .start,
+          children: [
+            Icon(
+              Icons.developer_mode_outlined,
+              size: 16,
+              color: theme.colorScheme.onTertiaryContainer,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Developer: $text',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onTertiaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
