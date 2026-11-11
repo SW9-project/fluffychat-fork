@@ -16,6 +16,7 @@ import 'assist_backend.dart';
 import 'assist_prompt.dart';
 import 'assist_result.dart';
 import 'assist_validator.dart';
+import 'prompt_redactor.dart';
 
 /// A Matrix OpenID token for the proxy, cached until shortly before it
 /// expires. The token only proves who the user is; it cannot read or send
@@ -231,22 +232,9 @@ class RemoteAssistBackend extends AssistBackend {
     'tool_choice': 'auto',
   };
 
-  static final _matrixId = RegExp(
-    r'[@#!+$][A-Za-z0-9._=/+\-]+:[A-Za-z0-9.\-]*[A-Za-z0-9](?::\d+)?',
-  );
-  static final _link = RegExp(
-    r'\b(?:https?://|mxc://|matrix:|www\.)\S*[^\s.,;:!?)\]]',
-    caseSensitive: false,
-  );
-  static final _email = RegExp(r'\b[\w.+\-]+@[\w\-]+\.[\w.\-]+\b');
-
   /// Removes Matrix user, room and event IDs, aliases, links and e-mail
-  /// addresses, which could point to a person or a room. Names typed as
-  /// plain words cannot be told apart from other words and are kept.
-  static String redact(String text) => text
-      .replaceAll(_link, '[link]')
-      .replaceAll(_email, '[email]')
-      .replaceAll(_matrixId, '[id]');
+  /// addresses, which could point to a person or a room.
+  static String redact(String text) => const PromptRedactor().redact(text);
 
   static const replyMaxLength = 400;
 
