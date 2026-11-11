@@ -68,16 +68,21 @@ abstract class AssistBackend {
 class AssistBackendUnavailable implements Exception {
   final String reason;
 
-  /// The network or the proxy could not be reached at all.
+  /// The network or the service could not be reached at all, or did not
+  /// answer in time.
   final bool network;
 
-  /// This user hit the proxy's per-user rate limit.
+  /// The service's rate limit was hit (HTTP 429).
   final bool rateLimited;
+
+  /// How long the service asked us to wait, from its `retry-after` header.
+  final Duration? retryAfter;
 
   const AssistBackendUnavailable(
     this.reason, {
     this.network = false,
     this.rateLimited = false,
+    this.retryAfter,
   });
 
   @override

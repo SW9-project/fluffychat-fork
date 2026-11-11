@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:matrix/matrix.dart';
 
@@ -141,10 +142,10 @@ abstract final class AssistPromptBuilder {
     return AssistPrompt(system: system, tools: tools);
   }
 
-  /// Logs a warning when the request is likely over [tokenBudget]. The
-  /// warning carries only sizes, never the text.
+  /// Logs a warning in debug builds when the request is likely over
+  /// [tokenBudget]. The warning carries only sizes, never the text.
   static int checkBudget(int estimatedTokens) {
-    if (estimatedTokens > tokenBudget) {
+    if (kDebugMode && estimatedTokens > tokenBudget) {
       Logs().w(
         'Assist request is about $estimatedTokens tokens, over the budget of '
         '$tokenBudget. Shorten assets/assist/heuristics.md or offer fewer tools.',
