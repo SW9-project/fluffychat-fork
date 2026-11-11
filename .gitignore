@@ -340,8 +340,9 @@ assets/models/baseline/*.part
 env.json
 **/env.json
 
-# LLM proxy build output and evaluation results
+# LLM proxy build output
 llm-proxy/node_modules/
 llm-proxy/dist/
 llm-proxy/coverage/
+# Results of the removed TypeScript evaluation; the Dart one writes to build/
 llm-proxy/eval/results/

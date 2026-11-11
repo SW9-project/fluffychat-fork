@@ -2,6 +2,8 @@
 
 The proxy sits between the app's Assist widget and free-tier LLM APIs.
 
+> **Not used by the app right now (Nov 11, 2026).** For development and the research study the app calls Groq directly with a key from `env.json` (see the main README, "AI Assist (development only)"). That key is extractable from the app, so before any public release the app must go back to a proxy like this one. The app's proxy backend was removed in commit `a43ff0ce2` (see it with `git show a43ff0ce2^:lib/personalization/assist/remote_assist_backend.dart`). A new one only needs to build its request with `AssistChatFormat` in `lib/personalization/assist/assist_chat_format.dart`.
+
 The proxy holds the provider API keys, so the app and the repository hold none. Only signed-in users of our homeserver can use it. It moves to the next provider when one fails. It also limits how often each user can call it, so one person cannot use up the shared free tier.
 
 ```
@@ -149,7 +151,7 @@ docker compose logs -f llm-proxy
 
 ### 5. Point the app at it
 
-Build the app with the proxy URL. The URL is not a secret.
+The app cannot use the proxy at the moment (see the note at the top). The removed proxy backend read the URL like this; the URL is not a secret.
 
 ```bash
 flutter build apk --dart-define=ASSIST_PROXY_URL=https://matrix.example.org/_assist/v1/assist
@@ -177,7 +179,7 @@ Models are set in `config/providers.json`, not in code. On Nov 8, 2026, Groq lis
 - `openai/gpt-oss-120b`. Bigger, with the same free-tier limits.
 - `llama-3.3-70b-versatile`. Supports parallel tool calls; if you use it, set `"parallelToolCalls": false` so it proposes one change at a time.
 
-Check <https://console.groq.com/docs/tool-use> and <https://console.groq.com/docs/deprecations> before changing models. Then run the evaluation script (below) to compare them.
+Check <https://console.groq.com/docs/tool-use> and <https://console.groq.com/docs/deprecations> before changing models. Then compare them with the app's evaluation script, `flutter test tool/assist_eval.dart` (see the main README).
 
 ### Adding another provider
 
@@ -249,4 +251,4 @@ To run the proxy locally without Docker, set the variables from `.env.example` a
 
 ## Evaluation script
 
-See `eval/README.md`.
+The evaluation moved to the app: `tool/assist_eval.dart` sends generated requests to Groq through the app's own `GroqAssistBackend`. See the main README, "AI Assist (development only)".

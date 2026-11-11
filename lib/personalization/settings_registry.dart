@@ -29,10 +29,13 @@ import 'accessibility_settings.dart';
 /// 4. Add the setting's title to `categoryTitles` in
 ///    `personalization_l10n.dart` (English and Danish) and a sample to
 ///    `assist/change_preview.dart`.
-/// 5. Refresh the evaluation fixture in `llm-proxy/eval/fixtures/` with
-///    `UPDATE_ASSIST_FIXTURE=1 flutter test test/personalization/assist_eval_fixture_test.dart`,
-///    then run `flutter test test/personalization` (a test fails while the
-///    fixture is stale).
+/// 5. Add a few English and Danish requests for it to `cases` in
+///    `tool/assist_eval.dart` (with the new id in `expect`), run
+///    `flutter test test/personalization`, and with a Groq key in `env.json`
+///    run `flutter test tool/assist_eval.dart` to see whether the model picks
+///    the new setting. The tool schema, the validator and the settings sent
+///    to the model all follow from this entry, so nothing else needs to
+///    change for the online model.
 ///
 /// Only number settings exist so far. A yes/no or choice setting needs a new
 /// subclass of [SettingDefinition] with its own value schema, a case in the

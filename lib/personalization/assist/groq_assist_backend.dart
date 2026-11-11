@@ -48,7 +48,8 @@ class GroqConfig {
   static ({GroqConfig? config, String? missing}) fromEnvironment() =>
       resolve(key: _key, model: _model, reasoningEffort: _reasoningEffort);
 
-  @visibleForTesting
+  /// Checks [key] and [model] as [fromEnvironment] does; the evaluation
+  /// script uses it with the values from env.json.
   static ({GroqConfig? config, String? missing}) resolve({
     required String key,
     required String model,
