@@ -516,6 +516,26 @@ void main() {
       );
       expect(GroqConfig.resolve(key: '', model: '').config, isNull);
     });
+
+    test('env.example.json has the placeholder key and a model', () {
+      final example =
+          jsonDecode(File('env.example.json').readAsStringSync()) as Map;
+      expect(
+        example.keys,
+        unorderedEquals([
+          'GROQ_API_KEY',
+          'GROQ_MODEL',
+          'GROQ_REASONING_EFFORT',
+        ]),
+      );
+      expect(example['GROQ_API_KEY'], GroqConfig.placeholderKey);
+      final r = GroqConfig.resolve(
+        key: example['GROQ_API_KEY'],
+        model: example['GROQ_MODEL'],
+      );
+      expect(r.config, isNull);
+      expect(r.missing, startsWith('GROQ_API_KEY not set'));
+    });
   });
 
   group('headers', () {

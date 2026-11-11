@@ -335,6 +335,10 @@ assets/models/baseline/*.part
 .env
 **/.env
 !**/.env.example
+# Dev-only Groq key for the Assist tab, see README.md "AI Assist (development
+# only)". Commit env.example.json, never env.json.
+env.json
+**/env.json
 
 # LLM proxy build output and evaluation results
 llm-proxy/node_modules/
