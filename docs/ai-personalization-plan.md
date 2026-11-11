@@ -8,7 +8,7 @@ Draft for review. Nothing here is approved until Simon signs off; Claude Code (C
 
 Decisions already made:
 
-- **All inference runs on the client.** No message content or interaction data leaves the device for AI purposes. This keeps Matrix end-to-end encryption (E2EE) intact. *Changed for the Assist tab by Phase 6 (Nov 8, 2026): it may ask an online model through our proxy.*
+- **All inference runs on the client.** No message content or interaction data leaves the device for AI purposes. This keeps Matrix end-to-end encryption (E2EE) intact. *Changed for the Assist tab by Phase 6 (Nov 8, 2026): it may ask an online model through our proxy. Phase 6b (Nov 11, 2026): for development and the study it asks Groq directly.*
 - **Heuristics first, model second.** Expert heuristics from the literature review decide *when* to suggest a change and *what* the change is. The model does only light, real-time language work.
 - **Premade descriptions per heuristic.** The model does not generate explanation text in this version.
 - **First feature: user-resizable UI elements**, as the literature review identified.
@@ -26,7 +26,7 @@ The heuristics and the model both feed the same suggestion card, so the user con
 
 These apply to every phase. CC must treat them as rules, not suggestions.
 
-1. **No data leaves the device for AI.** No network calls for inference, no remote analytics, no crash reporters that capture message text. Interaction signals stay local. *Phase 6 exception: the Assist tab sends the typed prompt and the size settings to our proxy; see Phase 6 for exactly what is sent.*
+1. **No data leaves the device for AI.** No network calls for inference, no remote analytics, no crash reporters that capture message text. Interaction signals stay local. *Phase 6 exception: the Assist tab sends the typed prompt and the size settings to our proxy; see Phase 6 for exactly what is sent. Phase 6b: in development and study builds it sends them straight to Groq.*
 2. **Accessibility settings stay local in phase 1.** Matrix account data is not end-to-end encrypted, so syncing settings there would let the server see them. Settings can reveal disabilities, which is sensitive. Server sync is a later, separate decision.
 3. **Message metadata lives inside the encrypted message content**, under our own namespace. Never in relations or room state, which stay in plaintext.
 4. **The model never applies a change directly.** Every model output is parsed, checked against an allowlist of functions and value ranges, and shown to the user for confirmation.
@@ -252,6 +252,28 @@ Its prompt and tools come from a fixture that a test keeps equal to the app's.
 - There is no study condition that forces the on-device model, for comparing the two.
 - The Synapse and reverse-proxy setup on the home server is not done (see `llm-proxy/README.md`).
 
+## Phase 6b: Groq called directly from the app (development and study only)
+
+Nov 11, 2026 · requested on the `feat/ai-personalization` branch; a temporary setup, not a release design
+
+**Goal:** use the online model in development and in the study without running the proxy. The app calls Groq with a key that is compiled in from `env.json` (`--dart-define-from-file=env.json`). The team accepts that the key can be extracted from any build made with it.
+
+**What changes from Phase 6.** Phase 6b wins over the following, for now:
+
+- **"API keys exist only in the proxy's environment."** No longer true for development and study builds. The key is in the app. `env.json` is git-ignored and `env.example.json` holds a placeholder.
+- **The proxy path in the app is removed.** `RemoteAssistBackend`, the OpenID token source and the `assistProxyUrl` setting are gone (commit `a43ff0ce2`). The `llm-proxy/` server code stays.
+  - The shared request and answer format now lives in `AssistChatFormat`. A proxy backend can come back as one class next to `GroqAssistBackend`.
+  - **Before any public release** the app must go back to a proxy. `GroqAssistBackend` carries a `TODO(dev-only)` saying so, and so does the README.
+- **What leaves the phone** is the same as in Phase 6, with one stricter rule and one new exposure:
+  - **Stricter:** the names of the user's rooms, of DM partners and room heroes as far as they are in memory, and the user's own display name are now removed from the prompt as `[name]`, as well as Matrix IDs, links and e-mail addresses (`PromptRedactor`). It works on whole words. Screen words and common words inside a name are kept, so a contact called "Mor" still turns "mor" into `[name]`.
+  - **New:** Groq now sees each phone's IP address, which the proxy used to hide.
+  - Enforcement: `AssistRequest` still has no field for anything else, and `AssistChatFormat.body` is now the only code that builds the request. A test fails if anything outside the Assist tab creates a backend, or if anything but `groq_assist_backend.dart` reads `GROQ_API_KEY` or knows Groq's address.
+- **Rate limits.** The free tier's limits are now shared by every study phone on the same key: about 30 requests and 8,000 tokens per minute, and 1,000 requests and 200,000 tokens per day for `openai/gpt-oss-20b`. On HTTP 429 the tab first asks the user to wait a moment. Until Groq's `retry-after` is over, the app does not ask Groq again. The on-device model answers in that time if it is set up. Another 429, or a wait over a minute (the daily quota), goes to the on-device model.
+- **Malformed tool calls** (Groq's `tool_use_failed`, a call the validator cannot use, or an answer cut off without a call) are asked once more with a fixed hint. After that the user is asked to say it another way.
+- **Evaluation** moved from `llm-proxy/eval/` (TypeScript) to `tool/assist_eval.dart`. It sends 33 generated requests through the app's own `GroqAssistBackend` and paces itself by tokens per minute. Run it with `flutter test tool/assist_eval.dart`.
+
+**Not done here:** no real Groq call or evaluation run has been made. Both need a key, which is set up by hand (see the README, "AI Assist (development only)").
+
 ## Open questions
 
 These need answers from Simon or the team. CC must not decide them.
@@ -268,6 +290,9 @@ These need answers from Simon or the team. CC must not decide them.
 - [ ] Mistral as a second provider: its free tier requires opting in to training on requests. Allowed once consent covers it?
 - [ ] Should the study compare the online and the on-device model? That needs a third study condition that forces the on-device model.
 - [ ] Which heuristics replace the placeholders in `assets/assist/heuristics.md`, and should `tools/export_app.py` in the heuristics catalog generate that file too, so the two heuristic files cannot drift?
+- [ ] Ethics and consent for Phase 6b: study phones now send Assist prompts and the size settings straight to Groq, so Groq also sees each phone's IP address. Does the consent cover this?
+- [ ] One shared key for all study phones, or one key per phone (more quota, but more keys to protect)? The shared free tier allows about four Assist requests per minute across all phones.
+- [ ] When does the app go back to the proxy: before the study, or only before a public release?
 
 ## Claude Code handoff
 
