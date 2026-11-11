@@ -506,12 +506,17 @@ class _AssistViewState extends State<AssistView> {
           AssistUnavailableReason.rateLimited => l10n.assistRateLimited,
         }, key: const Key('assist_unavailable'));
       case AssistNoSuggestion(:final reason):
-        return withSettingsLink(
-          reason == RejectionReason.noChange
-              ? l10n.assistNoChange
-              : l10n.noSuggestion,
-          key: const Key('assist_no_suggestion'),
-        );
+        // The online model was already asked twice when its tool call was
+        // unusable, so the user is asked to put it differently.
+        final online = exchange.source?.kind == AssistBackendKind.remote;
+        return withSettingsLink(switch (reason) {
+          RejectionReason.noChange => l10n.assistNoChange,
+          RejectionReason.invalidArguments ||
+          RejectionReason.unknownFunction ||
+          RejectionReason.unknownHeuristic when online =>
+            l10n.assistTryRephrase,
+          _ => l10n.noSuggestion,
+        }, key: const Key('assist_no_suggestion'));
       case AssistAtLimit(:final category):
         return withSettingsLink(
           l10n.alreadyAtLimit(l10n.categoryTitles[category]!),

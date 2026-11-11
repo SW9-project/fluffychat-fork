@@ -84,6 +84,7 @@ class PersonalizationL10n {
   final String changeBackInSettings;
   final String assistOnlineUnavailable;
   final String assistRateLimited;
+  final String assistTryRephrase;
   final String assistNoChange;
   final String assistClamped;
   final String assistGenericReason;
@@ -172,6 +173,7 @@ class PersonalizationL10n {
     required this.changeBackInSettings,
     required this.assistOnlineUnavailable,
     required this.assistRateLimited,
+    required this.assistTryRephrase,
     required this.assistNoChange,
     required this.assistClamped,
     required this.assistGenericReason,
@@ -296,7 +298,10 @@ class PersonalizationL10n {
         'You can also undo it later with Undo in the Accessibility settings.',
     assistOnlineUnavailable: "The online assistant can't be reached right now.",
     assistRateLimited:
-        'You have asked a lot in a short time. Wait a minute and try again.',
+        'Many people are asking right now. Please wait a moment and try '
+        'again.',
+    assistTryRephrase:
+        "I didn't quite understand that. Could you say it another way?",
     assistNoChange: 'It already has that size.',
     assistClamped: 'That is as far as it can go.',
     assistGenericReason: 'This change may help.',
@@ -427,8 +432,9 @@ class PersonalizationL10n {
         'Du kan også fortryde det senere med Fortryd i '
         'tilgængelighedsindstillingerne.',
     assistOnlineUnavailable: 'Den online assistent kan ikke nås lige nu.',
-    assistRateLimited:
-        'Du har spurgt om meget på kort tid. Vent et minut, og prøv igen.',
+    assistRateLimited: 'Mange spørger lige nu. Vent et øjeblik, og prøv igen.',
+    assistTryRephrase:
+        'Det forstod jeg ikke helt. Kan du sige det på en anden måde?',
     assistNoChange: 'Den har allerede den størrelse.',
     assistClamped: 'Længere kan det ikke komme.',
     assistGenericReason: 'Denne ændring kan måske hjælpe.',

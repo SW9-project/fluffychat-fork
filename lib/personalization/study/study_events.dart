@@ -185,7 +185,10 @@ class AssistAnswered extends StudyEvent {
         'reason': failed ? 'error' : reason.name,
       },
       AssistMessage(:final text) => {'reply': text},
-      AssistUnavailable(:final reason) => {'reason': reason.name},
+      AssistUnavailable(:final reason, :final retryAfter) => {
+        'reason': reason.name,
+        'retry_after_s': ?retryAfter?.inSeconds,
+      },
     },
     ...?timing?.toJson(),
     ...?source?.toJson(),

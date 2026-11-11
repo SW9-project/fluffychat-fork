@@ -75,12 +75,102 @@ void main() {
     expect(outcome.source.fallbackReason, 'fallback');
   });
 
-  test('falls back when rate limited', () async {
-    remote.failWith = const AssistBackendUnavailable(
-      'rate_limited',
-      rateLimited: true,
-    );
-    expect(text(await hybrid.ask(request)), 'from local');
+  group('rate limits', () {
+    AssistBackendUnavailable limited([Duration? retryAfter]) =>
+        AssistBackendUnavailable(
+          'rate_limited',
+          rateLimited: true,
+          retryAfter: retryAfter,
+        );
+
+    Matcher waitFor(Duration? retryAfter) => isA<AssistUnavailable>()
+        .having((r) => r.reason, 'reason', AssistUnavailableReason.rateLimited)
+        .having((r) => r.retryAfter, 'retryAfter', retryAfter);
+
+    test('the first 429 asks to wait, even with the fallback ready', () async {
+      remote.failWith = limited(const Duration(seconds: 7));
+      final outcome = await hybrid.ask(request);
+      expect(outcome.result, waitFor(const Duration(seconds: 7)));
+      expect(outcome.source.kind, AssistBackendKind.remote);
+      expect(outcome.source.fallbackReason, 'rate_limited');
+      expect(local.asks, 0);
+      expect(remote.asks, 1);
+    });
+
+    test('during the wait the on-device model answers', () async {
+      remote.failWith = limited(const Duration(seconds: 7));
+      await hybrid.ask(request);
+      now = now.add(const Duration(seconds: 3));
+      final outcome = await hybrid.ask(request);
+      expect(text(outcome), 'from local');
+      expect(outcome.source.fallbackReason, 'rate_limited');
+      expect(remote.asks, 1);
+    });
+
+    test('during the wait without a fallback it asks to wait again', () async {
+      local.state = ModelState.notPrepared;
+      remote.failWith = limited(const Duration(seconds: 7));
+      await hybrid.ask(request);
+      now = now.add(const Duration(seconds: 3));
+      expect(
+        (await hybrid.ask(request)).result,
+        waitFor(const Duration(seconds: 4)),
+      );
+      expect(remote.asks, 1);
+    });
+
+    test('another 429 after the wait goes to the on-device model', () async {
+      remote.failWith = limited(const Duration(seconds: 7));
+      await hybrid.ask(request);
+      now = now.add(const Duration(seconds: 8));
+      final outcome = await hybrid.ask(request);
+      expect(remote.asks, 2);
+      expect(text(outcome), 'from local');
+    });
+
+    test('a long wait (the daily quota) goes to the on-device model', () async {
+      remote.failWith = limited(const Duration(hours: 3));
+      expect(text(await hybrid.ask(request)), 'from local');
+      now = now.add(const Duration(hours: 1));
+      expect(text(await hybrid.ask(request)), 'from local');
+      expect(remote.asks, 1);
+    });
+
+    test('without retry-after it waits the default', () async {
+      local.state = ModelState.notPrepared;
+      remote.failWith = limited();
+      expect(
+        (await hybrid.ask(request)).result,
+        waitFor(HybridAssistBackend.defaultRateLimitWait),
+      );
+      now = now.add(HybridAssistBackend.defaultRateLimitWait);
+      remote.failWith = null;
+      expect(text(await hybrid.ask(request)), 'from remote');
+    });
+
+    test('an answer in between makes the next 429 a first one', () async {
+      remote.failWith = limited(const Duration(seconds: 5));
+      await hybrid.ask(request);
+      now = now.add(const Duration(seconds: 6));
+      remote.failWith = null;
+      await hybrid.ask(request);
+      remote.failWith = limited(const Duration(seconds: 5));
+      expect(
+        (await hybrid.ask(request)).result,
+        waitFor(const Duration(seconds: 5)),
+      );
+    });
+
+    test('a 429 long after the last one is a first one again', () async {
+      remote.failWith = limited(const Duration(seconds: 5));
+      await hybrid.ask(request);
+      now = now.add(const Duration(minutes: 6));
+      expect(
+        (await hybrid.ask(request)).result,
+        waitFor(const Duration(seconds: 5)),
+      );
+      expect(local.asks, 0);
+    });
   });
 
   test('says the assistant is unavailable when no fallback is ready', () async {

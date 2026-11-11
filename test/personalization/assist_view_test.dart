@@ -616,10 +616,10 @@ void main() {
       expect(remote.requests.last.previous, isNull);
     });
 
-    testWidgets('uses the on-device model when the proxy says to', (
+    testWidgets('uses the on-device model when the online one fails', (
       tester,
     ) async {
-      remote.failWith = const AssistBackendUnavailable('fallback');
+      remote.failWith = const AssistBackendUnavailable('server_error');
       await pumpBackend(tester, hybrid());
       await ask(tester, 'the buttons are hard to hit');
       expect(local.prompts, ['the buttons are hard to hit']);
@@ -653,15 +653,31 @@ void main() {
       expect(find.byKey(const Key('assist_offline_row')), findsNothing);
     });
 
-    testWidgets('rate limited: asks to wait', (tester) async {
-      local = FakeModel(ModelState.notPrepared);
-      remote.failWith = const AssistBackendUnavailable(
-        'rate_limited',
-        rateLimited: true,
-      );
+    for (final state in [ModelState.notPrepared, ModelState.ready]) {
+      testWidgets('rate limited: asks to wait a moment (on-device $state)', (
+        tester,
+      ) async {
+        local = FakeModel(state);
+        remote.failWith = const AssistBackendUnavailable(
+          'rate_limited',
+          rateLimited: true,
+          retryAfter: Duration(seconds: 5),
+        );
+        await pumpBackend(tester, hybrid());
+        await ask(tester, 'buttons');
+        expect(find.textContaining('wait a moment'), findsOneWidget);
+        expect(local.prompts, isEmpty);
+      });
+    }
+
+    testWidgets('an unusable online tool call asks to rephrase', (
+      tester,
+    ) async {
+      remote.answer = (_) =>
+          const AssistNoSuggestion(RejectionReason.invalidArguments);
       await pumpBackend(tester, hybrid());
       await ask(tester, 'buttons');
-      expect(find.textContaining('Wait a minute'), findsOneWidget);
+      expect(find.textContaining('say it another way'), findsOneWidget);
     });
 
     testWidgets('a value equal to the current one says so', (tester) async {

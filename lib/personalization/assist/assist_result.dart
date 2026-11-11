@@ -65,7 +65,11 @@ class AssistMessage extends AssistResult {
 class AssistUnavailable extends AssistResult {
   final AssistUnavailableReason reason;
 
-  const AssistUnavailable(this.reason);
+  /// For [AssistUnavailableReason.rateLimited]: how long until the online
+  /// assistant is asked again, if known.
+  final Duration? retryAfter;
+
+  const AssistUnavailable(this.reason, {this.retryAfter});
 }
 
 /// Which assistant answered, shown subtly under the answer and logged.
@@ -105,9 +109,10 @@ class AssistSource {
 }
 
 enum AssistUnavailableReason {
-  /// The proxy or the network is unreachable, or no provider answered.
+  /// The online assistant or the network is unreachable, or it failed.
   offline,
 
-  /// This user sent too many requests in the last minute.
+  /// The online assistant's rate limit was hit. On the free tier it is shared
+  /// by everyone using the same key, so it is not the user's fault.
   rateLimited,
 }
