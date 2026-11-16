@@ -3,6 +3,10 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import 'accessibility_scope.dart';
+import 'quick_access_conversations.dart';
+import 'simple_view_conversations.dart';
+import 'simple_view_dialog.dart';
 import 'simplified_interface.dart';
 import 'simplified_interface_l10n.dart';
 import 'simplified_interface_widgets.dart';
@@ -13,36 +17,30 @@ class SimpleSetupL10n {
     : es = Localizations.localeOf(context).languageCode == 'es';
   String tr(String en, String spanish) => es ? spanish : en;
   String get personalize => tr('Personalize', 'Personalizar');
-  String get title => tr('Your simple view', 'Tu vista sencilla');
+  String get title => tr('Simple view', 'Vista sencilla');
   String get subtitle =>
       tr('Your conversations, within reach', 'Tus conversaciones, a mano');
-  String get preview =>
-      tr('See the change first', 'Mira el cambio antes de aplicarlo');
+  String get preview => tr('Preview', 'Vista previa');
   String get next => tr('Continue', 'Continuar');
   String get back => tr('Back', 'Atrás');
-  String get apply => tr('Apply this view', 'Aplicar esta vista');
-  String get skip => tr(
-    'Do not show this preview again when I use the switch',
-    'No volver a mostrar esta vista previa al usar el interruptor',
-  );
-  String get skipHelp => tr(
-    'You can turn previews back on in Personalize. Assistant always asks before applying a suggestion.',
-    'Puedes recuperar la vista previa en Personalizar. Assistant siempre pide confirmar sus propuestas.',
-  );
-  String get contactsQuestion => tr(
-    'Which conversations would you like at the top?',
-    '¿Qué conversaciones quieres tener arriba?',
-  );
+  String get apply => tr('Apply', 'Aplicar');
+  String get skip =>
+      tr('Skip preview next time', 'No mostrar la vista previa la próxima vez');
+  String get skipHelp =>
+      tr('You can change this later.', 'Puedes cambiarlo luego.');
+  String get contactsQuestion =>
+      tr('Conversations at the top', 'Conversaciones arriba');
   String get frequent => tr('My 3 most used', 'Mis 3 más usadas');
   String get frequentHelp => tr(
-    'Based on conversations you open from Chats on this device after choosing this option. Recent conversations appear until there is enough activity. No messages are read.',
-    'Según las conversaciones que abras desde Chats en este dispositivo a partir de ahora. Al principio aparecerán las recientes. No se lee el contenido de los mensajes.',
+    'Based on chats opened here. Recent chats appear first.',
+    'Según los chats que abras aquí. Al principio, los recientes.',
   );
   String get chosen => tr('I will choose them', 'Quiero elegirlas');
-  String get chosenHelp => tr(
-    'Choose up to 3 conversations from Quick access. They stay in your chosen order.',
-    'Elige hasta 3 conversaciones desde Accesos rápidos. Se mantiene el orden que elijas.',
-  );
+  String get chosenHelp =>
+      tr('Choose up to 3 names.', 'Elige hasta 3 nombres.');
+  String get editNames => tr('Choose names', 'Elegir nombres');
+  String get emptyNames =>
+      tr('No conversations yet.', 'Aún no hay conversaciones.');
   String get none => tr('No shortcuts', 'Sin accesos rápidos');
   String get noneHelp => tr(
     'Keep one list of conversations.',
@@ -64,31 +62,20 @@ class SimpleSetupL10n {
     'Keep the familiar conversation details.',
     'Mantener la información habitual de las conversaciones.',
   );
-  String get chatQuestion =>
-      tr('How would you like the chat to look?', '¿Cómo quieres ver el chat?');
-  String get quietChat => tr('A calmer chat', 'Un chat más sencillo');
-  String get quietHelp => tr(
-    'Plain background, less secondary information and emojis grouped with attachments. Voice and sending stay available.',
-    'Fondo liso, menos información secundaria y emojis agrupados con los adjuntos. Voz y envío siguen disponibles.',
-  );
-  String get familiarChat =>
-      tr('Keep my usual chat', 'Mantener mi chat habitual');
-  String get familiarHelp => tr(
-    'Keep the background and controls you already use.',
-    'Conservar el fondo y los controles que ya utilizas.',
-  );
+  String get quietChat =>
+      tr('A clearer, more spacious chat', 'Chat claro y más espaciado');
   String get saved => tr(
-    'Your choices are remembered. You can change them in Personalize.',
-    'Tus elecciones se guardan. Puedes cambiarlas en Personalizar.',
+    'Your text and button sizes stay the same.',
+    'Se conservan tus tamaños de texto y botones.',
   );
-  String question(int number) =>
-      tr('Question $number of 3', 'Pregunta $number de 3');
+  String question(int number) => tr('Step $number of 2', 'Paso $number de 2');
 }
 
 class _ViewChoice {
   final SimpleViewPreferences preferences;
   final bool skipPreview;
-  const _ViewChoice(this.preferences, this.skipPreview);
+  final List<String> selectedIds;
+  const _ViewChoice(this.preferences, this.skipPreview, this.selectedIds);
 }
 
 /// Shared by the home switch and Assistant. Cancelling never saves answers
@@ -101,7 +88,9 @@ Future<int?> requestSimpleViewChange(
   bool target, {
   bool personalize = false,
   bool previewAlreadyShown = false,
+  SimpleViewConversations? conversations,
 }) async {
+  final source = conversations ?? SimpleViewConversations.fromContext(context);
   final needsQuestions = personalize || (target && !controller.configured);
   if (!needsQuestions && (previewAlreadyShown || controller.skipPreview)) {
     final write = controller.setEnabled(target);
@@ -110,22 +99,34 @@ Future<int?> requestSimpleViewChange(
     return revision;
   }
   final revision = controller.revision;
-  final result = await showDialog<_ViewChoice>(
+  final result = await showSimpleViewDialog<_ViewChoice>(
     context: context,
     barrierDismissible: false,
     builder: (_) => _SimpleSetupDialog(
       controller: controller,
       target: target,
       questions: needsQuestions,
+      source: source,
     ),
   );
-  if (result == null || controller.revision != revision) return null;
+  if (result == null || !context.mounted || controller.revision != revision) {
+    return null;
+  }
+  if (conversations == null &&
+      source != null &&
+      SimpleViewConversations.fromContext(context)?.account != source.account) {
+    return null;
+  }
   final Future<void> write;
   if (controller.configured || target) {
     write = controller.applyPreferences(
       result.preferences,
       enabled: target,
       skipPreview: result.skipPreview,
+      accountId: source?.account,
+      quickAccessIds: result.preferences.quickAccess == SimpleQuickAccess.chosen
+          ? result.selectedIds
+          : null,
     );
   } else {
     write = controller
@@ -141,19 +142,51 @@ class _SimpleSetupDialog extends StatefulWidget {
   final SimplifiedInterfaceController controller;
   final bool target;
   final bool questions;
+  final SimpleViewConversations? source;
   const _SimpleSetupDialog({
     required this.controller,
     required this.target,
     required this.questions,
+    this.source,
   });
   @override
   State<_SimpleSetupDialog> createState() => _SimpleSetupDialogState();
 }
 
 class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
-  late int _step = widget.questions ? 0 : 3;
+  late int _step = widget.questions ? 0 : 2;
   late SimpleViewPreferences _draft = widget.controller.preferences;
   late bool _skip = widget.controller.skipPreview;
+  late List<String> _selected = widget.controller.quickAccessFor(
+    widget.source?.account ?? '',
+  );
+
+  List<String> get _visibleIds =>
+      _draft.quickAccess == SimpleQuickAccess.frequent
+      ? widget.controller.frequentFor(
+          widget.source?.account ?? '',
+          widget.source?.conversations.map((entry) => entry.id).toList() ?? [],
+        )
+      : _draft.quickAccess == SimpleQuickAccess.chosen
+      ? _selected
+      : [];
+
+  List<String> get _names => [
+    for (final id in _visibleIds)
+      for (final entry
+          in widget.source?.conversations ?? <QuickAccessConversation>[])
+        if (entry.id == id) entry.name,
+  ];
+
+  Future<void> _chooseNames() async {
+    final result = await chooseSimpleConversations(
+      context,
+      widget.source?.conversations ?? [],
+      _selected,
+    );
+    if (result != null && mounted) setState(() => _selected = result);
+  }
+
   final _scroll = ScrollController();
   @override
   void dispose() {
@@ -165,6 +198,18 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
     setState(() => _step = step);
     if (_scroll.hasClients) _scroll.jumpTo(0);
   }
+
+  Widget _contactNames(SimpleSetupL10n text) => Padding(
+    key: const Key('setup_contact_names'),
+    padding: const EdgeInsets.only(bottom: 16),
+    child: _names.isEmpty
+        ? Text(text.emptyNames)
+        : Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [for (final name in _names) Chip(label: Text(name))],
+          ),
+  );
 
   Widget _choice(
     String id,
@@ -181,7 +226,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
         button: true,
         child: Material(
           color: selected
-              ? theme.colorScheme.primaryContainer
+              ? theme.colorScheme.primary.withAlpha(18)
               : theme.colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -197,12 +242,13 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
             onTap: onTap,
             borderRadius: BorderRadius.circular(20),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
                     selected ? Icons.check_circle : Icons.circle_outlined,
+                    size: AccessibilityScope.of(context).icon(),
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(width: 12),
@@ -233,7 +279,6 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
     final heading = switch (_step) {
       0 => text.contactsQuestion,
       1 => text.homeQuestion,
-      2 => text.chatQuestion,
       _ => text.preview,
     };
     return Dialog.fullscreen(
@@ -241,6 +286,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
         appBar: AppBar(
           automaticallyImplyLeading: false,
           title: Text(text.title),
+          toolbarHeight: MediaQuery.textScalerOf(context).scale(22) * 2 + 16,
         ),
         body: SingleChildScrollView(
           controller: _scroll,
@@ -248,13 +294,13 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_step < 3) ...[
+              if (_step < 2) ...[
                 Text(
                   text.question(_step + 1),
                   style: theme.textTheme.labelLarge,
                 ),
                 const SizedBox(height: 12),
-                LinearProgressIndicator(value: (_step + 1) / 3),
+                LinearProgressIndicator(value: (_step + 1) / 2),
                 const SizedBox(height: 24),
               ],
               Text(heading, style: theme.textTheme.headlineSmall),
@@ -271,6 +317,8 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                     ),
                   ),
                 ),
+                if (_draft.quickAccess == SimpleQuickAccess.frequent)
+                  _contactNames(text),
                 _choice(
                   'setup_chosen',
                   text.chosen,
@@ -282,6 +330,20 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                     ),
                   ),
                 ),
+                if (_draft.quickAccess == SimpleQuickAccess.chosen) ...[
+                  _contactNames(text),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: OutlinedButton.icon(
+                      key: const Key('setup_choose_names'),
+                      onPressed: widget.source?.conversations.isNotEmpty == true
+                          ? _chooseNames
+                          : null,
+                      icon: const Icon(Icons.person_add_outlined),
+                      label: Text(text.editNames),
+                    ),
+                  ),
+                ],
                 _choice(
                   'setup_none',
                   text.none,
@@ -314,25 +376,6 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                 ),
               ],
               if (_step == 2) ...[
-                _choice(
-                  'setup_quiet_chat',
-                  text.quietChat,
-                  text.quietHelp,
-                  _draft.quietChat,
-                  () =>
-                      setState(() => _draft = _draft.copyWith(quietChat: true)),
-                ),
-                _choice(
-                  'setup_familiar_chat',
-                  text.familiarChat,
-                  text.familiarHelp,
-                  !_draft.quietChat,
-                  () => setState(
-                    () => _draft = _draft.copyWith(quietChat: false),
-                  ),
-                ),
-              ],
-              if (_step == 3) ...[
                 ExpansionTile(
                   title: Text(text.tr('Current view', 'Vista actual')),
                   children: [
@@ -351,6 +394,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                 SimplifiedInterfacePreview(
                   enabled: widget.target,
                   preferences: _draft,
+                  conversationNames: _names,
                 ),
                 const SizedBox(height: 16),
                 Text(text.saved),
@@ -387,12 +431,14 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                   ),
                 FilledButton(
                   key: Key(
-                    _step == 3 ? 'simple_setup_apply' : 'simple_setup_next',
+                    _step == 2 ? 'simple_setup_apply' : 'simple_setup_next',
                   ),
-                  onPressed: () => _step < 3
+                  onPressed: () => _step < 2
                       ? _go(_step + 1)
-                      : Navigator.of(context).pop(_ViewChoice(_draft, _skip)),
-                  child: Text(_step == 3 ? text.apply : text.next),
+                      : Navigator.of(
+                          context,
+                        ).pop(_ViewChoice(_draft, _skip, _selected)),
+                  child: Text(_step == 2 ? text.apply : text.next),
                 ),
               ],
             ),

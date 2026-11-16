@@ -155,9 +155,11 @@ class ChatEventList extends StatelessWidget {
                     : Column(
                         mainAxisSize: .min,
                         children: [
-                          if (events.isNotEmpty)
+                          if (events.isNotEmpty &&
+                              !SimplifiedInterfaceScope.quietChatOf(context))
                             SeenByRow(event: events.first, timeline: timeline),
-                          TypingIndicators(controller),
+                          if (!SimplifiedInterfaceScope.quietChatOf(context))
+                            TypingIndicators(controller),
                           EncryptionInfo(room: controller.room),
                         ],
                       ),

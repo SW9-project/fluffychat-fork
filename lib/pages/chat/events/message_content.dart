@@ -12,6 +12,7 @@ import 'package:fluffychat/pages/chat/events/video_player.dart';
 import 'package:fluffychat/pages/image_viewer/image_viewer.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/meaning/meaning_decoration.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
@@ -185,7 +186,12 @@ class MessageContent extends StatelessWidget {
               textColor: textColor,
               child: Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6) *
+                    EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: SimplifiedInterfaceScope.quietChatOf(context)
+                          ? 12
+                          : 6,
+                    ) *
                     AccessibilityScope.of(context).textScale,
                 child: HtmlMessage(
                   html: html,

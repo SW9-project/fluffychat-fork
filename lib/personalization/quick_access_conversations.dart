@@ -3,6 +3,7 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import 'simple_view_dialog.dart';
 import 'simple_view_setup.dart';
 import 'simplified_interface.dart';
 import 'simplified_interface_l10n.dart';
@@ -21,9 +22,7 @@ class SimpleConversationTile extends StatelessWidget {
     final text = SimplifiedInterfaceL10n.of(context);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      color: shortcut
-          ? theme.colorScheme.primaryContainer
-          : theme.colorScheme.surface,
+      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
@@ -126,14 +125,10 @@ class QuickAccessConversations extends StatelessWidget {
                 onPressed: conversations.isEmpty
                     ? null
                     : () async {
-                        final result = await showDialog<List<String>>(
-                          context: context,
-                          builder: (_) => _QuickAccessPicker(
-                            conversations: conversations,
-                            selectedIds: selected
-                                .map((entry) => entry.id)
-                                .toList(),
-                          ),
+                        final result = await chooseSimpleConversations(
+                          context,
+                          conversations,
+                          selected.map((entry) => entry.id).toList(),
                         );
                         if (result != null) onSave(result);
                       },
@@ -158,6 +153,18 @@ class QuickAccessConversations extends StatelessWidget {
     );
   }
 }
+
+Future<List<String>?> chooseSimpleConversations(
+  BuildContext context,
+  List<QuickAccessConversation> conversations,
+  List<String> selectedIds,
+) => showSimpleViewDialog<List<String>>(
+  context: context,
+  builder: (_) => _QuickAccessPicker(
+    conversations: conversations,
+    selectedIds: selectedIds,
+  ),
+);
 
 class _QuickAccessPicker extends StatefulWidget {
   final List<QuickAccessConversation> conversations;

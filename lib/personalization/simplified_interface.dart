@@ -47,7 +47,7 @@ class SimpleViewPreferences {
                 .firstOrNull ??
             SimpleQuickAccess.chosen,
         cleanHome: json['cleanHome'] != false,
-        quietChat: json['quietChat'] != false,
+        quietChat: true,
       );
     } on FormatException {
       return const SimpleViewPreferences();
@@ -55,8 +55,9 @@ class SimpleViewPreferences {
   }
 }
 
-/// An independent preference: enabling it never changes size, spacing,
-/// message density, filters, wallpaper preferences, or notification settings.
+/// Enabling this mode preserves stored sizes, filters, wallpaper preferences,
+/// and notification settings.
+/// The calmer chat is presented temporarily while this mode is enabled.
 class SimplifiedInterfaceController extends ChangeNotifier {
   static const enabledKey = 'personalization.simplified_interface.enabled';
   static const quickAccessKey =
@@ -137,7 +138,14 @@ class SimplifiedInterfaceController extends ChangeNotifier {
     SimpleViewPreferences value, {
     required bool enabled,
     required bool skipPreview,
+    String? accountId,
+    List<String>? quickAccessIds,
   }) {
+    value = value.copyWith(quietChat: true);
+    if (accountId != null && quickAccessIds != null) {
+      _quickAccess[accountId] = _cleanIds(quickAccessIds);
+    }
+    final shortcutsSnapshot = jsonEncode(_quickAccess);
     _preferences = value;
     _configured = true;
     _enabled = enabled;
@@ -149,7 +157,11 @@ class SimplifiedInterfaceController extends ChangeNotifier {
       final profileSaved = await _store.setString(preferencesKey, snapshot);
       final enabledSaved = await _store.setBool(enabledKey, enabled);
       final previewSaved = await _store.setBool(skipPreviewKey, skipPreview);
-      return profileSaved && enabledSaved && previewSaved;
+      final shortcutsSaved =
+          accountId == null ||
+          quickAccessIds == null ||
+          await _store.setString(quickAccessKey, shortcutsSnapshot);
+      return profileSaved && enabledSaved && previewSaved && shortcutsSaved;
     });
   }
 
@@ -236,9 +248,7 @@ class SimplifiedInterfaceScope extends StatefulWidget {
 
   static bool quietChatOf(BuildContext context) {
     final controller = maybeOf(context);
-    return controller != null &&
-        controller.enabled &&
-        controller.preferences.quietChat;
+    return controller != null && controller.enabled;
   }
 
   @override

@@ -11,6 +11,7 @@ import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/adaptive_bottom_sheet.dart';
 import 'package:fluffychat/utils/date_time_extension.dart';
 import 'package:fluffychat/utils/event_read_extension.dart';
@@ -83,6 +84,7 @@ class Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final simple = SimplifiedInterfaceScope.quietChatOf(context);
 
     if (!{
       EventTypes.Message,
@@ -144,8 +146,8 @@ class Message extends StatelessWidget {
         !event.redacted);
     final bubbleShape = MessageBubbleBorder(
       ownMessage: ownMessage,
-      groupedAbove: nextEventSameSender,
-      groupedBelow: previousEventSameSender,
+      groupedAbove: !simple && nextEventSameSender,
+      groupedBelow: !simple && previousEventSameSender,
       tail: !previousEventSameSender && !noBubble,
     );
     final borderRadius = bubbleShape.borderRadius;
@@ -217,8 +219,14 @@ class Message extends StatelessWidget {
           padding: EdgeInsets.only(
             left: 8.0,
             right: 8.0,
-            top: nextEventSameSender ? 1.0 : 8.0,
-            bottom: previousEventSameSender || previousEvent == null
+            top: simple
+                ? 10.0
+                : nextEventSameSender
+                ? 1.0
+                : 8.0,
+            bottom: simple
+                ? 10.0
+                : previousEventSameSender || previousEvent == null
                 ? 1.0
                 : 8.0,
           ),
@@ -604,8 +612,9 @@ class Message extends StatelessWidget {
                                               child: Row(
                                                 mainAxisSize: .min,
                                                 children: [
-                                                  if (sender.powerLevel.role !=
-                                                      PowerLevelRole.user)
+                                                  if (!simple &&
+                                                      sender.powerLevel.role !=
+                                                          PowerLevelRole.user)
                                                     Padding(
                                                       padding:
                                                           const EdgeInsets.only(
@@ -737,6 +746,11 @@ class Message extends StatelessWidget {
                                                   },
                                             ),
                                           _MessageContentWithMeta(
+                                            showMeta:
+                                                !simple ||
+                                                selected ||
+                                                displayEvent.status.isError ||
+                                                displayEvent.status.isSending,
                                             noBubble: noBubble,
                                             meta: _MessageMeta(
                                               event: displayEvent,
@@ -1033,15 +1047,18 @@ class _MessageContentWithMeta extends StatelessWidget {
   final Widget child;
   final Widget meta;
   final bool noBubble;
+  final bool showMeta;
 
   const _MessageContentWithMeta({
     required this.child,
     required this.meta,
     required this.noBubble,
+    required this.showMeta,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (!showMeta) return child;
     final meta = SelectionContainer.disabled(child: this.meta);
     if (noBubble) {
       return Stack(

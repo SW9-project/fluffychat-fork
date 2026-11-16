@@ -3,6 +3,7 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import 'accessibility_scope.dart';
 import 'simple_view_setup.dart';
 import 'simplified_interface.dart';
 import 'simplified_interface_l10n.dart';
@@ -15,76 +16,38 @@ class SimplifiedInterfaceSwitch extends StatelessWidget {
     final controller = SimplifiedInterfaceScope.maybeOf(context);
     if (controller == null) return const SizedBox.shrink();
     final text = SimplifiedInterfaceL10n.of(context);
-    final setup = SimpleSetupL10n.of(context);
     final theme = Theme.of(context);
+    final sizes = AccessibilityScope.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-      child: Material(
-        color: controller.enabled
-            ? theme.colorScheme.primaryContainer
-            : theme.colorScheme.surfaceContainer,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(
-            color: controller.enabled
-                ? theme.colorScheme.primary
-                : Colors.transparent,
-            width: 2,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(text.simpleView, style: theme.textTheme.bodyMedium),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (controller.enabled)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.home_rounded,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        setup.subtitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            SwitchListTile.adaptive(
+          TextButton(
+            key: const Key('simple_personalize'),
+            style: TextButton.styleFrom(
+              minimumSize: Size(sizes.touchTarget(48), sizes.buttonBox(48)),
+            ),
+            onPressed: () => requestSimpleViewChange(
+              context,
+              controller,
+              true,
+              personalize: true,
+            ),
+            child: Text(text.edit),
+          ),
+          Semantics(
+            label: text.simpleView,
+            child: Switch.adaptive(
               key: const Key('simplified_interface_switch'),
               value: controller.enabled,
-              title: Text(
-                text.simpleView,
-                style: controller.enabled
-                    ? theme.textTheme.headlineSmall
-                    : null,
-              ),
-              subtitle: Text(controller.enabled ? text.enabled : text.disabled),
               onChanged: (value) =>
                   requestSimpleViewChange(context, controller, value),
             ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                key: const Key('simple_personalize'),
-                onPressed: () => requestSimpleViewChange(
-                  context,
-                  controller,
-                  true,
-                  personalize: true,
-                ),
-                icon: const Icon(Icons.tune),
-                label: Text(setup.personalize),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -94,9 +57,11 @@ class SimplifiedInterfaceSwitch extends StatelessWidget {
 class SimplifiedInterfacePreview extends StatelessWidget {
   final bool enabled;
   final SimpleViewPreferences? preferences;
+  final List<String> conversationNames;
   const SimplifiedInterfacePreview({
     required this.enabled,
     this.preferences,
+    this.conversationNames = const [],
     super.key,
   });
 
@@ -128,7 +93,7 @@ class SimplifiedInterfacePreview extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: enabled
-                    ? theme.colorScheme.primaryContainer
+                    ? theme.colorScheme.primary.withAlpha(18)
                     : theme.colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -158,10 +123,10 @@ class SimplifiedInterfacePreview extends StatelessWidget {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: const [
-                  CircleAvatar(child: Icon(Icons.person)),
-                  CircleAvatar(child: Icon(Icons.person)),
-                  CircleAvatar(child: Icon(Icons.person)),
+                children: [
+                  for (final name in conversationNames) Chip(label: Text(name)),
+                  if (conversationNames.isEmpty)
+                    const CircleAvatar(child: Icon(Icons.person)),
                 ],
               ),
             ] else if (!enabled)
@@ -201,7 +166,43 @@ class SimplifiedInterfacePreview extends StatelessWidget {
             if (enabled) ...[
               const SizedBox(height: 8),
               Text(profile.cleanHome ? setup.cleanHome : setup.detailedHome),
-              Text(profile.quietChat ? setup.quietChat : setup.familiarChat),
+              Text(setup.quietChat),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    setup.tr('Hello!', '¡Hola!'),
+                    style: const TextStyle(height: 1.5),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withAlpha(18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    setup.tr('See you soon.', 'Hasta pronto.'),
+                    style: const TextStyle(height: 1.5),
+                  ),
+                ),
+              ),
             ],
           ],
         ),

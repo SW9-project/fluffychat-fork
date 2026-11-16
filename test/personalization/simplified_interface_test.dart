@@ -1,12 +1,16 @@
 // SPDX-FileCopyrightText: 2026 SW9-project contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import 'package:fluffychat/personalization/accessibility_controller.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/model/simple_view_function.dart';
 import 'package:fluffychat/personalization/quick_access_conversations.dart';
 import 'package:fluffychat/personalization/signals/interaction_signal.dart';
+import 'package:fluffychat/personalization/simple_view_conversations.dart';
+import 'package:fluffychat/personalization/simple_view_setup.dart';
 import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/personalization/simplified_interface_widgets.dart';
 import 'package:fluffychat/personalization/study/study_log.dart';
@@ -168,7 +172,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await pumpHome(tester, textScale: 2);
       await tap(tester, 'simplified_interface_switch');
-      for (var step = 0; step < 3; step++) {
+      for (var step = 0; step < 2; step++) {
         await tap(tester, 'simple_setup_next');
       }
       await tap(tester, 'simple_skip_preview');
@@ -179,7 +183,7 @@ void main() {
   );
 
   testWidgets(
-    'first activation asks three questions and saves only after preview confirmation',
+    'first activation asks two questions and saves only after preview confirmation',
     (tester) async {
       await pumpHome(tester);
       await tap(tester, 'simplified_interface_switch');
@@ -188,8 +192,6 @@ void main() {
       await tap(tester, 'simple_setup_next');
       await tap(tester, 'setup_detailed_home');
       await tap(tester, 'simple_setup_next');
-      await tap(tester, 'setup_familiar_chat');
-      await tap(tester, 'simple_setup_next');
       expect(controller.configured, false);
       expect(controller.enabled, false);
       await tap(tester, 'simple_skip_preview');
@@ -197,7 +199,7 @@ void main() {
       expect(controller.enabled, true);
       expect(controller.preferences.quickAccess, SimpleQuickAccess.frequent);
       expect(controller.preferences.cleanHome, false);
-      expect(controller.preferences.quietChat, false);
+      expect(controller.preferences.quietChat, true);
       expect(controller.skipPreview, true);
       await tap(tester, 'simplified_interface_switch');
       expect(controller.enabled, false);
@@ -210,13 +212,34 @@ void main() {
     },
   );
 
+  testWidgets('preview scrolls when dragging inside the example card', (
+    tester,
+  ) async {
+    await controller.applyPreferences(
+      const SimpleViewPreferences(),
+      enabled: false,
+      skipPreview: false,
+    );
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await pumpHome(tester, textScale: 1.8);
+    await tap(tester, 'simplified_interface_switch');
+    final preview = find.byType(SimplifiedInterfacePreview).last;
+    final before = tester.getTopLeft(preview).dy;
+    await tester.dragFrom(const Offset(160, 550), const Offset(0, -250));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(preview).dy, lessThan(before));
+    await tap(tester, 'simple_setup_cancel');
+  });
+
   testWidgets('cancel discards onboarding choices and preview preference', (
     tester,
   ) async {
     await pumpHome(tester);
     await tap(tester, 'simplified_interface_switch');
     await tap(tester, 'setup_frequent');
-    await tap(tester, 'simple_setup_next');
     await tap(tester, 'simple_setup_next');
     await tap(tester, 'simple_setup_next');
     await tap(tester, 'simple_skip_preview');
@@ -248,7 +271,7 @@ void main() {
     },
   );
 
-  testWidgets('Personalize can restore previews and update the three choices', (
+  testWidgets('Personalize can restore previews and update choices', (
     tester,
   ) async {
     controller.applyPreferences(
@@ -260,7 +283,6 @@ void main() {
     await pumpHome(tester);
     await tap(tester, 'simple_personalize');
     await tap(tester, 'setup_none');
-    await tap(tester, 'simple_setup_next');
     await tap(tester, 'simple_setup_next');
     await tap(tester, 'simple_setup_next');
     await tap(tester, 'simple_skip_preview');
@@ -314,6 +336,118 @@ void main() {
       ]);
     },
   );
+
+  Future<void> pumpContactSetup(WidgetTester tester) async {
+    final source = SimpleViewConversations('account-a', [
+      for (final name in ['Anna', 'Beth', 'Carla', 'David'])
+        QuickAccessConversation(id: name, name: name, onOpen: () {}),
+    ]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              key: const Key('open_setup'),
+              onPressed: () => requestSimpleViewChange(
+                context,
+                controller,
+                true,
+                conversations: source,
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tap(tester, 'open_setup');
+  }
+
+  testWidgets('frequent choice shows the actual three names before applying', (
+    tester,
+  ) async {
+    await pumpContactSetup(tester);
+    await tap(tester, 'setup_frequent');
+    for (final name in ['Anna', 'Beth', 'Carla']) {
+      expect(find.text(name), findsOneWidget);
+    }
+    expect(find.text('David'), findsNothing);
+    await tap(tester, 'simple_setup_cancel');
+    expect(controller.configured, false);
+  });
+
+  testWidgets('chosen names are transactional across picker and onboarding', (
+    tester,
+  ) async {
+    await pumpContactSetup(tester);
+    await tap(tester, 'setup_choose_names');
+    await tap(tester, 'quick_access_pick_David');
+    await tap(tester, 'quick_access_pick_Anna');
+    await tap(tester, 'quick_access_save');
+    expect(find.text('David'), findsOneWidget);
+    expect(controller.quickAccessFor('account-a'), isEmpty);
+    await tap(tester, 'simple_setup_cancel');
+    expect(controller.quickAccessFor('account-a'), isEmpty);
+    await tap(tester, 'open_setup');
+    await tap(tester, 'setup_choose_names');
+    await tap(tester, 'quick_access_pick_Beth');
+    await tap(tester, 'quick_access_save');
+    await tap(tester, 'simple_setup_next');
+    await tap(tester, 'simple_setup_next');
+    expect(find.byKey(const Key('setup_familiar_chat')), findsNothing);
+    expect(find.text('Beth'), findsOneWidget);
+    await tap(tester, 'simple_setup_apply');
+    expect(controller.quickAccessFor('account-a'), ['Beth']);
+    expect(controller.quickAccessFor('account-b'), isEmpty);
+    expect(controller.preferences.quietChat, true);
+    final restored = SimplifiedInterfaceController(store);
+    expect(restored.quickAccessFor('account-a'), ['Beth']);
+    restored.dispose();
+  });
+
+  testWidgets(
+    'dialog keeps personalized scaling outside the navigator and never resets sizes',
+    (tester) async {
+      final sizes = AccessibilityController(store);
+      await sizes.apply(ScaleCategory.text, 1.8);
+      await sizes.apply(ScaleCategory.button, 1.4);
+      final before = sizes.settings;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AccessibilityScope(
+            controller: sizes,
+            child: AccessibilityTextScale(
+              child: SimplifiedInterfaceScope(
+                controller: controller,
+                child: const Scaffold(body: SimplifiedInterfaceSwitch()),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tap(tester, 'simplified_interface_switch');
+      final heading = tester.element(find.text('Conversations at the top'));
+      expect(MediaQuery.textScalerOf(heading).scale(10), closeTo(18, 0.01));
+      expect(AccessibilityScope.of(heading).buttonScale, 1.4);
+      await tap(tester, 'simple_setup_next');
+      await tap(tester, 'simple_setup_next');
+      await tap(tester, 'simple_setup_apply');
+      expect(sizes.settings, before);
+      expect(AccessibilitySettings.load(store), before);
+      await tester.pumpWidget(const SizedBox.shrink());
+      sizes.dispose();
+    },
+  );
+
+  test('old profiles also receive the automatic calmer chat', () async {
+    await store.setString(
+      SimplifiedInterfaceController.preferencesKey,
+      '{"quickAccess":"none","cleanHome":true,"quietChat":false}',
+    );
+    final restored = SimplifiedInterfaceController(store);
+    expect(restored.preferences.quietChat, true);
+    restored.dispose();
+  });
 
   testWidgets('picker limits selection and cancel keeps original shortcuts', (
     tester,
@@ -418,7 +552,7 @@ void main() {
       await tap(tester, 'assist_simple_apply');
       expect(controller.enabled, false);
       expect(find.byKey(const Key('setup_frequent')), findsOneWidget);
-      for (var step = 0; step < 3; step++) {
+      for (var step = 0; step < 2; step++) {
         await tap(tester, 'simple_setup_next');
       }
       await tap(tester, 'simple_setup_apply');
