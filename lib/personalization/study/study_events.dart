@@ -106,13 +106,19 @@ class AssistModelState extends StudyEvent {
 class AssistPrompted extends StudyEvent {
   final String prompt;
 
-  const AssistPrompted(this.prompt);
+  /// Spoken words were put into the prompt field since the last send, even
+  /// if the participant edited them afterwards. False for a prompt that was
+  /// only typed. Log lines from before voice input have no `voice` field,
+  /// which means false.
+  final bool voice;
+
+  const AssistPrompted(this.prompt, {this.voice = false});
 
   @override
   String get type => 'assist_prompt';
 
   @override
-  Map<String, Object?> get data => {'prompt': prompt};
+  Map<String, Object?> get data => {'prompt': prompt, 'voice': voice};
 }
 
 /// The assistant's answer to a prompt, with the model's timing.

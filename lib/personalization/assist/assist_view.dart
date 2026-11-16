@@ -100,6 +100,11 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   Timer? _elapsedTimer;
   int _elapsedSeconds = 0;
 
+  /// Spoken words were put into the field since the last send, for the
+  /// study log. Stays true when the user edits them; resets on send and when
+  /// the field is cleared.
+  bool _usedVoice = false;
+
   List<Heuristic> get _heuristics => widget.manager.config.heuristics;
 
   @override
@@ -107,7 +112,12 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     super.initState();
     widget.model?.status.addListener(_onModelStatus);
     _listenToVoice(widget.transcriber);
+    _controller.addListener(_onFieldChanged);
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  void _onFieldChanged() {
+    if (_controller.text.isEmpty) _usedVoice = false;
   }
 
   @override
@@ -247,6 +257,7 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     _voiceActive = false;
     final heard = spoken.trim();
     _setField(heard.isEmpty ? _textBeforeVoice : _withSpoken(heard));
+    if (heard.isNotEmpty) _usedVoice = true;
     _voiceNotice = switch (end) {
       null ||
       TranscriberEnd.timeLimit when heard.isEmpty => _VoiceNotice.heardNothing,
@@ -279,14 +290,16 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     final text = _controller.text.trim();
     if (model == null || text.isEmpty || _busy || _voiceBusy) return;
     final exchange = _Exchange(text);
+    final voice = _usedVoice;
     setState(() {
       _exchanges.add(exchange);
       _busy = true;
       _voiceNotice = null;
+      _usedVoice = false;
       _controller.clear();
     });
     _scrollToEnd();
-    StudyLog.instance.record(AssistPrompted(text));
+    StudyLog.instance.record(AssistPrompted(text, voice: voice));
 
     AssistResult result;
     ModelTiming? timing;

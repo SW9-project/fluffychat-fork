@@ -396,10 +396,73 @@ void main() {
       expect(events().where((e) => e['type'] == 'assist_prompt'), isEmpty);
       await tester.tap(find.byKey(const Key('assist_send')));
       await tester.pumpAndSettle();
-      expect(
-        events().where((e) => e['type'] == 'assist_prompt').single['prompt'],
+      expect(events().where((e) => e['type'] == 'assist_prompt').single, {
+        't': isA<String>(),
+        'type': 'assist_prompt',
+        'prompt': 'the buttons are hard to hit',
+        'voice': true,
+      });
+    });
+
+    List<Object?> voiceFlags() => [
+      for (final e in events())
+        if (e['type'] == 'assist_prompt') e['voice'],
+    ];
+
+    testWidgets('voice stays true after editing and resets after send', (
+      tester,
+    ) async {
+      startLog();
+      final voice = FakeTranscriber();
+      await pump(tester, picksButtons(), transcriber: voice);
+      await tester.tap(find.byKey(const Key('assist_mic')));
+      await tester.pump();
+      voice.hear('the buttons are hard');
+      await tester.tap(find.byKey(const Key('assist_mic')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('assist_input')),
         'the buttons are hard to hit',
       );
+      await tester.tap(find.byKey(const Key('assist_send')));
+      await tester.pumpAndSettle();
+      await ask(tester, 'the text is tiny');
+      expect(voiceFlags(), [true, false]);
+    });
+
+    testWidgets('clearing the field resets voice', (tester) async {
+      startLog();
+      final voice = FakeTranscriber();
+      await pump(tester, picksButtons(), transcriber: voice);
+      await tester.tap(find.byKey(const Key('assist_mic')));
+      await tester.pump();
+      voice.hear('something else');
+      await tester.tap(find.byKey(const Key('assist_mic')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('assist_input')), '');
+      await ask(tester, 'the buttons are hard to hit');
+      expect(voiceFlags(), [false]);
+    });
+
+    testWidgets('a cancelled recording does not count as voice', (
+      tester,
+    ) async {
+      startLog();
+      final voice = FakeTranscriber();
+      await pump(tester, picksButtons(), transcriber: voice);
+      await tester.enterText(find.byKey(const Key('assist_input')), 'the');
+      await tester.tap(find.byKey(const Key('assist_mic')));
+      await tester.pump();
+      voice.hear('buttons');
+      await tester.pump();
+      tester.binding
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.hidden)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      await ask(tester, 'the buttons are hard to hit');
+      expect(voiceFlags(), [false]);
     });
   });
 
@@ -522,6 +585,7 @@ void main() {
       expect(find.text('Listening. Tap to stop.'), findsOneWidget);
       expect(micIcon(Icons.stop), findsOneWidget);
       expect(field(tester).controller?.text, 'make the buttons bigger');
+      expect(voice.sessions, 2);
       expect(voice.stopCalls, 0);
       await tapMic(tester);
     });
