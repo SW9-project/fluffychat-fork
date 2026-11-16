@@ -6,6 +6,7 @@
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/date_time_extension.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/utils/sync_status_localization.dart';
@@ -22,6 +23,7 @@ class ChatAppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final simple = SimplifiedInterfaceScope.quietChatOf(context);
     final room = controller.room;
     if (controller.selectedEvents.isNotEmpty) {
       return Text(
@@ -93,6 +95,7 @@ class ChatAppBarTitle extends StatelessWidget {
                         (room.client.onSync.value != null &&
                             status.status != SyncStatus.error &&
                             room.client.prevBatch != null);
+                    if (hide && simple) return const SizedBox.shrink();
                     final style = TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.normal,

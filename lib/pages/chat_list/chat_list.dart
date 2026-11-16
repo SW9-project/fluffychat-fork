@@ -13,6 +13,7 @@ import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_list/chat_list_view.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/localized_exception_extension.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
@@ -147,6 +148,15 @@ class ChatListController extends State<ChatList>
       return;
     }
 
+    final simple = SimplifiedInterfaceScope.maybeOf(context);
+    if (room.membership == Membership.join && !room.isSpace && simple != null) {
+      unawaited(
+        simple.recordConversationOpened(
+          '${room.client.homeserver}|${room.client.userID}',
+          room.id,
+        ),
+      );
+    }
     context.go('/rooms/${room.id}');
   }
 

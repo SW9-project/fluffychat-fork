@@ -73,6 +73,21 @@ class LogExported extends StudyEvent {
   Map<String, Object?> get data => {'events': events};
 }
 
+/// The researcher cleared the log: after saving it ([saved]), or without
+/// saving when a participant withdrew. The first line of the new log.
+class LogCleared extends StudyEvent {
+  final int events;
+  final bool saved;
+
+  const LogCleared(this.events, {required this.saved});
+
+  @override
+  String get type => 'log_cleared';
+
+  @override
+  Map<String, Object?> get data => {'events': events, 'saved': saved};
+}
+
 class AssistOpened extends StudyEvent {
   final StudyCondition condition;
 
@@ -185,7 +200,13 @@ enum SuggestionOutcome {
   applied('suggestion_applied'),
   declined('suggestion_declined'),
   undone('suggestion_undone'),
-  optedOut('suggestion_opted_out');
+  optedOut('suggestion_opted_out'),
+
+  /// A new prompt replaced it before the participant answered.
+  superseded('suggestion_superseded'),
+
+  /// The participant left the Assist tab without answering.
+  abandoned('suggestion_abandoned');
 
   final String type;
 
@@ -226,4 +247,16 @@ class SettingsChanged extends StudyEvent {
     'kind': commit.kind.name,
     'changes': commit.to.diff(commit.from),
   };
+}
+
+/// Distinguishes explicit choices from model proposals; no contact data.
+class SimpleViewAction extends StudyEvent {
+  final String action;
+  final bool from;
+  final bool to;
+  const SimpleViewAction(this.action, this.from, this.to);
+  @override
+  String get type => 'simple_view';
+  @override
+  Map<String, Object?> get data => {'action': action, 'from': from, 'to': to};
 }

@@ -26,29 +26,6 @@ class ChangePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = PersonalizationL10n.of(context);
-<<<<<<< Updated upstream
-    Widget column(String label, double value, {bool highlight = false}) =>
-        Expanded(
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              Text(
-                '$label  × ${value.toStringAsFixed(1)}',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: highlight ? FontWeight.bold : null,
-                  color: highlight ? theme.colorScheme.primary : null,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Scale down instead of overflowing on narrow screens.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: _Sample(category: category, value: value),
-              ),
-            ],
-          ),
-        );
-=======
     final parts = _Part.of(change);
     final room = change.changedChat;
     final sizes = _sizes(l10n, change);
@@ -74,7 +51,6 @@ class ChangePreview extends StatelessWidget {
         _Scene(settings: settings, themeMode: mode, parts: parts, room: room),
       ],
     );
->>>>>>> Stashed changes
 
     return Container(
       key: const Key('change_preview'),
@@ -83,28 +59,20 @@ class ChangePreview extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppConfig.borderRadius / 2),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: .start,
         children: [
-<<<<<<< Updated upstream
-          column(l10n.previewNow, from),
-=======
           side(l10n.previewNow, change.from, change.themeFrom),
->>>>>>> Stashed changes
           Padding(
-            padding: const EdgeInsets.only(top: 24),
-            child: Icon(Icons.arrow_forward, color: theme.colorScheme.primary),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Icon(Icons.arrow_downward, color: theme.colorScheme.primary),
           ),
-<<<<<<< Updated upstream
-          column(l10n.previewSuggested, to, highlight: true),
-=======
           side(
             l10n.previewSuggested,
             change.to,
             change.themeTo ?? change.themeFrom,
             highlight: true,
           ),
->>>>>>> Stashed changes
         ],
       ),
     );

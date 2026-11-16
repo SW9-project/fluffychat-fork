@@ -28,6 +28,9 @@ class MemoryStorage implements StudyLogStorage {
 
   @override
   Future<List<String>> readLines() async => [...lines];
+
+  @override
+  Future<void> clear() async => lines.clear();
 }
 
 class FakeModel implements SettingsIntentModel {
@@ -710,12 +713,6 @@ void main() {
       expect(events()[1], {
         't': isA<String>(),
         'type': 'assist_proposal',
-<<<<<<< Updated upstream
-        'heuristic': 'near-miss-buttons',
-        'category': 'button_scale',
-        'from': 1.0,
-        'to': 1.1,
-=======
         'participant': '',
         'function': 'change_button_size',
         'arguments': {'direction': 'bigger'},
@@ -723,7 +720,6 @@ void main() {
           'button_scale': [1.0, 1.2],
           'touch_target_scale': [1.0, 1.2],
         },
->>>>>>> Stashed changes
         'total_ms': 900,
         'ttft_ms': 410,
         'backend': 'gpu',

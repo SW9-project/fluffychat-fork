@@ -46,7 +46,7 @@ void main() {
     expect(scaler.scale(10), 30);
   });
 
-  testWidgets('input text scale replaces the text scale for the input', (
+  testWidgets('input text scale multiplies only the input text', (
     tester,
   ) async {
     late TextScaler appScaler;
@@ -63,16 +63,6 @@ void main() {
       ),
     );
     await controller.apply(ScaleCategory.text, 1.5);
-<<<<<<< Updated upstream
-    await tester.pump();
-    expect(appScaler.scale(10), 15);
-    expect(inputScaler.scale(10), 15);
-
-    await controller.apply(ScaleCategory.inputText, 2.0);
-    await tester.pump();
-    expect(appScaler.scale(10), 15);
-    expect(inputScaler.scale(10), 20);
-=======
     await controller.apply(ScaleCategory.inputText, 1.2);
     await tester.pump();
     expect(appScaler.scale(10), 15);
@@ -82,7 +72,6 @@ void main() {
     await controller.apply(ScaleCategory.inputText, 2.0);
     await tester.pump();
     expect(inputScaler.scale(10), closeTo(20, 0.001));
->>>>>>> Stashed changes
   });
 
   testWidgets('icon buttons follow button and touch target scale', (
@@ -109,11 +98,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getSize(find.byIcon(Icons.send)), const Size.square(48));
 
-    await controller.apply(ScaleCategory.touchTarget, 1.5);
+    await controller.apply(ScaleCategory.touchTarget, 2.0);
     await tester.pumpAndSettle();
     final scaledSize = tester.getSize(find.byKey(key));
     expect(scaledSize.width, greaterThan(defaultSize.width));
-    expect(scaledSize.width, greaterThanOrEqualTo(60));
+    expect(scaledSize.width, greaterThanOrEqualTo(80));
   });
 
   testWidgets('without a scope the defaults are used', (tester) async {

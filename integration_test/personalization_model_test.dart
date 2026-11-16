@@ -32,15 +32,10 @@ import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/model/function_gemma_model.dart';
 import 'package:fluffychat/personalization/model/personalization_tools.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
-<<<<<<< Updated upstream
-import 'package:fluffychat/personalization/personalization_layer.dart';
-import 'package:flutter/services.dart';
-=======
 import 'package:fluffychat/personalization/model/tool_call_interpreter.dart';
 import 'package:flutter_edge_ai/engine.dart';
 import 'package:flutter_edge_ai_litertlm/src/ffi/litert_lm_bindings.dart';
 import 'package:flutter_edge_ai_litertlm/src/ffi/litert_lm_library.dart';
->>>>>>> Stashed changes
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:material_ui/material_ui.dart' show ThemeMode;
@@ -86,20 +81,6 @@ void main() {
       final prepare = Stopwatch()..start();
       await model.prepare();
       expect(model.status.value.state, ModelState.ready);
-<<<<<<< Updated upstream
-      prepare.stop();
-
-      final counts = {for (final o in Outcome.values) o: 0};
-      final correct = <String, int>{};
-      final asked = <String, int>{};
-      final totals = <int>[];
-      final firstTokens = <double>[];
-      int? loadMs;
-      String? backend;
-      report(
-        '[phrases-csv] language,outcome,ttft_ms,total_ms,input_tokens,'
-        'output_tokens,expected,proposed,text',
-=======
       print('[eval] prepared in ${prepare.elapsedMilliseconds} ms');
       // A file that is already installed is not installed again, and the
       // plugin restores the model that was active last: fail rather than
@@ -117,7 +98,6 @@ void main() {
         tools: tools,
         settings: AccessibilitySettings.defaults,
         theme: ThemeMode.system,
->>>>>>> Stashed changes
       );
       var functionOk = 0, exact = 0, usable = 0;
       final totals = <int>[];

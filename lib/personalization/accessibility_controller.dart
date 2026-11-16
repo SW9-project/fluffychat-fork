@@ -59,7 +59,7 @@ class AccessibilityController extends ChangeNotifier {
   Future<void> apply(ScaleCategory category, double value) => _commit(
     SettingsChangeKind.apply,
     _settings,
-    _settings.change(category, value),
+    _settings.copyWith(category, value),
   );
 
   /// Replaces all settings at once as a single undoable change, such as an
@@ -81,9 +81,6 @@ class AccessibilityController extends ChangeNotifier {
 
   /// [value] is the whole size of [category], as its slider shows it.
   void preview(ScaleCategory category, double value) {
-<<<<<<< Updated upstream
-    final next = _settings.change(category, value);
-=======
     final next = _settings.withEffective(category, value);
     if (next == _settings) return;
     _settings = next;
@@ -93,7 +90,6 @@ class AccessibilityController extends ChangeNotifier {
   /// Like [preview], for one chat's own text scale.
   void previewChatText(String roomId, double value) {
     final next = _settings.withChatText(roomId, value);
->>>>>>> Stashed changes
     if (next == _settings) return;
     _settings = next;
     notifyListeners();

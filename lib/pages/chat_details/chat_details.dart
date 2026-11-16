@@ -118,49 +118,6 @@ class ChatDetailsController extends State<ChatDetails> {
     if (mounted) setState(() {});
   }
 
-  Future<void> setWallpaperAction() async {
-    final room = Matrix.of(context).client.getRoomById(roomId!)!;
-    final pickedFile = (await selectFiles(
-      context,
-      type: FileType.image,
-    )).firstOrNull;
-    if (pickedFile == null || !mounted) return;
-    await showFutureLoadingDialog(
-      context: context,
-      future: () async => room.setWallpaper(
-        await room.client.uploadContent(
-          await pickedFile.readAsBytes(),
-          filename: pickedFile.name,
-        ),
-      ),
-    );
-    if (mounted) setState(() {});
-  }
-
-  Future<void> deleteWallpaperAction() async {
-    final room = Matrix.of(context).client.getRoomById(roomId!)!;
-    await showFutureLoadingDialog(
-      context: context,
-      future: () => room.setWallpaper(null),
-    );
-    if (mounted) setState(() {});
-  }
-
-  /// Slider values while dragging, null once saved.
-  double? wallpaperOpacity, wallpaperBlur;
-
-  void updateWallpaperOpacity(double v) => setState(() => wallpaperOpacity = v);
-  void updateWallpaperBlur(double v) => setState(() => wallpaperBlur = v);
-
-  Future<void> saveWallpaperLook(String key, double value) async {
-    final room = Matrix.of(context).client.getRoomById(roomId!)!;
-    await showFutureLoadingDialog(
-      context: context,
-      future: () => room.setRoomConfig({key: value}),
-    );
-    if (mounted) setState(() => wallpaperOpacity = wallpaperBlur = null);
-  }
-
   Future<void> setTopicAction() async {
     final l10n = L10n.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);

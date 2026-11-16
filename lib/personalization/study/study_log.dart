@@ -14,11 +14,14 @@ import 'study_settings.dart';
 
 /// Keeps the lines of the study log. The app uses [FileStudyLogStorage].
 abstract interface class StudyLogStorage {
-  /// Adds [line] at the end. Lines are never changed or removed.
+  /// Adds [line] at the end. Lines are never changed.
   Future<void> append(String line);
 
   /// All lines, oldest first.
   Future<List<String>> readLines();
+
+  /// Removes every line.
+  Future<void> clear();
 }
 
 /// A file in the app's private support directory.
@@ -51,14 +54,22 @@ class FileStudyLogStorage implements StudyLogStorage {
         if (line.isNotEmpty) line,
     ];
   }
+
+  @override
+  Future<void> clear() async {
+    final file = await _file();
+    if (await file.exists()) await file.delete();
+  }
 }
 
-/// The local study event log (Phase 5): one JSON object per line.
+/// The local study event log (Phase 5): one JSON object per line, each with
+/// the participant code.
 ///
 /// Nothing is recorded while logging is off in [StudySettings], which is the
 /// default: the researcher turns it on after the participant agreed. The app
 /// only appends to the log and never uploads it. The researcher saves it as
-/// a file from the study screen, with the participant present.
+/// a file from the study screen, with the participant present, and clears it
+/// there after saving, or when a participant withdraws.
 class StudyLog {
   /// Null for the log that records nothing.
   final StudySettings? settings;
@@ -101,10 +112,13 @@ class StudyLog {
   /// Appends [event] when logging is on.
   void record(StudyEvent event) {
     final storage = _storage;
-    if (storage == null || !isRecording) return;
+    final settings = this.settings;
+    if (storage == null || settings == null || !isRecording) return;
     final line = jsonEncode({
       't': _clock().toUtc().toIso8601String(),
       'type': event.type,
+      // On every line, so a shared study phone never mixes participants up.
+      'participant': settings.value.participant,
       ...event.data,
     });
     _writes = _writes.then((_) async {
@@ -118,6 +132,20 @@ class StudyLog {
 
   /// Completes when everything recorded so far is written.
   Future<void> get flushed => _writes;
+
+  /// Deletes every recorded event. Only the study screen does this: after
+  /// the log is saved, or when a participant withdraws.
+  Future<void> clear() async {
+    final storage = _storage;
+    if (storage == null) return;
+    final cleared = _writes.then((_) => storage.clear());
+    // A failed clear must not stop later writes.
+    _writes = cleared.catchError(
+      (Object e, StackTrace s) =>
+          Logs().w('Unable to clear the study log', e, s),
+    );
+    await cleared;
+  }
 
   /// The recorded lines, oldest first.
   Future<List<String>> lines() async {

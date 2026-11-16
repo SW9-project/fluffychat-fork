@@ -1,0 +1,21 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.google.ai.edge.litertlm:litertlm-jvm:0.16.1'
+}
+
+application {
+    mainClass = 'AssistantHost'
+    applicationDefaultJvmArgs = ['-Xmx768m', '--enable-native-access=ALL-UNNAMED']
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+}

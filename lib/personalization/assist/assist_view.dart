@@ -14,6 +14,10 @@ import '../model/personalization_tools.dart';
 import '../model/settings_intent_model.dart';
 import '../model/tool_call_interpreter.dart';
 import '../personalization_l10n.dart';
+import '../simple_view_setup.dart';
+import '../simplified_interface.dart';
+import '../simplified_interface_l10n.dart';
+import '../simplified_interface_widgets.dart';
 import '../study/study_events.dart';
 import '../study/study_log.dart';
 import '../suggestions/suggestion.dart';
@@ -81,6 +85,9 @@ class AssistView extends StatefulWidget {
   /// The user's chats, most recent first.
   final List<AssistChat> Function() chats;
 
+  /// Describes an explicit development host without claiming on-device use.
+  final String? developmentModelInfo;
+
   const AssistView({
     required this.model,
     required this.manager,
@@ -89,6 +96,7 @@ class AssistView extends StatefulWidget {
     required this.tools,
     required this.themeMode,
     required this.chats,
+    this.developmentModelInfo,
     super.key,
   });
 
@@ -104,6 +112,10 @@ class _Exchange {
   AssistResult? result;
   Suggestion? suggestion;
   _Outcome? outcome;
+  bool? simpleTarget;
+  bool? simpleFrom;
+  int? simpleRevision;
+  int? appliedRevision;
 
   /// The chat a one-chat change is for, as shown to the user.
   String? chatName;
@@ -244,6 +256,31 @@ class _AssistViewState extends State<AssistView> {
       AssistAnswered(result, timing: timing, failed: failed, answer: answer),
     );
     if (!mounted) return;
+    final simpleController = SimplifiedInterfaceScope.maybeOf(context);
+    final simpleTarget = switch (result) {
+      AssistNotAvailable(:final call) => _simpleTarget(call),
+      _ => null,
+    };
+    if (simpleController != null && simpleTarget != null) {
+      // The trained model knows the simple view; the simplified interface
+      // confirms the switch with its own preview.
+      _conversation.ended();
+      setState(() {
+        exchange.simpleTarget = simpleTarget;
+        exchange.simpleFrom = simpleController.enabled;
+        exchange.simpleRevision = simpleController.revision;
+        _busy = false;
+      });
+      StudyLog.instance.record(
+        SimpleViewAction(
+          'model_proposal',
+          simpleController.enabled,
+          simpleTarget,
+        ),
+      );
+      _scrollToEnd();
+      return;
+    }
     _show(exchange, result);
     setState(() => _busy = false);
     _scrollToEnd();
@@ -276,6 +313,109 @@ class _AssistViewState extends State<AssistView> {
     setState(() => _exchanges.add(answer));
     _show(answer, next);
     _scrollToEnd();
+  }
+
+  /// The simple view [call] asks for: `set_simple_mode`, or resetting it.
+  static bool? _simpleTarget(ProposedCall call) => switch (call.name) {
+    PersonalizationTools.setSimpleMode => switch (call.args['enabled']) {
+      final bool enabled => enabled,
+      _ => null,
+    },
+    PersonalizationTools.resetSettings
+        when call.args['setting'] == 'simple_mode' =>
+      false,
+    _ => null,
+  };
+
+  void _offerSimpleView(SimplifiedInterfaceController controller) {
+    final target = !controller.enabled;
+    final text = SimplifiedInterfaceL10n.of(context);
+    final exchange = _Exchange(target ? text.turnOn : text.turnOff)
+      ..simpleTarget = target
+      ..simpleFrom = controller.enabled
+      ..simpleRevision = controller.revision;
+    setState(() => _exchanges.add(exchange));
+    StudyLog.instance.record(
+      SimpleViewAction('quick_action_proposal', controller.enabled, target),
+    );
+    _scrollToEnd();
+  }
+
+  Widget _simpleAnswer(BuildContext context, _Exchange exchange) {
+    final controller = SimplifiedInterfaceScope.maybeOf(context)!;
+    final text = SimplifiedInterfaceL10n.of(context);
+    final l10n = PersonalizationL10n.of(context);
+    final target = exchange.simpleTarget!;
+    final fresh = controller.revision == exchange.simpleRevision;
+    final canUndo =
+        exchange.outcome == _Outcome.applied &&
+        controller.revision == exchange.appliedRevision;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(target ? text.turnOn : text.turnOff),
+        const SizedBox(height: 8),
+        Text(text.proposalInfo),
+        const SizedBox(height: 12),
+        SimplifiedInterfacePreview(enabled: target),
+        const SizedBox(height: 12),
+        if (exchange.outcome == _Outcome.undone)
+          Text(l10n.changeUndone)
+        else if (exchange.outcome == _Outcome.declined)
+          Text(text.unchanged)
+        else if (canUndo)
+          TextButton.icon(
+            key: const Key('assist_simple_undo'),
+            icon: const Icon(Icons.undo),
+            label: Text(l10n.undo),
+            onPressed: () async {
+              if (controller.revision != exchange.appliedRevision) return;
+              await controller.setEnabled(exchange.simpleFrom!);
+              StudyLog.instance.record(
+                SimpleViewAction('undo', target, exchange.simpleFrom!),
+              );
+              if (mounted) setState(() => exchange.outcome = _Outcome.undone);
+            },
+          )
+        else if (!fresh)
+          Text(text.stale)
+        else if (controller.enabled == target)
+          Text(text.alreadySelected)
+        else
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            children: [
+              OutlinedButton(
+                key: const Key('assist_simple_decline'),
+                onPressed: () =>
+                    setState(() => exchange.outcome = _Outcome.declined),
+                child: Text(l10n.noThanks),
+              ),
+              FilledButton(
+                key: const Key('assist_simple_apply'),
+                onPressed: () async {
+                  if (controller.revision != exchange.simpleRevision) return;
+                  final appliedRevision = await requestSimpleViewChange(
+                    context,
+                    controller,
+                    target,
+                    previewAlreadyShown: true,
+                  );
+                  if (appliedRevision == null || !mounted) return;
+                  exchange.appliedRevision = appliedRevision;
+                  exchange.outcome = _Outcome.applied;
+                  StudyLog.instance.record(
+                    SimpleViewAction('apply', exchange.simpleFrom!, target),
+                  );
+                  if (mounted) setState(() {});
+                },
+                child: Text(l10n.applyChange),
+              ),
+            ],
+          ),
+      ],
+    );
   }
 
   void _show(_Exchange exchange, AssistResult result) {
@@ -325,6 +465,7 @@ class _AssistViewState extends State<AssistView> {
 
   @override
   Widget build(BuildContext context) {
+    SimplifiedInterfaceScope.maybeOf(context);
     final model = widget.model;
     if (model == null) return _statusPanel(context, null);
     return ValueListenableBuilder<ModelStatus>(
@@ -358,9 +499,13 @@ class _AssistViewState extends State<AssistView> {
         ];
       case ModelState.notPrepared:
         children = [
-          Text(l10n.assistIntro, textAlign: TextAlign.center),
+          Text(
+            widget.developmentModelInfo ?? l10n.assistIntro,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
-          Text(l10n.assistSetupInfo, textAlign: TextAlign.center),
+          if (widget.developmentModelInfo == null)
+            Text(l10n.assistSetupInfo, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton(
             key: const Key('assist_setup'),
@@ -425,7 +570,28 @@ class _AssistViewState extends State<AssistView> {
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               children: [
-                _AssistantBubble(child: Text(l10n.assistIntro)),
+                _AssistantBubble(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.developmentModelInfo ?? l10n.assistIntro),
+                      if (SimplifiedInterfaceScope.maybeOf(context)
+                          case final controller?)
+                        TextButton.icon(
+                          key: const Key('assist_simple_view'),
+                          onPressed: _busy
+                              ? null
+                              : () => _offerSimpleView(controller),
+                          icon: const Icon(Icons.view_agenda_outlined),
+                          label: Text(
+                            controller.enabled
+                                ? SimplifiedInterfaceL10n.of(context).turnOff
+                                : SimplifiedInterfaceL10n.of(context).turnOn,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
                 for (final exchange in _exchanges) ...[
                   _UserBubble(text: exchange.prompt),
                   _AssistantBubble(child: _answer(context, exchange)),
@@ -472,6 +638,7 @@ class _AssistViewState extends State<AssistView> {
   }
 
   Widget _answer(BuildContext context, _Exchange exchange) {
+    if (exchange.simpleTarget != null) return _simpleAnswer(context, exchange);
     final l10n = PersonalizationL10n.of(context);
     final words = AppearanceL10n.of(context);
     final settingsLink = TextButton.icon(
@@ -508,66 +675,6 @@ class _AssistViewState extends State<AssistView> {
           words.noAction,
           key: const Key('assist_no_action'),
         );
-<<<<<<< Updated upstream
-      case AssistProposal(
-        :final heuristic,
-        :final category,
-        :final from,
-        :final to,
-      ):
-        final suggestion = exchange.suggestion!;
-        final changed = l10n.changedTo(
-          l10n.categoryTitles[category]!,
-          to.toStringAsFixed(1),
-        );
-        final Widget actions;
-        if (widget.manager.current == suggestion) {
-          actions = Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              OutlinedButton(
-                key: const Key('assist_no_thanks'),
-                onPressed: () => _decline(exchange),
-                child: Text(l10n.noThanks),
-              ),
-              FilledButton(
-                key: const Key('assist_apply'),
-                onPressed: () => _apply(exchange),
-                child: Text(l10n.applyChange),
-              ),
-            ],
-          );
-        } else if (widget.manager.applied?.suggestion == suggestion) {
-          actions = Row(
-            children: [
-              Expanded(child: Text(changed)),
-              TextButton.icon(
-                key: const Key('assist_undo'),
-                onPressed: () => _undo(exchange),
-                icon: const Icon(Icons.undo),
-                label: Text(l10n.undo),
-              ),
-            ],
-          );
-        } else {
-          actions = Text(switch (exchange.outcome) {
-            _Outcome.applied => changed,
-            _Outcome.undone => l10n.changeUndone,
-            _Outcome.declined || null => l10n.notChanged,
-          });
-        }
-        return Column(
-          crossAxisAlignment: .stretch,
-          children: [
-            Text(heuristic.description(language)),
-            const SizedBox(height: 12),
-            ChangePreview(category: category, from: from, to: to),
-            const SizedBox(height: 12),
-            actions,
-          ],
-=======
       case AssistNotAvailable():
         return Text(words.notAvailable, key: const Key('assist_not_available'));
       case AssistUnchanged(:final reason, :final category):
@@ -576,7 +683,6 @@ class _AssistViewState extends State<AssistView> {
               ? l10n.alreadyAtLimit(l10n.categoryTitles[category]!)
               : words.alreadySet,
           key: const Key('assist_unchanged'),
->>>>>>> Stashed changes
         );
       case AssistClarification(:final options):
         return _clarification(context, exchange, options);

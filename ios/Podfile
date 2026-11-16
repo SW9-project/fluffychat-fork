@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
 # Global platform for the project
-=======
-# Uncomment this line to define a global platform for your project
->>>>>>> Stashed changes
 platform :ios, '15.6'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.

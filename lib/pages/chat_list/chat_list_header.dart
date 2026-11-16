@@ -11,6 +11,8 @@ import 'package:fluffychat/pages/chat_list/chat_list.dart';
 import 'package:fluffychat/pages/chat_list/client_chooser_button.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
+import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
 import 'package:fluffychat/utils/sync_status_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -78,7 +80,9 @@ class ChatListHeader extends StatelessWidget implements PreferredSizeWidget {
                 borderRadius: BorderRadius.circular(cupertino ? 12 : 99),
               ),
               hintText: hide
-                  ? L10n.of(context).searchChatsRooms
+                  ? (SimplifiedInterfaceScope.enabledOf(context)
+                        ? SimplifiedInterfaceL10n.of(context).search
+                        : L10n.of(context).searchChatsRooms)
                   : status.calcLocalizedString(context),
               hintStyle: TextStyle(
                 color: theme.colorScheme.onSurfaceVariant,

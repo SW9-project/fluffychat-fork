@@ -3,10 +3,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-<<<<<<< Updated upstream
-# Downloads the on-device FunctionGemma model into assets/models so it is
-# bundled into the app. See assets/models/README.md for the license terms.
-=======
 # Downloads the models kept for comparison into assets/models/baseline, which is
 # not bundled into the app:
 #
@@ -18,14 +14,9 @@
 # assets/models/README.md.
 #
 # See assets/models/README.md for the license terms.
->>>>>>> Stashed changes
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-
-file="assets/models/functiongemma-270M-it.litertlm"
-url="https://huggingface.co/sasha-denisov/function-gemma-270M-it/resolve/main/functiongemma-270M-it.litertlm"
-sha256="680fead1cca41a23220c904500a515d06e41f5c66d130aa4a9cc5905ec529a8e"
 
 checksum() {
   if command -v sha256sum >/dev/null; then
@@ -35,23 +26,22 @@ checksum() {
   fi
 }
 
-if [[ -f "$file" && "$(checksum "$file")" == "$sha256" ]]; then
-  echo "Model already present: $file"
-  exit 0
-fi
+# Moves a finished download into place, or removes it when its checksum is wrong.
+finish() {
+  local file="$1" sha256="$2"
+  if [[ "$(checksum "$file.part")" != "$sha256" ]]; then
+    rm -f "$file.part"
+    echo "Checksum mismatch, download removed." >&2
+    exit 1
+  fi
+  mv "$file.part" "$file"
+  echo "Saved $file"
+}
 
-echo "Downloading FunctionGemma 270M (about 284 MB)..."
-curl --fail --location --progress-bar --output "$file.part" "$url"
+present() {
+  [[ -f "$1" && "$(checksum "$1")" == "$2" ]]
+}
 
-<<<<<<< Updated upstream
-if [[ "$(checksum "$file.part")" != "$sha256" ]]; then
-  rm -f "$file.part"
-  echo "Checksum mismatch, download removed." >&2
-  exit 1
-fi
-mv "$file.part" "$file"
-echo "Saved $file"
-=======
 fetch_pilot() {
   local file="assets/models/baseline/functiongemma-270M-sw9-pilot1.litertlm"
   local sha256="834126ed04d2cba810eb2de65da6dc580983afa6d25be3518157d1dfbb27cc74"
@@ -100,4 +90,3 @@ case "${1:-}" in
     exit 2
     ;;
 esac
->>>>>>> Stashed changes

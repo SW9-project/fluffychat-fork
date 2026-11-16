@@ -100,33 +100,23 @@ abstract class FluffyThemes {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
       dividerColor: dividerColor,
-<<<<<<< Updated upstream
-      dividerTheme: DividerThemeData(color: dividerColor, thickness: 0.5),
+      dividerTheme: DividerThemeData(
+        color: dividerColor,
+        thickness: cupertino ? 0.5 : 1,
+      ),
+      // Material keeps its own tonal, rounded square buttons. Both grow with
+      // the icon, keeping the Material 3 padding around it: 16 for regular
+      // buttons and 8 for small ones.
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        shape: const StadiumBorder(),
-        // Grow with the icon, keeping the Material 3 padding around it: 16
-        // for regular buttons and 8 for small ones.
+        backgroundColor: cupertino ? colorScheme.primary : null,
+        foregroundColor: cupertino ? colorScheme.onPrimary : null,
+        shape: cupertino ? const CircleBorder() : null,
         iconSize: a11y.icon(),
         sizeConstraints: BoxConstraints.tight(Size.square(a11y.icon() + 32)),
         smallSizeConstraints: BoxConstraints.tight(
           Size.square(a11y.icon() + 16),
         ),
-=======
-      dividerTheme: DividerThemeData(
-        color: dividerColor,
-        thickness: cupertino ? 0.5 : 1,
->>>>>>> Stashed changes
       ),
-      // Material keeps its own tonal, rounded square buttons.
-      floatingActionButtonTheme: cupertino
-          ? FloatingActionButtonThemeData(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              shape: const CircleBorder(),
-            )
-          : null,
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           iconColor: colorScheme.onSurface,
@@ -335,6 +325,25 @@ extension BubbleColorTheme on ThemeData {
   Color get serviceMessageColor => colorScheme.surfaceContainer;
 
   Color get onServiceMessageColor => colorScheme.onSurfaceVariant;
+
+  /// The four corners of the default chat background gradient.
+  List<Color> get chatBackgroundColors => brightness == Brightness.light
+      ? const [
+          Color(0xFFDBDDBB),
+          Color(0xFF6BA587),
+          Color(0xFFD5D88D),
+          Color(0xFF88B884),
+        ]
+      : const [
+          Color(0xFF0E1621),
+          Color(0xFF13202E),
+          Color(0xFF111C27),
+          Color(0xFF0E1621),
+        ];
+
+  Color get chatBackgroundPatternColor => brightness == Brightness.light
+      ? const Color(0x24000000)
+      : const Color(0x0DFFFFFF);
 
   /// Unread counter of muted chats.
   Color get mutedBadgeColor =>

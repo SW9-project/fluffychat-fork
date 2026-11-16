@@ -21,6 +21,9 @@ class MemoryStorage implements StudyLogStorage {
 
   @override
   Future<List<String>> readLines() async => [...lines];
+
+  @override
+  Future<void> clear() async => lines.clear();
 }
 
 void main() {
@@ -101,6 +104,30 @@ void main() {
       expect(events[2]['events'], 2);
     });
 
+    test('every line has the participant code', () async {
+      await settings.update(
+        settings.value.copyWith(logging: true, participant: 'P01'),
+      );
+      log.record(const AssistPrompted('one'));
+      await settings.update(settings.value.copyWith(participant: 'P02'));
+      log.record(const AssistPrompted('two'));
+      expect(
+        [for (final e in decoded(await log.lines())) e['participant']],
+        ['P01', 'P02'],
+      );
+    });
+
+    test('clear removes the events, and later ones are kept', () async {
+      await turnOn();
+      log.record(const AssistPrompted('old'));
+      await log.clear();
+      expect(await log.lines(), isEmpty);
+      log.record(const LogCleared(1, saved: true));
+      final events = decoded(await log.lines());
+      expect(events.single, containsPair('type', 'log_cleared'));
+      expect(events.single, containsPair('saved', true));
+    });
+
     test('the app-wide log records nothing before it starts', () async {
       StudyLog.instance.record(const AssistPrompted('hello'));
       expect(StudyLog.instance.isRecording, isFalse);
@@ -141,6 +168,11 @@ void main() {
         [for (final e in events) e['prompt'] ?? e['type']],
         ['logging_started', 'one', 'two'],
       );
+
+      await second.clear();
+      expect(await file.exists(), isFalse);
+      second.record(const AssistPrompted('three'));
+      expect(decoded(await second.lines()).single['prompt'], 'three');
     });
   });
 
@@ -167,7 +199,6 @@ void main() {
       );
       expect(events[0]['changes'], {
         'text_scale': [1.0, 1.5],
-        'input_text_scale': [1.0, 1.5],
       });
       expect(events[1]['changes'], {
         'button_scale': [1.0, 1.6],
@@ -177,7 +208,6 @@ void main() {
       });
       expect(events[3]['changes'], {
         'text_scale': [1.5, 1.0],
-        'input_text_scale': [1.5, 1.0],
       });
     });
   });

@@ -6,6 +6,7 @@
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
+import 'package:fluffychat/personalization/model/emulator_host_model.dart';
 import 'package:fluffychat/personalization/model/function_gemma_model.dart';
 import 'package:fluffychat/personalization/model/personalization_tools.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
@@ -40,7 +41,11 @@ class _AssistantPageState extends State<AssistantPage> {
     super.initState();
     final condition = StudySettings.instance.value.condition;
     StudyLog.instance.record(AssistOpened(condition));
-    if (condition == StudyCondition.assist) _model = FunctionGemmaModel();
+    if (condition == StudyCondition.assist) {
+      _model = EmulatorHostModel.enabled
+          ? EmulatorHostModel()
+          : FunctionGemmaModel();
+    }
   }
 
   @override
@@ -71,13 +76,34 @@ class _AssistantPageState extends State<AssistantPage> {
     return MainNavigationBarInsets(
       child: Scaffold(
         appBar: AppBar(
-          title: Text(L10n.of(context).assistant),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(L10n.of(context).assistant),
+              if (EmulatorHostModel.enabled)
+                Text(
+                  Localizations.localeOf(context).languageCode == 'es'
+                      ? 'Modelo local en el ordenador'
+                      : 'Local model on this computer',
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+            ],
+          ),
           automaticallyImplyLeading: false,
         ),
         body: manager == null || accessibility == null
             ? const SizedBox.expand()
             : AssistView(
                 model: _model,
+                developmentModelInfo: EmulatorHostModel.enabled
+                    ? (Localizations.localeOf(context).languageCode == 'es'
+                          ? 'Dime qué te cuesta usar y te propondré un cambio. '
+                                'En esta prueba, el modelo se ejecuta en tu '
+                                'ordenador.'
+                          : 'Tell me what is hard to use and I will suggest a '
+                                'change. In this development build, the model '
+                                'runs on your computer.')
+                    : null,
                 manager: manager,
                 accessibility: accessibility,
                 onOpenAccessibilitySettings: () =>

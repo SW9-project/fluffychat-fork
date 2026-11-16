@@ -96,15 +96,13 @@ class _StudyScreenState extends State<StudyScreen> {
     if (mounted) setState(() => _lines = lines);
   }
 
-  Future<void> _setCondition(StudyCondition condition) async {
-    final current = _settings.value.condition;
-    if (condition == current) return;
+  Future<bool> _confirm(String title, String info, String action) async {
     final l10n = PersonalizationL10n.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.studyChangeCondition),
-        content: Text(l10n.studyChangeConditionInfo),
+        title: Text(title),
+        content: Text(info),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -113,12 +111,25 @@ class _StudyScreenState extends State<StudyScreen> {
           FilledButton(
             key: const Key('study_confirm'),
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.studyChange),
+            child: Text(action),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
+    return confirmed == true;
+  }
+
+  Future<void> _setCondition(StudyCondition condition) async {
+    final current = _settings.value.condition;
+    if (condition == current) return;
+    final l10n = PersonalizationL10n.of(context);
+    if (!await _confirm(
+      l10n.studyChangeCondition,
+      l10n.studyChangeConditionInfo,
+      l10n.studyChange,
+    )) {
+      return;
+    }
     _log.record(ConditionChanged(current, condition));
     await _settings.update(_settings.value.copyWith(condition: condition));
     await _reload();
@@ -132,9 +143,21 @@ class _StudyScreenState extends State<StudyScreen> {
     await _reload();
   }
 
-  Future<void> _export() async {
+  /// Saves the log as a file. With [clear], the log is cleared once the file
+  /// is saved, for the next participant.
+  Future<void> _export({bool clear = false}) async {
     final l10n = L10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    if (clear) {
+      final personalization = PersonalizationL10n.of(context);
+      if (!await _confirm(
+        personalization.studySaveAndClearConfirm,
+        personalization.studySaveAndClearInfo,
+        personalization.studySaveAndClear,
+      )) {
+        return;
+      }
+    }
     setState(() => _saving = true);
     try {
       final now = DateTime.now();
@@ -154,7 +177,13 @@ class _StudyScreenState extends State<StudyScreen> {
           ))?.toString();
       final path = await save(_fileName(preferences.participant, now), bytes);
       if (path == null) return;
-      _log.record(LogExported(_lines.length));
+      final events = _lines.length;
+      if (clear) {
+        await _log.clear();
+        _log.record(LogCleared(events, saved: true));
+      } else {
+        _log.record(LogExported(events));
+      }
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.fileHasBeenSavedAt(path)),
@@ -165,6 +194,26 @@ class _StudyScreenState extends State<StudyScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// For a participant who withdraws: deletes the log without saving it.
+  Future<void> _delete() async {
+    final l10n = PersonalizationL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await _confirm(
+      l10n.studyDeleteConfirm,
+      l10n.studyDeleteInfo,
+      l10n.studyDeleteAction,
+    )) {
+      return;
+    }
+    final events = _lines.length;
+    await _log.clear();
+    _log.record(LogCleared(events, saved: false));
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.studyCleared), showCloseIcon: true),
+    );
+    await _reload();
   }
 
   static String _fileName(String participant, DateTime now) {
@@ -274,6 +323,23 @@ class _StudyScreenState extends State<StudyScreen> {
                       onPressed: _saving || _lines.isEmpty ? null : _export,
                       icon: const Icon(Icons.save_alt),
                       label: Text(l10n.studySave),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('study_save_and_clear'),
+                      onPressed: _saving || _lines.isEmpty
+                          ? null
+                          : () => _export(clear: true),
+                      icon: const Icon(Icons.save_as_outlined),
+                      label: Text(l10n.studySaveAndClear),
+                    ),
+                    TextButton.icon(
+                      key: const Key('study_delete'),
+                      onPressed: _saving || _lines.isEmpty ? null : _delete,
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
+                      icon: const Icon(Icons.delete_outline),
+                      label: Text(l10n.studyDelete),
                     ),
                   ],
                 ),

@@ -10,11 +10,8 @@ import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_details/chat_details.dart';
 import 'package:fluffychat/pages/chat_details/participant_list_item.dart';
 import 'package:fluffychat/pages/settings/settings.dart';
-<<<<<<< Updated upstream
-import 'package:fluffychat/utils/chat_wallpaper.dart';
-=======
 import 'package:fluffychat/utils/account_config.dart';
->>>>>>> Stashed changes
+import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/verified_room_extension.dart';
@@ -370,30 +367,6 @@ class ChatDetailsView extends StatelessWidget {
                           const SizedBox(height: 16),
                         ],
                         Divider(color: theme.dividerColor),
-<<<<<<< Updated upstream
-                        StreamBuilder(
-                          stream: room.client.onChatWallpaperChanged,
-                          builder: (context, _) => ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainer,
-                              foregroundColor: iconColor,
-                              child: const Icon(Icons.wallpaper_outlined),
-                            ),
-                            title: Text(L10n.of(context).wallpaper),
-                            subtitle: Text(
-                              room.customWallpaper?.localizedName(
-                                    L10n.of(context),
-                                  ) ??
-                                  L10n.of(context).defaultWallpaper,
-                            ),
-                            onTap: () => context.push(
-                              '/rooms/${room.id}/details/wallpaper',
-                            ),
-                            trailing: const Icon(Icons.chevron_right_outlined),
-                          ),
-                        ),
-=======
                         ListTile(
                           leading: CircleAvatar(
                             backgroundColor: theme.colorScheme.surfaceContainer,
@@ -424,56 +397,28 @@ class ChatDetailsView extends StatelessWidget {
                           ),
                           onTap: controller.setBubbleColorAction,
                         ),
-                        ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: theme.colorScheme.surfaceContainer,
-                            foregroundColor: iconColor,
-                            child: const Icon(Icons.wallpaper_outlined),
+                        StreamBuilder(
+                          stream: room.client.onChatWallpaperChanged,
+                          builder: (context, _) => ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainer,
+                              foregroundColor: iconColor,
+                              child: const Icon(Icons.wallpaper_outlined),
+                            ),
+                            title: Text(L10n.of(context).wallpaper),
+                            subtitle: Text(
+                              room.customWallpaper?.localizedName(
+                                    L10n.of(context),
+                                  ) ??
+                                  L10n.of(context).defaultWallpaper,
+                            ),
+                            onTap: () => context.push(
+                              '/rooms/${room.id}/details/wallpaper',
+                            ),
+                            trailing: const Icon(Icons.chevron_right_outlined),
                           ),
-                          title: Text(L10n.of(context).setWallpaper),
-                          trailing: room.ownWallpaperUrl == null
-                              ? null
-                              : IconButton(
-                                  icon: const Icon(Icons.delete_outlined),
-                                  color: theme.colorScheme.error,
-                                  tooltip: L10n.of(context).delete,
-                                  onPressed: controller.deleteWallpaperAction,
-                                ),
-                          onTap: controller.setWallpaperAction,
                         ),
-                        if (room.wallpaperUrl != null) ...[
-                          ListTile(title: Text(L10n.of(context).opacity)),
-                          Slider.adaptive(
-                            min: 0.1,
-                            max: 1.0,
-                            divisions: 9,
-                            semanticFormatterCallback: (d) => d.toString(),
-                            value:
-                                controller.wallpaperOpacity ??
-                                room.wallpaperOpacity.clamp(0.1, 1.0),
-                            onChanged: controller.updateWallpaperOpacity,
-                            onChangeEnd: (v) => controller.saveWallpaperLook(
-                              'wallpaper_opacity',
-                              v,
-                            ),
-                          ),
-                          ListTile(title: Text(L10n.of(context).blur)),
-                          Slider.adaptive(
-                            min: 0.0,
-                            max: 10.0,
-                            divisions: 10,
-                            semanticFormatterCallback: (d) => d.toString(),
-                            value:
-                                controller.wallpaperBlur ??
-                                room.wallpaperBlur.clamp(0.0, 10.0),
-                            onChanged: controller.updateWallpaperBlur,
-                            onChangeEnd: (v) => controller.saveWallpaperLook(
-                              'wallpaper_blur',
-                              v,
-                            ),
-                          ),
-                        ],
->>>>>>> Stashed changes
                         if (!room.isDirectChat) ...[
                           ListTile(
                             leading: CircleAvatar(

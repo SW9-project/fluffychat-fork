@@ -15,6 +15,7 @@ import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:matrix/matrix.dart';
 
+import 'assistant_model_config.dart';
 import 'litert_conversation.dart';
 import 'personalization_tools.dart';
 import 'process_abi.dart';
@@ -24,25 +25,16 @@ import 'settings_intent_model.dart';
 /// and the LiteRT-LM engine. Runs fully on the device.
 ///
 /// The model file is bundled as an app asset (see `assets/models/README.md`).
-<<<<<<< Updated upstream
-/// A build without it, a device below Android 11 (API 30), a platform other than
-/// Android and iOS or a process that is not arm64 reports [ModelState.unavailable], and the app works without it.
-class FunctionGemmaModel implements SettingsIntentModel {
-  static const assetPath = 'assets/models/functiongemma-270M-it.litertlm';
-  static const fileName = 'functiongemma-270M-it.litertlm';
-=======
 /// A build without it, a platform other than iOS or Android, an Android device
 /// below 11 (API 30) or a process that is not arm64 reports [ModelState.unavailable], and the app works without it.
 class FunctionGemmaModel implements SettingsIntentModel {
-  static const assetPath =
-      'assets/models/functiongemma-270M-sw9-tools1.litertlm';
-  static const fileName = 'functiongemma-270M-sw9-tools1.litertlm';
+  static const assetPath = AssistantModelConfig.assetPath;
+  static const fileName = AssistantModelConfig.fileName;
 
   /// The model file's context: the eleven declarations are ~1300 tokens, a
   /// conversation adds up to ~200 and the answer [maxOutputTokens].
   static const maxTokens = 2048;
   static const maxOutputTokens = 128;
->>>>>>> Stashed changes
 
   /// The loaded model is freed after this long without a request.
   static const idleTimeout = Duration(minutes: 2);
@@ -75,21 +67,6 @@ class FunctionGemmaModel implements SettingsIntentModel {
     if (!_disposed) _status.value = status;
   }
 
-<<<<<<< Updated upstream
-  /// The LiteRT-LM engine needs an arm64 process on iOS or Android 11+, and
-  /// this build must contain the model file.
-  static Future<bool> isSupported() async {
-    if (!(PlatformInfos.isAndroid || PlatformInfos.isIOS) || !isArm64Process) {
-      return false;
-    }
-    if (PlatformInfos.isAndroid) {
-      final info = await DeviceInfoPlugin().androidInfo;
-      if (info.version.sdkInt < 30) return false;
-      // An arm64 process on an x86 device runs under ARM translation, where
-      // LiteRT's CPU detection crashes the app (seen on the x86_64 emulator).
-      if (info.supportedAbis.firstOrNull != 'arm64-v8a') return false;
-    }
-=======
   /// The LiteRT-LM engine needs an arm64 process on iOS, or on Android 11, and
   /// this build must contain the model file.
   static Future<bool> isSupported() async {
@@ -106,7 +83,6 @@ class FunctionGemmaModel implements SettingsIntentModel {
   }
 
   static Future<bool> _bundlesModel() async {
->>>>>>> Stashed changes
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
     return manifest.listAssets().contains(assetPath);
   }

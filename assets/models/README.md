@@ -1,11 +1,5 @@
-# On-device model
+﻿# Modelo SW9 v2
 
-<<<<<<< Updated upstream
-This folder holds the FunctionGemma 270M model that the personalization
-feature runs on the device (see `docs/ai-personalization-plan.md`, Phase 3).
-The model file is about 284 MB, too large for git, so it is not committed.
-Fetch it before building a release or study APK:
-=======
 This folder holds the model that the personalization feature runs on the device
 (see `docs/ai-personalization-plan.md`, Phase 3). The file is about 284 MB, too
 large for git, so it is not committed.
@@ -20,31 +14,12 @@ large for git, so it is not committed.
 
 `functiongemma-270M-sw9-tools1.litertlm` is built in this repository from the
 training run in `training/` (see `training/TRAINING.md`, steps 5 to 7):
->>>>>>> Stashed changes
 
 ```sh
 bash scripts/fetch_personalization_model.sh --baseline   # the converter needs it
 training/.convert-venv/bin/python training/convert.py
 ```
 
-<<<<<<< Updated upstream
-A build without the file works normally; the "Tell the app what is hard"
-feature is then hidden.
-
-The model only runs on Android 11 (API 30) or later, in an arm64 app process.
-On an x86_64 emulator, build an arm64-only APK
-(`flutter build apk --target-platform android-arm64`): the emulator translates
-it.
-
-## License
-
-FunctionGemma is provided under and subject to the Gemma Terms of Use,
-https://ai.google.dev/gemma/terms, and the Gemma Prohibited Use Policy,
-https://ai.google.dev/gemma/prohibited_use_policy. Anyone who receives an APK
-with this file bundled must also receive these terms.
-
-Source of the converted file: https://huggingface.co/sasha-denisov/function-gemma-270M-it
-=======
 `convert.py` writes the file here. It is not attached to any release yet, so a fresh
 clone has to build it, or copy it from someone who has. sha256 of the file built from
 `checkpoint-1561` (epoch 7) on 2026-11-11:
@@ -108,5 +83,4 @@ data that includes utterances from MASSIVE 1.1 by Amazon (CC BY 4.0); its
 attribution is in `NOTICE` in the `functiongemma-heuristics` repository.
 
 Source of the baseline file: https://huggingface.co/sasha-denisov/function-gemma-270M-it
->>>>>>> Stashed changes
 (converted from https://huggingface.co/google/functiongemma-270m-it).

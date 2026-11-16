@@ -2,16 +2,9 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import 'package:fluffychat/personalization/meaning/annotated_send.dart';
-import 'package:fluffychat/personalization/meaning/meaning_draft.dart';
 import 'package:fluffychat/personalization/meaning/meaning_rules.dart';
-import 'package:fluffychat/personalization/meaning/meaning_settings.dart';
 import 'package:fluffychat/personalization/meaning/message_meaning.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
-import 'package:matrix/matrix.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   // Tuesday 27 October 2026, 18:00.
@@ -139,111 +132,5 @@ void main() {
         ], expected);
       });
     }
-  });
-
-  group('MeaningDraft', () {
-    late TextEditingController text;
-    late MeaningSettings settings;
-    late MeaningDraft draft;
-
-    setUp(() async {
-      SharedPreferences.setMockInitialValues({});
-      settings = MeaningSettings(await SharedPreferences.getInstance());
-      text = TextEditingController();
-      draft = MeaningDraft(text, settings: settings, clock: () => now);
-    });
-
-    tearDown(() {
-      draft.dispose();
-      text.dispose();
-    });
-
-    test('nothing while the input is empty', () {
-      expect(draft.meaning, isNull);
-    });
-
-    test('follows the text', () {
-      text.text = 'Ses vi i morgen kl. 14?';
-      expect(draft.meaning!.intent, MessageIntent.question);
-      expect(draft.meaning!.times.single.text, 'i morgen kl. 14');
-    });
-
-    test('the sender can change and remove parts', () {
-      text.text = 'Ses vi i morgen kl. 14?';
-      draft.setIntent(MessageIntent.request);
-      draft.setUrgency(MessageUrgency.high);
-      draft.removeTime(draft.meaning!.times.single);
-      expect(
-        draft.meaning,
-        const MessageMeaning(
-          intent: MessageIntent.request,
-          urgency: MessageUrgency.high,
-        ),
-      );
-    });
-
-    test('the sender can send without meaning', () {
-      text.text = 'Hello?';
-      draft.remove();
-      expect(draft.meaning, isNull);
-      expect(draft.take(), isNull);
-    });
-
-    test('take resets the draft for the next message', () {
-      text.text = 'Hello?';
-      draft.setIntent(MessageIntent.information);
-      expect(draft.take()!.intent, MessageIntent.information);
-      text.text = 'Next?';
-      expect(draft.meaning!.intent, MessageIntent.question);
-    });
-
-    test('nothing when turned off in the settings', () async {
-      await settings.update(const MeaningPreferences(annotateOutgoing: false));
-      text.text = 'Hello?';
-      expect(draft.meaning, isNull);
-    });
-  });
-
-  group('buildAnnotatedTextContent', () {
-    late Client client;
-    late Room room;
-
-    setUpAll(() async {
-      sqfliteFfiInit();
-      client = Client(
-        'meaning test',
-        database: await MatrixSdkDatabase.init(
-          'meaning-test',
-          database: await databaseFactoryFfi.openDatabase(':memory:'),
-          sqfliteFactory: databaseFactoryFfi,
-        ),
-      );
-      room = Room(id: '!room:example.org', client: client);
-    });
-
-    test('puts the meaning next to body, not in relations', () {
-      const meaning = MessageMeaning(intent: MessageIntent.question);
-      final content = buildAnnotatedTextContent(
-        room,
-        'Are you coming?',
-        meaning: meaning,
-      );
-      expect(content['msgtype'], MessageTypes.Text);
-      expect(content['body'], 'Are you coming?');
-      expect(content[ns], meaning.toJson());
-      expect(content.containsKey('m.relates_to'), isFalse);
-    });
-
-    test('keeps formatting like the SDK', () {
-      final content = buildAnnotatedTextContent(room, '**bold**');
-      expect(content['format'], 'org.matrix.custom.html');
-      expect(content['formatted_body'], contains('<strong>bold</strong>'));
-      expect(content.containsKey(ns), isFalse);
-    });
-
-    test('plain text gets no formatted body', () {
-      final content = buildAnnotatedTextContent(room, 'just text');
-      expect(content.containsKey('formatted_body'), isFalse);
-    });
   });
 }

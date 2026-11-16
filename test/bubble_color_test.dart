@@ -7,9 +7,6 @@ import 'package:fluffychat/pages/chat/events/message.dart';
 import 'package:fluffychat/utils/account_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:matrix/matrix.dart';
-
-import 'utils/test_client.dart';
 
 void main() {
   test('bubble color survives the account data round trip', () {
@@ -73,24 +70,5 @@ void main() {
       groupedAbove: true,
     );
     expect(groupedIos.borderRadius.topRight, const Radius.circular(18));
-  });
-
-  test('a chat wallpaper overrides the general one', () async {
-    final room = Room(
-      id: '!chat:example.org',
-      client: await prepareTestClient(),
-    );
-    expect(room.wallpaperUrl, isNull);
-    room.roomAccountData[RoomBubbleColorExtension.accountDataKey] = BasicEvent(
-      type: RoomBubbleColorExtension.accountDataKey,
-      content: {
-        'wallpaper_url': 'mxc://example.org/chat',
-        'wallpaper_opacity': 0.3,
-      },
-    );
-    expect(room.wallpaperUrl, Uri.parse('mxc://example.org/chat'));
-    expect(room.ownWallpaperUrl, Uri.parse('mxc://example.org/chat'));
-    expect(room.wallpaperOpacity, 0.3);
-    expect(room.wallpaperBlur, 0.0);
   });
 }

@@ -6,10 +6,13 @@
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
+import 'package:fluffychat/utils/adaptive_bottom_sheet.dart';
 import 'package:fluffychat/utils/date_time_extension.dart';
 import 'package:fluffychat/utils/event_read_extension.dart';
 import 'package:fluffychat/utils/file_description.dart';
@@ -23,6 +26,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
 import '../../../config/app_config.dart';
+import '../sticker_picker_dialog.dart';
 import 'message_content.dart';
 import 'message_reactions.dart';
 import 'reply_content.dart';
@@ -85,6 +89,7 @@ class Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final simple = SimplifiedInterfaceScope.quietChatOf(context);
 
     if (!{
       EventTypes.Message,
@@ -225,8 +230,14 @@ class Message extends StatelessWidget {
           padding: EdgeInsets.only(
             left: 8.0,
             right: 8.0,
-            top: nextEventSameSender ? 1.0 : 8.0,
-            bottom: previousEventSameSender || previousEvent == null
+            top: simple
+                ? 10.0
+                : nextEventSameSender
+                ? 1.0
+                : 8.0,
+            bottom: simple
+                ? 10.0
+                : previousEventSameSender || previousEvent == null
                 ? 1.0
                 : 8.0,
           ),
@@ -670,38 +681,6 @@ class Message extends StatelessWidget {
                                                           },
                                                         ),
                                                       ),
-<<<<<<< Updated upstream
-                                                    );
-                                                  },
-                                            ),
-                                          _MessageContentWithMeta(
-                                            noBubble: noBubble,
-                                            meta: _MessageMeta(
-                                              event: displayEvent,
-                                              ownMessage: ownMessage,
-                                              isEdited: isEdited,
-                                              selected: selected,
-                                              color: noBubble
-                                                  ? Colors.white
-                                                  : ownMessage
-                                                  ? theme.bubbleAccentColor
-                                                  : theme
-                                                        .otherBubbleAccentColor,
-                                            ),
-                                            child: _SelectableWhenSelected(
-                                              selected: selected,
-                                              child: MessageContent(
-                                                displayEvent,
-                                                textColor: textColor,
-                                                linkColor: linkColor,
-                                                onInfoTab: onInfoTab,
-                                                borderRadius: borderRadius,
-                                                timeline: timeline,
-                                                selected: selected,
-                                                bigEmojis: bigEmojis,
-                                              ),
-                                            ),
-=======
                                                     ],
                                                   ),
                                                 ),
@@ -780,6 +759,7 @@ class Message extends StatelessWidget {
                                                       },
                                                 ),
                                               _MessageContentWithMeta(
+                                                showMeta: true,
                                                 noBubble: noBubble,
                                                 meta: _MessageMeta(
                                                   event: displayEvent,
@@ -805,7 +785,6 @@ class Message extends StatelessWidget {
                                                 ),
                                               ),
                                             ],
->>>>>>> Stashed changes
                                           ),
                                         ),
                                       ),
@@ -878,8 +857,6 @@ class Message extends StatelessWidget {
                                   ],
                                 ),
                               ),
-<<<<<<< Updated upstream
-=======
                             Align(
                               alignment: ownMessage
                                   ? Alignment.bottomRight
@@ -976,7 +953,6 @@ class Message extends StatelessWidget {
                                     : const SizedBox.shrink(),
                               ),
                             ),
->>>>>>> Stashed changes
                           ],
                         ),
                       ),
@@ -1045,43 +1021,11 @@ class Message extends StatelessWidget {
   }
 }
 
-<<<<<<< Updated upstream
-/// Like in Telegram, the text of a message can only be selected while the
-/// message is selected, and only by starting on the text, not anywhere in the
-/// timeline. The [GlobalKey] moves [child] into the [SelectionArea] instead of
-/// rebuilding it, so images and players don't reload.
-class _SelectableWhenSelected extends StatefulWidget {
-  final bool selected;
-  final Widget child;
-
-  const _SelectableWhenSelected({required this.selected, required this.child});
-
-  @override
-  State<_SelectableWhenSelected> createState() =>
-      _SelectableWhenSelectedState();
-}
-
-class _SelectableWhenSelectedState extends State<_SelectableWhenSelected> {
-  final _childKey = GlobalKey();
-
-  @override
-  Widget build(BuildContext context) {
-    final child = KeyedSubtree(key: _childKey, child: widget.child);
-    if (!widget.selected) return child;
-    return SelectionArea(child: child);
-  }
-}
-
-/// Telegram like bubble with a small tail at the bottom of the last message
-/// in a group of messages from the same sender. The space for the tail is
-/// always reserved so that all bubbles of a group are aligned.
-=======
 /// Message bubble. On iOS it is round with a small tail at the bottom of the
 /// last message in a group of messages from the same sender, like in
 /// Messages. On Android the corners between grouped messages are tighter,
 /// like in Google Messages. The space for the tail is always reserved so that
 /// all bubbles of a group are aligned.
->>>>>>> Stashed changes
 class MessageBubbleBorder extends ShapeBorder {
   final bool ownMessage;
   final bool cupertino;
@@ -1187,15 +1131,18 @@ class _MessageContentWithMeta extends StatelessWidget {
   final Widget child;
   final Widget meta;
   final bool noBubble;
+  final bool showMeta;
 
   const _MessageContentWithMeta({
     required this.child,
     required this.meta,
     required this.noBubble,
+    required this.showMeta,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (!showMeta) return child;
     final meta = SelectionContainer.disabled(child: this.meta);
     if (noBubble) {
       return Stack(

@@ -328,8 +328,6 @@ BACKLOG.md
 
 # On-device model, fetched by scripts/fetch_personalization_model.sh
 assets/models/*.litertlm
-<<<<<<< Updated upstream
-=======
 assets/models/*.part
 assets/models/baseline/*.litertlm
 assets/models/baseline/*.part
@@ -340,4 +338,3 @@ training/.convert-venv/
 training/.hf/
 training/functiongemma-270m-it/
 training/output/
->>>>>>> Stashed changes

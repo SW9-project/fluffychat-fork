@@ -3,12 +3,15 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:ui' as ui;
+
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
 import 'package:fluffychat/pages/chat/chat_app_bar_list_tile.dart';
 import 'package:fluffychat/pages/chat/chat_app_bar_title.dart';
+import 'package:fluffychat/pages/chat/chat_background.dart';
 import 'package:fluffychat/pages/chat/chat_event_list.dart';
 import 'package:fluffychat/pages/chat/pinned_events.dart';
 import 'package:fluffychat/pages/chat/reply_display.dart';
@@ -22,10 +25,6 @@ import 'package:fluffychat/utils/other_party_can_receive.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/bubble_color_picker.dart';
 import 'package:fluffychat/widgets/chat_settings_popup_menu.dart';
-<<<<<<< Updated upstream
-=======
-import 'package:fluffychat/widgets/mxc_image.dart';
->>>>>>> Stashed changes
 import 'package:fluffychat/widgets/pulsating_widget.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -48,8 +47,6 @@ class ChatView extends StatelessWidget {
 
     final scrollUpBannerEventId = controller.scrollUpBannerEventId;
 
-<<<<<<< Updated upstream
-=======
     // Like Messages on iOS 26, the glass field floats above the messages
     // without a bar. Everything else down there needs the bar behind it.
     final floatingInput =
@@ -62,7 +59,6 @@ class ChatView extends StatelessWidget {
         controller.room.isAbandonedDMRoom != true &&
         controller.room.otherPartyCanReceiveMessages;
 
->>>>>>> Stashed changes
     return PopScope(
       canPop:
           controller.selectedEvents.isEmpty &&
@@ -376,7 +372,6 @@ class ChatView extends StatelessWidget {
                     top: false,
                     child: Stack(
                       children: <Widget>[
-<<<<<<< Updated upstream
                         Positioned.fill(
                           child: StreamBuilder(
                             stream:
@@ -385,34 +380,6 @@ class ChatView extends StatelessWidget {
                               wallpaper: controller.room.wallpaper,
                             ),
                           ),
-=======
-                        StreamBuilder(
-                          stream: controller.room.onConfigChange,
-                          builder: (context, _) {
-                            final wallpaperUrl = controller.room.wallpaperUrl;
-                            if (wallpaperUrl == null) {
-                              return const SizedBox.shrink();
-                            }
-                            return Opacity(
-                              opacity: controller.room.wallpaperOpacity,
-                              child: ImageFiltered(
-                                imageFilter: ui.ImageFilter.blur(
-                                  sigmaX: controller.room.wallpaperBlur,
-                                  sigmaY: controller.room.wallpaperBlur,
-                                ),
-                                child: MxcImage(
-                                  cacheKey: wallpaperUrl.toString(),
-                                  uri: wallpaperUrl,
-                                  fit: BoxFit.cover,
-                                  height: MediaQuery.sizeOf(context).height,
-                                  width: MediaQuery.sizeOf(context).width,
-                                  isThumbnail: false,
-                                  placeholder: (_) => Container(),
-                                ),
-                              ),
-                            );
-                          },
->>>>>>> Stashed changes
                         ),
                         GestureDetector(
                           onTap: controller.clearSingleSelectedEvent,
