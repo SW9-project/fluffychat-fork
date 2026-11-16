@@ -20,10 +20,10 @@ import 'study/study_log.dart';
 import 'suggestions/suggestion_manager.dart';
 
 /// Holds the app-wide [SuggestionManager] and the heuristics file, and
-/// starts the study log (Phase 5), which records nothing until the researcher
+/// starts the study log, which records nothing until the researcher
 /// turns it on.
 ///
-/// Since Phase 3b nothing here suggests a change on its own: interaction
+/// Nothing here suggests a change on its own: interaction
 /// signals and automatic heuristic evaluation are disconnected, and changes
 /// are only proposed in the Assist tab after the user asks. The on-device
 /// model lives in the Assist tab too, not here.

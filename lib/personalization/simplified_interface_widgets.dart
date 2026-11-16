@@ -69,7 +69,6 @@ class SimplifiedInterfacePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = SimplifiedInterfaceL10n.of(context);
     final theme = Theme.of(context);
-    final setup = SimpleSetupL10n.of(context);
     final profile =
         preferences ??
         SimplifiedInterfaceScope.maybeOf(context)?.preferences ??
@@ -105,7 +104,7 @@ class SimplifiedInterfacePreview extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      enabled ? setup.title : text.fullView,
+                      enabled ? text.simpleView : text.fullView,
                       style: theme.textTheme.titleMedium,
                     ),
                   ),
@@ -116,7 +115,7 @@ class SimplifiedInterfacePreview extends StatelessWidget {
             if (enabled && profile.quickAccess != SimpleQuickAccess.none) ...[
               Text(
                 profile.quickAccess == SimpleQuickAccess.frequent
-                    ? setup.frequent
+                    ? text.frequent
                     : text.quickAccess,
                 style: theme.textTheme.titleSmall,
               ),
@@ -165,8 +164,8 @@ class SimplifiedInterfacePreview extends StatelessWidget {
             ),
             if (enabled) ...[
               const SizedBox(height: 8),
-              Text(profile.cleanHome ? setup.cleanHome : setup.detailedHome),
-              Text(setup.quietChat),
+              Text(profile.cleanHome ? text.cleanHome : text.detailedHome),
+              Text(text.quietChat),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,
@@ -180,7 +179,7 @@ class SimplifiedInterfacePreview extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    setup.tr('Hello!', '¡Hola!'),
+                    text.sampleHello,
                     style: const TextStyle(height: 1.5),
                   ),
                 ),
@@ -198,7 +197,7 @@ class SimplifiedInterfacePreview extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    setup.tr('See you soon.', 'Hasta pronto.'),
+                    text.sampleBye,
                     style: const TextStyle(height: 1.5),
                   ),
                 ),

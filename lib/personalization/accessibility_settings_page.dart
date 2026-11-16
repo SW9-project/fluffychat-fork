@@ -121,8 +121,8 @@ class AccessibilitySettingsPage extends StatelessWidget {
 ///
 /// A size on top of another, such as the titles on top of the text size,
 /// shows its whole size, so it moves with the size below it, within its own
-/// range. Dragging it
-/// changes only this size, and a button puts it back on the size below.
+/// range. Dragging it changes only this size, and a button puts it back on the
+/// size below.
 class _ScaleSlider extends StatelessWidget {
   final ScaleCategory category;
 
@@ -400,7 +400,11 @@ class _PreviewBubble extends StatelessWidget {
     ),
     child: Text(
       text,
-      style: TextStyle(color: textColor, fontSize: AppConfig.messageFontSize),
+      style: TextStyle(
+        color: textColor,
+        fontSize: AppConfig.messageFontSize,
+        height: AccessibilityScope.of(context).lineHeight,
+      ),
     ),
   );
 }

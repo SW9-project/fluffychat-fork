@@ -12,28 +12,23 @@ enum SimpleQuickAccess { frequent, chosen, none }
 class SimpleViewPreferences {
   final SimpleQuickAccess quickAccess;
   final bool cleanHome;
-  final bool quietChat;
 
   const SimpleViewPreferences({
     this.quickAccess = SimpleQuickAccess.chosen,
     this.cleanHome = true,
-    this.quietChat = true,
   });
 
   SimpleViewPreferences copyWith({
     SimpleQuickAccess? quickAccess,
     bool? cleanHome,
-    bool? quietChat,
   }) => SimpleViewPreferences(
     quickAccess: quickAccess ?? this.quickAccess,
     cleanHome: cleanHome ?? this.cleanHome,
-    quietChat: quietChat ?? this.quietChat,
   );
 
   Map<String, Object> toJson() => {
     'quickAccess': quickAccess.name,
     'cleanHome': cleanHome,
-    'quietChat': quietChat,
   };
 
   static SimpleViewPreferences fromJson(String? source) {
@@ -47,7 +42,6 @@ class SimpleViewPreferences {
                 .firstOrNull ??
             SimpleQuickAccess.chosen,
         cleanHome: json['cleanHome'] != false,
-        quietChat: true,
       );
     } on FormatException {
       return const SimpleViewPreferences();
@@ -56,8 +50,7 @@ class SimpleViewPreferences {
 }
 
 /// Enabling this mode preserves stored sizes, filters, wallpaper preferences,
-/// and notification settings.
-/// The calmer chat is presented temporarily while this mode is enabled.
+/// and notification settings. The calmer chat is shown while it is enabled.
 class SimplifiedInterfaceController extends ChangeNotifier {
   static const enabledKey = 'personalization.simplified_interface.enabled';
   static const quickAccessKey =
@@ -141,7 +134,6 @@ class SimplifiedInterfaceController extends ChangeNotifier {
     String? accountId,
     List<String>? quickAccessIds,
   }) {
-    value = value.copyWith(quietChat: true);
     if (accountId != null && quickAccessIds != null) {
       _quickAccess[accountId] = _cleanIds(quickAccessIds);
     }
@@ -245,11 +237,6 @@ class SimplifiedInterfaceScope extends StatefulWidget {
 
   static bool enabledOf(BuildContext context) =>
       maybeOf(context)?.enabled ?? false;
-
-  static bool quietChatOf(BuildContext context) {
-    final controller = maybeOf(context);
-    return controller != null && controller.enabled;
-  }
 
   @override
   State<SimplifiedInterfaceScope> createState() =>

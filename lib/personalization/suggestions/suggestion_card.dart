@@ -13,7 +13,7 @@ import '../personalization_l10n.dart';
 import '../signals/tracked_target.dart';
 import 'suggestion_manager.dart';
 
-/// Disabled for now (Phase 3b): proposals are shown in the Assist tab, and
+/// Disabled: proposals are shown in the Assist tab, and
 /// nothing inserts this card. Its apply and undo logic lives in
 /// [SuggestionManager], which the Assist tab uses.
 ///

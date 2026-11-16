@@ -9,7 +9,7 @@ import 'heuristic.dart';
 
 export '../suggestions/suggestion.dart';
 
-/// Disabled for now (Phase 3b): signals are not collected, so nothing calls
+/// Disabled: signals are not collected, so nothing calls
 /// this. The on-device model is fine-tuned on its own functions instead
 /// (`assets/personalization_tools.json`).
 ///

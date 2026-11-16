@@ -62,7 +62,7 @@ class FileStudyLogStorage implements StudyLogStorage {
   }
 }
 
-/// The local study event log (Phase 5): one JSON object per line, each with
+/// The local study event log: one JSON object per line, each with
 /// the participant code.
 ///
 /// Nothing is recorded while logging is off in [StudySettings], which is the

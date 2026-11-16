@@ -76,8 +76,8 @@ class AssistUnchanged extends AssistResult {
   const AssistUnchanged(this.call, this.reason, [this.category]);
 }
 
-/// A function the model knows but this build does not have yet: the simple
-/// view.
+/// The simple view: not a settings change, so the Assist tab hands it to the
+/// simplified interface, which confirms it with its own preview.
 class AssistNotAvailable extends AssistResult {
   final ProposedCall call;
 

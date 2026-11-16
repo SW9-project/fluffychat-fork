@@ -46,6 +46,12 @@ void main() {
   });
 
   group('AccessibilitySettings', () {
+    test('line spacing overrides the message line height only when set', () {
+      const s = AccessibilitySettings.defaults;
+      expect(s.lineHeight, isNull);
+      expect(s.copyWith(ScaleCategory.lineSpacing, 2.0).lineHeight, 2.5);
+    });
+
     test('a size on top of another follows it until set on its own', () async {
       const title = ScaleCategory.titleText;
       var s = AccessibilitySettings.defaults.copyWith(ScaleCategory.text, 1.2);

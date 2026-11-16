@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Phase 5 check on a device: the study log writes to the app's private
+// Checks on a device that the study log writes to the app's private
 // storage, and a saved export keeps what was typed in the Assist tab. A
 // stand-in model answers (FunctionGemma does not run on the x86_64 emulator),
 // so no homeserver is needed.

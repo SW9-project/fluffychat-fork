@@ -80,11 +80,10 @@ class _AssistantPageState extends State<AssistantPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(L10n.of(context).assistant),
+              // Debug builds only: the model runs on the developer's computer.
               if (EmulatorHostModel.enabled)
                 Text(
-                  Localizations.localeOf(context).languageCode == 'es'
-                      ? 'Modelo local en el ordenador'
-                      : 'Local model on this computer',
+                  'Model on this computer',
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
             ],
@@ -95,15 +94,6 @@ class _AssistantPageState extends State<AssistantPage> {
             ? const SizedBox.expand()
             : AssistView(
                 model: _model,
-                developmentModelInfo: EmulatorHostModel.enabled
-                    ? (Localizations.localeOf(context).languageCode == 'es'
-                          ? 'Dime qué te cuesta usar y te propondré un cambio. '
-                                'En esta prueba, el modelo se ejecuta en tu '
-                                'ordenador.'
-                          : 'Tell me what is hard to use and I will suggest a '
-                                'change. In this development build, the model '
-                                'runs on your computer.')
-                    : null,
                 manager: manager,
                 accessibility: accessibility,
                 onOpenAccessibilitySettings: () =>

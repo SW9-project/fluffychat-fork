@@ -49,7 +49,7 @@ class StudyEntry extends StatelessWidget {
 /// researcher cancelled.
 typedef SaveStudyLog = Future<String?> Function(String name, Uint8List bytes);
 
-/// The hidden study screen (Phase 5), opened by holding the title of the
+/// The hidden study screen, opened by holding the title of the
 /// Accessibility page. The researcher sets the condition and the participant
 /// code, turns logging on after the participant agreed, and saves the log as
 /// a file with the participant present. Nothing is uploaded.

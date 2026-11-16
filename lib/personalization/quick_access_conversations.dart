@@ -4,7 +4,6 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'simple_view_dialog.dart';
-import 'simple_view_setup.dart';
 import 'simplified_interface.dart';
 import 'simplified_interface_l10n.dart';
 
@@ -113,9 +112,7 @@ class QuickAccessConversations extends StatelessWidget {
             spacing: 8,
             children: [
               Text(
-                automatic
-                    ? SimpleSetupL10n.of(context).frequent
-                    : text.quickAccess,
+                automatic ? text.frequent : text.quickAccess,
                 style: theme.textTheme.titleLarge,
               ),
               TextButton.icon(

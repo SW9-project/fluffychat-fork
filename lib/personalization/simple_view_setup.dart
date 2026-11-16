@@ -11,66 +11,6 @@ import 'simplified_interface.dart';
 import 'simplified_interface_l10n.dart';
 import 'simplified_interface_widgets.dart';
 
-class SimpleSetupL10n {
-  final bool es;
-  SimpleSetupL10n.of(BuildContext context)
-    : es = Localizations.localeOf(context).languageCode == 'es';
-  String tr(String en, String spanish) => es ? spanish : en;
-  String get personalize => tr('Personalize', 'Personalizar');
-  String get title => tr('Simple view', 'Vista sencilla');
-  String get subtitle =>
-      tr('Your conversations, within reach', 'Tus conversaciones, a mano');
-  String get preview => tr('Preview', 'Vista previa');
-  String get next => tr('Continue', 'Continuar');
-  String get back => tr('Back', 'Atrás');
-  String get apply => tr('Apply', 'Aplicar');
-  String get skip =>
-      tr('Skip preview next time', 'No mostrar la vista previa la próxima vez');
-  String get skipHelp =>
-      tr('You can change this later.', 'Puedes cambiarlo luego.');
-  String get contactsQuestion =>
-      tr('Conversations at the top', 'Conversaciones arriba');
-  String get frequent => tr('My 3 most used', 'Mis 3 más usadas');
-  String get frequentHelp => tr(
-    'Based on chats opened here. Recent chats appear first.',
-    'Según los chats que abras aquí. Al principio, los recientes.',
-  );
-  String get chosen => tr('I will choose them', 'Quiero elegirlas');
-  String get chosenHelp =>
-      tr('Choose up to 3 names.', 'Elige hasta 3 nombres.');
-  String get editNames => tr('Choose names', 'Elegir nombres');
-  String get emptyNames =>
-      tr('No conversations yet.', 'Aún no hay conversaciones.');
-  String get none => tr('No shortcuts', 'Sin accesos rápidos');
-  String get noneHelp => tr(
-    'Keep one list of conversations.',
-    'Mantener una sola lista de conversaciones.',
-  );
-  String get homeQuestion => tr(
-    'What would you like to see in the conversation list?',
-    '¿Qué quieres ver en la lista de conversaciones?',
-  );
-  String get cleanHome =>
-      tr('Names and unread messages only', 'Solo nombres y mensajes sin leer');
-  String get cleanHelp => tr(
-    'Clear cards, without message previews, dates or read receipts.',
-    'Tarjetas claras, sin avances de mensajes, fechas ni marcas de lectura.',
-  );
-  String get detailedHome =>
-      tr('Keep message previews', 'Conservar los avances de mensajes');
-  String get detailedHelp => tr(
-    'Keep the familiar conversation details.',
-    'Mantener la información habitual de las conversaciones.',
-  );
-  String get quietChat =>
-      tr('A clearer, more spacious chat', 'Chat claro y más espaciado');
-  String get saved => tr(
-    'Your text and button sizes stay the same.',
-    'Se conservan tus tamaños de texto y botones.',
-  );
-  String question(int number) => tr('Step $number of 2', 'Paso $number de 2');
-}
-
 class _ViewChoice {
   final SimpleViewPreferences preferences;
   final bool skipPreview;
@@ -199,7 +139,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
     if (_scroll.hasClients) _scroll.jumpTo(0);
   }
 
-  Widget _contactNames(SimpleSetupL10n text) => Padding(
+  Widget _contactNames(SimplifiedInterfaceL10n text) => Padding(
     key: const Key('setup_contact_names'),
     padding: const EdgeInsets.only(bottom: 16),
     child: _names.isEmpty
@@ -273,8 +213,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final text = SimpleSetupL10n.of(context);
-    final common = SimplifiedInterfaceL10n.of(context);
+    final text = SimplifiedInterfaceL10n.of(context);
     final theme = Theme.of(context);
     final heading = switch (_step) {
       0 => text.contactsQuestion,
@@ -285,7 +224,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: Text(text.title),
+          title: Text(text.simpleView),
           toolbarHeight: MediaQuery.textScalerOf(context).scale(22) * 2 + 16,
         ),
         body: SingleChildScrollView(
@@ -295,10 +234,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_step < 2) ...[
-                Text(
-                  text.question(_step + 1),
-                  style: theme.textTheme.labelLarge,
-                ),
+                Text(text.step(_step + 1), style: theme.textTheme.labelLarge),
                 const SizedBox(height: 12),
                 LinearProgressIndicator(value: (_step + 1) / 2),
                 const SizedBox(height: 24),
@@ -377,7 +313,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
               ],
               if (_step == 2) ...[
                 ExpansionTile(
-                  title: Text(text.tr('Current view', 'Vista actual')),
+                  title: Text(text.currentView),
                   children: [
                     SimplifiedInterfacePreview(
                       enabled: widget.controller.enabled,
@@ -386,10 +322,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  text.tr('After applying', 'Despu\u00e9s de aplicar'),
-                  style: theme.textTheme.titleMedium,
-                ),
+                Text(text.afterApplying, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
                 SimplifiedInterfacePreview(
                   enabled: widget.target,
@@ -421,7 +354,7 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                 TextButton(
                   key: const Key('simple_setup_cancel'),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(common.cancel),
+                  child: Text(text.cancel),
                 ),
                 if (_step > 0 && widget.questions)
                   OutlinedButton(

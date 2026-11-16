@@ -66,7 +66,7 @@ class AssistChat {
 /// Chats and messages are never sent; chat names are matched here, on the
 /// phone.
 ///
-/// The study log (Phase 5) records each prompt and the answer, with the
+/// The study log records each prompt and the answer, with the
 /// model's timing, when the researcher turned logging on.
 class AssistView extends StatefulWidget {
   /// The on-device model, or null when the assistant is off in the current
@@ -85,9 +85,6 @@ class AssistView extends StatefulWidget {
   /// The user's chats, most recent first.
   final List<AssistChat> Function() chats;
 
-  /// Describes an explicit development host without claiming on-device use.
-  final String? developmentModelInfo;
-
   const AssistView({
     required this.model,
     required this.manager,
@@ -96,7 +93,6 @@ class AssistView extends StatefulWidget {
     required this.tools,
     required this.themeMode,
     required this.chats,
-    this.developmentModelInfo,
     super.key,
   });
 
@@ -403,12 +399,13 @@ class _AssistViewState extends State<AssistView> {
                     previewAlreadyShown: true,
                   );
                   if (appliedRevision == null || !mounted) return;
-                  exchange.appliedRevision = appliedRevision;
-                  exchange.outcome = _Outcome.applied;
                   StudyLog.instance.record(
                     SimpleViewAction('apply', exchange.simpleFrom!, target),
                   );
-                  if (mounted) setState(() {});
+                  setState(() {
+                    exchange.appliedRevision = appliedRevision;
+                    exchange.outcome = _Outcome.applied;
+                  });
                 },
                 child: Text(l10n.applyChange),
               ),
@@ -465,7 +462,6 @@ class _AssistViewState extends State<AssistView> {
 
   @override
   Widget build(BuildContext context) {
-    SimplifiedInterfaceScope.maybeOf(context);
     final model = widget.model;
     if (model == null) return _statusPanel(context, null);
     return ValueListenableBuilder<ModelStatus>(
@@ -499,13 +495,9 @@ class _AssistViewState extends State<AssistView> {
         ];
       case ModelState.notPrepared:
         children = [
-          Text(
-            widget.developmentModelInfo ?? l10n.assistIntro,
-            textAlign: TextAlign.center,
-          ),
+          Text(l10n.assistIntro, textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          if (widget.developmentModelInfo == null)
-            Text(l10n.assistSetupInfo, textAlign: TextAlign.center),
+          Text(l10n.assistSetupInfo, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton(
             key: const Key('assist_setup'),
@@ -574,7 +566,7 @@ class _AssistViewState extends State<AssistView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.developmentModelInfo ?? l10n.assistIntro),
+                      Text(l10n.assistIntro),
                       if (SimplifiedInterfaceScope.maybeOf(context)
                           case final controller?)
                         TextButton.icon(

@@ -52,7 +52,7 @@ class StudyPreferences {
   );
 }
 
-/// The hidden study switches (Phase 5). Stored on this device only.
+/// The hidden study switches. Stored on this device only.
 class StudySettings extends ValueNotifier<StudyPreferences> {
   static const _condition = 'personalization.study.condition';
   static const _logging = 'personalization.study.logging';

@@ -240,6 +240,7 @@ class PersonalizationL10n {
       ScaleCategory.menuButton: 'Menu button',
       ScaleCategory.navigationButton: 'Bottom tabs',
       ScaleCategory.spacing: 'Spacing',
+      ScaleCategory.lineSpacing: 'Line spacing',
     },
     categoryDescriptions: {
       ScaleCategory.text: 'Size of all text in the app',
@@ -261,6 +262,7 @@ class PersonalizationL10n {
       ScaleCategory.menuButton: 'The three dots, on top of the button size',
       ScaleCategory.navigationButton: 'Icons of the tabs at the bottom',
       ScaleCategory.spacing: 'Space between things you can tap',
+      ScaleCategory.lineSpacing: 'Space between lines in messages',
     },
   );
 
@@ -363,6 +365,7 @@ class PersonalizationL10n {
       ScaleCategory.menuButton: 'Menuknap',
       ScaleCategory.navigationButton: 'Faner nederst',
       ScaleCategory.spacing: 'Afstand',
+      ScaleCategory.lineSpacing: 'Linjeafstand',
     },
     categoryDescriptions: {
       ScaleCategory.text: 'Størrelsen på al tekst i appen',
@@ -385,6 +388,7 @@ class PersonalizationL10n {
       ScaleCategory.menuButton: 'De tre prikker, oven i knapstørrelsen',
       ScaleCategory.navigationButton: 'Ikonerne på fanerne nederst',
       ScaleCategory.spacing: 'Afstand mellem ting, du kan trykke på',
+      ScaleCategory.lineSpacing: 'Afstand mellem linjer i beskeder',
     },
   );
 }

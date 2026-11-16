@@ -8,7 +8,7 @@ import 'interaction_signal.dart';
 
 export 'interaction_signal.dart' show TargetKind;
 
-/// Disabled for now (Phase 3b): targets still register, but nothing reads
+/// Disabled: targets still register, but nothing reads
 /// them because interaction signals are not collected.
 ///
 /// Marks a widget as a target for interaction signals. Its on-screen

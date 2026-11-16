@@ -119,6 +119,9 @@ enum ScaleCategory {
 
   /// Space between controls that can be tapped.
   spacing('spacing_scale', min: 0.5, max: 2.0, step: 0.25),
+
+  /// Space between lines of text in messages.
+  lineSpacing('line_spacing_scale', min: 1.0, max: 2.0, step: 0.1),
   avatar('avatar_scale', min: 1.0, max: 2.0, step: 0.1);
 
   const ScaleCategory(
@@ -252,6 +255,15 @@ class AccessibilitySettings {
   double get touchTargetScale => this[ScaleCategory.touchTarget];
   double get spacingScale => this[ScaleCategory.spacing];
   double get avatarScale => this[ScaleCategory.avatar];
+
+  /// Line height of message text, as a multiple of the font size, for
+  /// `MediaQueryData.lineHeightScaleFactorOverride`. Null keeps the text's own.
+  double? get lineHeight {
+    final scale = this[ScaleCategory.lineSpacing];
+    // 1.25 is the line height HtmlMessage draws messages with.
+    return scale == 1.0 ? null : _round(1.25 * scale);
+  }
+
   bool get buttonLabels => isOn(AccessibilityToggle.buttonLabels);
   bool get highContrast => isOn(AccessibilityToggle.highContrast);
 

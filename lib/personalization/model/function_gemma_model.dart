@@ -26,7 +26,8 @@ import 'settings_intent_model.dart';
 ///
 /// The model file is bundled as an app asset (see `assets/models/README.md`).
 /// A build without it, a platform other than iOS or Android, an Android device
-/// below 11 (API 30) or a process that is not arm64 reports [ModelState.unavailable], and the app works without it.
+/// below 11 (API 30) or a process that is not arm64 reports
+/// [ModelState.unavailable], and the app works without it.
 class FunctionGemmaModel implements SettingsIntentModel {
   static const assetPath = AssistantModelConfig.assetPath;
   static const fileName = AssistantModelConfig.fileName;

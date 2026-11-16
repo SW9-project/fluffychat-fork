@@ -8,7 +8,7 @@ import '../model/tool_call_interpreter.dart';
 import '../suggestions/suggestion.dart';
 import 'study_settings.dart';
 
-/// One entry in the study log (Phase 5).
+/// One entry in the study log.
 ///
 /// Events hold ids, enums, numbers and booleans. The only text is what the
 /// participant typed to the assistant ([AssistPrompted]), which the team

@@ -12,6 +12,7 @@ import 'package:fluffychat/pages/chat_list/dummy_chat_list_item.dart';
 import 'package:fluffychat/pages/chat_list/search_title.dart';
 import 'package:fluffychat/pages/chat_list/space_view.dart';
 import 'package:fluffychat/personalization/quick_access_conversations.dart';
+import 'package:fluffychat/personalization/simple_view_conversation_source.dart';
 import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
 import 'package:fluffychat/personalization/simplified_interface_widgets.dart';
@@ -82,33 +83,28 @@ class ChatListViewBody extends StatelessWidget {
             )
             .toList();
 
-        final account = '${client.homeserver}|${client.userID}';
+        final account = simpleViewAccount(client);
         final showQuick =
             simple &&
             !controller.isSearchMode &&
             simpleController!.preferences.quickAccess != SimpleQuickAccess.none;
-
-        final quickRooms = client.rooms
-            .where(
-              (room) =>
-                  !room.isSpace &&
-                  room.membership == Membership.join &&
-                  (!AppSettings.hideRoomsInSpaces.value ||
-                      spaceDelegateCandidates[room.id] == null),
-            )
-            .toList();
+        final quickRooms = showQuick
+            ? simpleViewRooms(client).toList()
+            : const <Room>[];
         final automatic =
             simpleController?.preferences.quickAccess ==
             SimpleQuickAccess.frequent;
-        final selected = automatic
-            ? simpleController!.frequentFor(
+        final selected = !showQuick
+            ? const <String>[]
+            : automatic
+            ? simpleController.frequentFor(
                 account,
                 quickRooms.map((r) => r.id).toList(),
               )
-            : simpleController?.quickAccessFor(account) ?? <String>[];
-        final visibleQuickIds = showQuick
-            ? selected.where((id) => quickRooms.any((r) => r.id == id)).toSet()
-            : <String>{};
+            : simpleController.quickAccessFor(account);
+        final visibleQuickIds = selected
+            .where((id) => quickRooms.any((r) => r.id == id))
+            .toSet();
         final listRooms = rooms
             .where((r) => !visibleQuickIds.contains(r.id))
             .toList();

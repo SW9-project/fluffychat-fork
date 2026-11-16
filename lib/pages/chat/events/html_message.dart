@@ -318,7 +318,7 @@ class HtmlMessage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: fontSize,
                   color: textColor,
-                  height: SimplifiedInterfaceScope.quietChatOf(context)
+                  height: SimplifiedInterfaceScope.enabledOf(context)
                       ? 1.5
                       : null,
                 ),
@@ -524,7 +524,7 @@ class HtmlMessage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: fontSize,
                   color: textColor,
-                  height: SimplifiedInterfaceScope.quietChatOf(context)
+                  height: SimplifiedInterfaceScope.enabledOf(context)
                       ? 1.5
                       : null,
                 ),
@@ -568,9 +568,7 @@ class HtmlMessage extends StatelessWidget {
             'body' => TextStyle(
               fontSize: fontSize,
               color: textColor,
-              height: SimplifiedInterfaceScope.quietChatOf(context)
-                  ? 1.5
-                  : null,
+              height: SimplifiedInterfaceScope.enabledOf(context) ? 1.5 : null,
             ),
             'a' => linkStyle,
             'strong' => const TextStyle(fontWeight: FontWeight.bold),
@@ -612,7 +610,7 @@ class HtmlMessage extends StatelessWidget {
     final style = TextStyle(
       fontSize: fontSize,
       color: textColor,
-      height: SimplifiedInterfaceScope.quietChatOf(context) ? 1.5 : null,
+      height: SimplifiedInterfaceScope.enabledOf(context) ? 1.5 : null,
     );
 
     if (maxLines == null) {

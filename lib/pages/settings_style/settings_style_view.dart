@@ -150,7 +150,6 @@ class SettingsStyleView extends StatelessWidget {
             Divider(color: theme.dividerColor),
             SettingsHeader(L10n.of(context).messagesStyle),
             const WallpaperEditor(),
-            // The font size slider moved to the accessibility settings.
             Divider(color: theme.dividerColor),
             StreamBuilder(
               stream: client.onSync.stream.where(

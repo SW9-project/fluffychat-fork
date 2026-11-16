@@ -125,7 +125,7 @@ enum _Part {
       if (change.from[c] == change.to[c]) continue;
       parts.addAll(switch (c) {
         ScaleCategory.text => [message, chatList, title],
-        ScaleCategory.messageText => [message],
+        ScaleCategory.messageText || ScaleCategory.lineSpacing => [message],
         ScaleCategory.chatListText => [chatList],
         ScaleCategory.titleText => [title],
         ScaleCategory.inputText => [input],
@@ -344,6 +344,7 @@ class _Scene extends StatelessWidget {
                   style: TextStyle(
                     fontSize: AppConfig.messageFontSize,
                     color: theme.colorScheme.onSurface,
+                    height: s.lineHeight,
                   ),
                 ),
               ),

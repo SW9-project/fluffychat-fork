@@ -23,7 +23,7 @@ class ChatAppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final simple = SimplifiedInterfaceScope.quietChatOf(context);
+    final simple = SimplifiedInterfaceScope.enabledOf(context);
     final room = controller.room;
     if (controller.selectedEvents.isNotEmpty) {
       return Text(

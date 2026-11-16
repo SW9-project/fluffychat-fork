@@ -177,7 +177,6 @@ void main() {
       expect(controller.enabled, true);
       expect(controller.preferences.quickAccess, SimpleQuickAccess.frequent);
       expect(controller.preferences.cleanHome, false);
-      expect(controller.preferences.quietChat, true);
       expect(controller.skipPreview, true);
       await tap(tester, 'simplified_interface_switch');
       expect(controller.enabled, false);
@@ -377,7 +376,6 @@ void main() {
     await tap(tester, 'simple_setup_apply');
     expect(controller.quickAccessFor('account-a'), ['Beth']);
     expect(controller.quickAccessFor('account-b'), isEmpty);
-    expect(controller.preferences.quietChat, true);
     final restored = SimplifiedInterfaceController(store);
     expect(restored.quickAccessFor('account-a'), ['Beth']);
     restored.dispose();
@@ -416,16 +414,6 @@ void main() {
       sizes.dispose();
     },
   );
-
-  test('old profiles also receive the automatic calmer chat', () async {
-    await store.setString(
-      SimplifiedInterfaceController.preferencesKey,
-      '{"quickAccess":"none","cleanHome":true,"quietChat":false}',
-    );
-    final restored = SimplifiedInterfaceController(store);
-    expect(restored.preferences.quietChat, true);
-    restored.dispose();
-  });
 
   testWidgets('picker limits selection and cancel keeps original shortcuts', (
     tester,

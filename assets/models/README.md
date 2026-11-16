@@ -1,4 +1,4 @@
-﻿# Modelo SW9 v2
+# On-device model
 
 This folder holds the model that the personalization feature runs on the device
 (see `docs/ai-personalization-plan.md`, Phase 3). The file is about 284 MB, too
@@ -8,7 +8,6 @@ large for git, so it is not committed.
 |---|---|---|
 | `functiongemma-270M-sw9-tools1.litertlm` | FunctionGemma fine-tuned on the eleven functions in `assets/personalization_tools.json`, which the app runs | yes |
 | `baseline/functiongemma-270M-it.litertlm` | The base model: kept for comparison, and the converter copies its metadata | no |
-| `baseline/functiongemma-270M-sw9-pilot1.litertlm` | The earlier pilot, trained on two placeholder heuristics | no |
 
 ## The fine-tuned model
 
@@ -57,17 +56,14 @@ Clear the app's data first when the device had another model file: a file that i
 already installed is not installed again, and the plugin restores the model that was
 active last. The test fails rather than reporting numbers for the wrong one.
 
-## The baseline and the pilot
+## The baseline
 
 ```sh
 bash scripts/fetch_personalization_model.sh --baseline
-bash scripts/fetch_personalization_model.sh --pilot
 ```
 
-download the base model and the pilot into `baseline/`. Flutter does not bundle
-subfolders of `assets/models/`, so they do not reach the APK. The pilot comes from
-the `pilot1` release of the private `functiongemma-heuristics` repository and needs
-the GitHub CLI and access to it.
+downloads the base model into `baseline/`. Flutter does not bundle subfolders of
+`assets/models/`, so it does not reach the APK.
 
 ## Licenses
 
@@ -78,9 +74,7 @@ the model bundled must also receive a copy of these terms and be told the use
 restrictions apply.
 
 The bundled model is a modified version of FunctionGemma. `NOTICE.txt` in this
-folder holds the notice and is bundled with the model. The pilot was fine-tuned on
-data that includes utterances from MASSIVE 1.1 by Amazon (CC BY 4.0); its
-attribution is in `NOTICE` in the `functiongemma-heuristics` repository.
+folder holds the notice and is bundled with the model.
 
 Source of the baseline file: https://huggingface.co/sasha-denisov/function-gemma-270M-it
 (converted from https://huggingface.co/google/functiongemma-270m-it).

@@ -179,26 +179,38 @@ class MessageContent extends StatelessWidget {
             final bigEmotes =
                 !event.isRichMessage && bigEmojis.contains(event.body);
 
+            final media = MediaQuery.of(context);
             return Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6) *
                   AccessibilityScope.of(context).messageScale(event.room.id),
-              child: HtmlMessage(
-                html: html,
-                textColor: textColor,
-                room: event.room,
-                fontSize: AppConfig.messageFontSize * (bigEmotes ? 5 : 1),
-                linkStyle: TextStyle(
-                  color: linkColor,
-                  fontSize: AppConfig.messageFontSize,
-                  decoration: TextDecoration.underline,
-                  decorationColor: linkColor,
+              // Overrides the line height of every text inside the message.
+              child: MediaQuery(
+                data: media.applyTextStyleOverrides(
+                  lineHeightScaleFactorOverride:
+                      AccessibilityScope.of(context).lineHeight ??
+                      media.lineHeightScaleFactorOverride,
+                  letterSpacingOverride: media.letterSpacingOverride,
+                  wordSpacingOverride: media.wordSpacingOverride,
+                  paragraphSpacingOverride: media.paragraphSpacingOverride,
                 ),
-                onOpen: (url) => UrlLauncher(context, url.url).launchUrl(),
-                eventId: event.eventId,
-                checkboxCheckedEvents: event.aggregatedEvents(
-                  timeline,
-                  EventCheckboxRoomExtension.relationshipType,
+                child: HtmlMessage(
+                  html: html,
+                  textColor: textColor,
+                  room: event.room,
+                  fontSize: AppConfig.messageFontSize * (bigEmotes ? 5 : 1),
+                  linkStyle: TextStyle(
+                    color: linkColor,
+                    fontSize: AppConfig.messageFontSize,
+                    decoration: TextDecoration.underline,
+                    decorationColor: linkColor,
+                  ),
+                  onOpen: (url) => UrlLauncher(context, url.url).launchUrl(),
+                  eventId: event.eventId,
+                  checkboxCheckedEvents: event.aggregatedEvents(
+                    timeline,
+                    EventCheckboxRoomExtension.relationshipType,
+                  ),
                 ),
               ),
             );

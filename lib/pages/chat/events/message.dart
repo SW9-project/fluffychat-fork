@@ -89,7 +89,7 @@ class Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final simple = SimplifiedInterfaceScope.quietChatOf(context);
+    final simple = SimplifiedInterfaceScope.enabledOf(context);
 
     if (!{
       EventTypes.Message,
