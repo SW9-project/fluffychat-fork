@@ -18,6 +18,7 @@ find . -type f \
     -not -path "*/macos/*" \
     -not -path "*/LICENSE" \
     -not -path "*/LICENSES/*" \
+    -not -path "*/packages/*" \
     -not -path "*/integration_test/synapse/*" \
     -not -path "*/integration_test/data/*" \
     -not -path "*/snap/*" \

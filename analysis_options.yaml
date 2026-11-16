@@ -51,6 +51,7 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    - packages/**
 
 dart_code_linter:
   rules:
