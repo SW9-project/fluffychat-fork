@@ -1,28 +1,35 @@
-# On-device model
+﻿# Modelo SW9 v2
 
-This folder holds the FunctionGemma 270M model that the personalization
-feature runs on the device (see `docs/ai-personalization-plan.md`, Phase 3).
-The model file is about 284 MB, too large for git, so it is not committed.
-Fetch it before building a release or study APK:
+Modelo activo: `functiongemma-270M-sw9-v2.litertlm` (284121728 bytes).
+SHA-256: `37e92741110b1a7bff2607905a3598186d42de36beabe9091400879ef7d1383b`.
+El archivo fue suministrado por el equipo y se importó desde Descargas el 2026-11-13.
+`model.json` registra su identidad. Los pesos no se guardan en Git.
+
+Importar la copia descargada antes de compilar:
 
 ```sh
-./scripts/fetch_personalization_model.sh
+./scripts/fetch_personalization_model.sh /ruta/functiongemma-270M-sw9-v2.litertlm
 ```
 
-A build without the file works normally; the "Tell the app what is hard"
-feature is then hidden.
+En Windows, `scripts/run-android-assistant.ps1` importa por defecto desde
+Descargas si falta la copia de assets. También acepta `-ModelFile RUTA`.
+La importación comprueba el SHA-256. No depende de una URL de descarga del v2.
 
-The model only runs on Android 11 (API 30) or later, in an arm64 app process.
-On an x86_64 emulator, build an arm64-only APK
-(`flutter build apk --target-platform android-arm64`): the emulator translates
-it.
+El APK incluye solo este modelo, mediante una entrada explícita en pubspec.yaml.
+Los modelos anteriores y las cachés no se empaquetan con él. El nombre nuevo
+hace que el motor móvil lo prepare como una versión distinta del modelo anterior.
 
-## License
+En Android, la inferencia nativa requiere Android 11+ y ARM64. Para el emulador
+x86_64 de Windows se utiliza el mismo archivo v2 en el ordenador mediante el
+puente local de desarrollo. El servicio informa del nombre y SHA-256 reales;
+la app comprueba ambos antes de aceptar sus respuestas.
 
-FunctionGemma is provided under and subject to the Gemma Terms of Use,
-https://ai.google.dev/gemma/terms, and the Gemma Prohibited Use Policy,
-https://ai.google.dev/gemma/prohibited_use_policy. Anyone who receives an APK
-with this file bundled must also receive these terms.
+Las funciones v2 integradas son `change_text_zoom` y `change_button`, con
+`direction: bigger | smaller`. Se traducen a los ajustes existentes con límites,
+vista previa, Apply y Undo. Otras funciones o argumentos se rechazan.
 
-Source of the converted file: https://huggingface.co/sasha-denisov/function-gemma-270M-it
-(converted from https://huggingface.co/google/functiongemma-270m-it).
+## Licencia
+
+La familia FunctionGemma está sujeta a los [Gemma Terms of Use](https://ai.google.dev/gemma/terms)
+y la [Gemma Prohibited Use Policy](https://ai.google.dev/gemma/prohibited_use_policy).
+El archivo v2 es una modificación suministrada por el equipo SW9.

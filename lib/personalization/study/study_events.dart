@@ -277,3 +277,15 @@ class MeaningSettingsChanged extends StudyEvent {
     'highlight_times': preferences.highlightTimes,
   };
 }
+
+/// Distinguishes explicit choices from model proposals; no contact data.
+class SimpleViewAction extends StudyEvent {
+  final String action;
+  final bool from;
+  final bool to;
+  const SimpleViewAction(this.action, this.from, this.to);
+  @override
+  String get type => 'simple_view';
+  @override
+  Map<String, Object?> get data => {'action': action, 'from': from, 'to': to};
+}

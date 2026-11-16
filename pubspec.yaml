@@ -116,7 +116,7 @@ flutter:
     - assets/
     - assets/logo/mini/
     - assets/sounds/
-    - assets/models/
+    - assets/models/functiongemma-270M-sw9-v2.litertlm
     - assets/vodozemac/0.8.1/
 
 hooks:

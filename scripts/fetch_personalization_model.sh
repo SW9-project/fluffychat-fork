@@ -3,15 +3,16 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-# Downloads the on-device FunctionGemma model into assets/models so it is
+# Imports the team-supplied FunctionGemma v2 model into assets/models so it is
 # bundled into the app. See assets/models/README.md for the license terms.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-file="assets/models/functiongemma-270M-it.litertlm"
-url="https://huggingface.co/sasha-denisov/function-gemma-270M-it/resolve/main/functiongemma-270M-it.litertlm"
-sha256="680fead1cca41a23220c904500a515d06e41f5c66d130aa4a9cc5905ec529a8e"
+filename="functiongemma-270M-sw9-v2.litertlm"
+file="assets/models/$filename"
+source_file="${1:-${SW9_MODEL_FILE:-$HOME/Downloads/$filename}}"
+sha256="37e92741110b1a7bff2607905a3598186d42de36beabe9091400879ef7d1383b"
 
 checksum() {
   if command -v sha256sum >/dev/null; then
@@ -26,13 +27,13 @@ if [[ -f "$file" && "$(checksum "$file")" == "$sha256" ]]; then
   exit 0
 fi
 
-echo "Downloading FunctionGemma 270M (about 284 MB)..."
-curl --fail --location --progress-bar --output "$file.part" "$url"
-
-if [[ "$(checksum "$file.part")" != "$sha256" ]]; then
-  rm -f "$file.part"
-  echo "Checksum mismatch, download removed." >&2
+if [[ ! -f "$source_file" ]]; then
+  echo "Supply the team v2 model: $0 /path/to/$filename" >&2
   exit 1
 fi
-mv "$file.part" "$file"
-echo "Saved $file"
+if [[ "$(checksum "$source_file")" != "$sha256" ]]; then
+  echo "Model checksum mismatch; existing assets have not been changed." >&2
+  exit 1
+fi
+cp "$source_file" "$file"
+echo "Imported $file"

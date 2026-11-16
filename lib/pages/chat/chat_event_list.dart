@@ -12,6 +12,7 @@ import 'package:fluffychat/pages/chat/encryption_info.dart';
 import 'package:fluffychat/pages/chat/events/message.dart';
 import 'package:fluffychat/pages/chat/seen_by_row.dart';
 import 'package:fluffychat/pages/chat/typing_indicators.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/filtered_timeline_extension.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
@@ -109,6 +110,7 @@ class ChatEventList extends StatelessWidget {
     }
 
     final hasWallpaper =
+        !SimplifiedInterfaceScope.quietChatOf(context) &&
         controller.room.wallpaper.type == ChatWallpaperType.image;
 
     return MediaQuery(

@@ -4,9 +4,9 @@
 
 // The model test harness (Phase 5): runs the phrase list through the real
 // on-device model and prints a report with accuracy and latency. Since
-// Phase 3b the model is offered only the heuristic functions from
-// assets/personalization_heuristics.json. The phrase list is in
-// personalization_phrases.dart.
+// V2 the model is offered the validated v2 text/button functions enabled by
+// assets/personalization_heuristics.json. The v2 phrase list is separate from
+// the original pilot dataset.
 //
 // Latency per phrase: time to first token as LiteRT-LM measured it, and the
 // total from sending the prompt to the answer. Loading the model is reported
@@ -16,10 +16,8 @@
 // Needs an arm64 process on Android 11+ and the bundled model file
 // (scripts/fetch_personalization_model.sh). On a phone:
 //   flutter test integration_test/personalization_model_test.dart -d <id>
-// On an x86_64 emulator, build an arm64 APK with this file as entry point:
-//   flutter build apk --debug --target-platform android-arm64 \
-//     -t integration_test/personalization_model_test.dart
-// then install it and read the report from `adb logcat -s flutter`.
+// On Windows x86_64, use the host bridge for app checks instead; this harness
+// requires native ARM64 and does not run via ARM translation.
 // Numbers for the thesis come from a real low-end phone, never an emulator.
 
 import 'dart:convert';
@@ -27,15 +25,17 @@ import 'dart:convert';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
+import 'package:fluffychat/personalization/model/assistant_model_config.dart';
 import 'package:fluffychat/personalization/model/function_gemma_model.dart';
 import 'package:fluffychat/personalization/model/heuristic_functions.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
+import 'package:fluffychat/personalization/model/v2_settings_functions.dart';
 import 'package:fluffychat/personalization/personalization_layer.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-import 'personalization_phrases.dart';
+import 'personalization_v2_phrases.dart';
 
 enum Outcome { correct, rejected, wrong }
 
@@ -67,7 +67,10 @@ void main() {
             )
             as Map<String, Object?>,
       ).heuristics;
-      final functions = HeuristicFunctions.declarationsFor(heuristics);
+      report(
+        '[phrases] model ${AssistantModelConfig.id} sha256 ${AssistantModelConfig.sha256}',
+      );
+      final functions = V2SettingsFunctions.declarationsFor(heuristics);
       final model = FunctionGemmaModel();
       final prepare = Stopwatch()..start();
       await model.prepare();
@@ -94,15 +97,13 @@ void main() {
         final firstToken = timing.timeToFirstTokenMs;
         if (firstToken != null) firstTokens.add(firstToken);
 
-        final result = HeuristicFunctions.interpret(
+        final result = V2SettingsFunctions.interpret(
           call,
           heuristics,
           AccessibilitySettings.defaults,
         );
         final proposed = switch (result) {
-          AssistProposal(:final heuristic) => HeuristicFunctions.nameFor(
-            heuristic,
-          ),
+          AssistProposal() => '${call!.name}:${call.args['direction']}',
           AssistAtLimit() || AssistNoSuggestion() => null,
         };
         final outcome = proposed == null

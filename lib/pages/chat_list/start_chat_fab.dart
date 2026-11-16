@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -12,6 +13,14 @@ class StartChatFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (SimplifiedInterfaceScope.enabledOf(context)) {
+      return FloatingActionButton.extended(
+        heroTag: 'start_chat_fab',
+        onPressed: () => context.go('/rooms/newprivatechat'),
+        icon: const Icon(Icons.edit),
+        label: Text(L10n.of(context).newChat),
+      );
+    }
     return FloatingActionButton(
       heroTag: 'start_chat_fab',
       tooltip: L10n.of(context).newChat,

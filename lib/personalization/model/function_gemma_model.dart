@@ -14,6 +14,7 @@ import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:matrix/matrix.dart';
 
+import 'assistant_model_config.dart';
 import 'process_abi.dart';
 import 'settings_functions.dart';
 import 'settings_intent_model.dart';
@@ -25,8 +26,8 @@ import 'settings_intent_model.dart';
 /// A build without it, a device below Android 11 (API 30), a platform other than
 /// Android and iOS or a process that is not arm64 reports [ModelState.unavailable], and the app works without it.
 class FunctionGemmaModel implements SettingsIntentModel {
-  static const assetPath = 'assets/models/functiongemma-270M-it.litertlm';
-  static const fileName = 'functiongemma-270M-it.litertlm';
+  static const assetPath = AssistantModelConfig.assetPath;
+  static const fileName = AssistantModelConfig.fileName;
 
   /// The loaded model is freed after this long without a request.
   static const idleTimeout = Duration(minutes: 2);

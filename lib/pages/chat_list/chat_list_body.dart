@@ -11,6 +11,10 @@ import 'package:fluffychat/pages/chat_list/chat_list_item.dart';
 import 'package:fluffychat/pages/chat_list/dummy_chat_list_item.dart';
 import 'package:fluffychat/pages/chat_list/search_title.dart';
 import 'package:fluffychat/pages/chat_list/space_view.dart';
+import 'package:fluffychat/personalization/quick_access_conversations.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
+import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
+import 'package:fluffychat/personalization/simplified_interface_widgets.dart';
 import 'package:fluffychat/utils/stream_extension.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/public_room_dialog.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -30,6 +34,9 @@ class ChatListViewBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final simpleController = SimplifiedInterfaceScope.maybeOf(context);
+    final simple = simpleController?.enabled ?? false;
+    final simpleL10n = SimplifiedInterfaceL10n.of(context);
 
     final client = Matrix.of(context).client;
     final activeSpace = controller.activeSpaceId;
@@ -75,10 +82,86 @@ class ChatListViewBody extends StatelessWidget {
             )
             .toList();
 
+        final account = '${client.homeserver}|${client.userID}';
+        final showQuick =
+            simple &&
+            !controller.isSearchMode &&
+            simpleController!.preferences.quickAccess != SimpleQuickAccess.none;
+
+        final quickRooms = client.rooms
+            .where(
+              (room) =>
+                  !room.isSpace &&
+                  room.membership == Membership.join &&
+                  (!AppSettings.hideRoomsInSpaces.value ||
+                      spaceDelegateCandidates[room.id] == null),
+            )
+            .toList();
+        final automatic =
+            simpleController?.preferences.quickAccess ==
+            SimpleQuickAccess.frequent;
+        final selected = automatic
+            ? simpleController!.frequentFor(
+                account,
+                quickRooms.map((r) => r.id).toList(),
+              )
+            : simpleController?.quickAccessFor(account) ?? <String>[];
+        final visibleQuickIds = showQuick
+            ? selected.where((id) => quickRooms.any((r) => r.id == id)).toSet()
+            : <String>{};
+        final listRooms = rooms
+            .where((r) => !visibleQuickIds.contains(r.id))
+            .toList();
         return CustomScrollView(
           controller: controller.scrollController,
           slivers: [
             ChatListHeader(controller: controller),
+            const SliverToBoxAdapter(child: SimplifiedInterfaceSwitch()),
+            if (showQuick)
+              SliverToBoxAdapter(
+                child: QuickAccessConversations(
+                  conversations: [
+                    for (final room in quickRooms)
+                      QuickAccessConversation(
+                        id: room.id,
+                        name: room.getLocalizedDisplayname(),
+                        unread: room.notificationCount,
+                        avatar: Avatar(
+                          mxContent: room.avatar,
+                          name: room.getLocalizedDisplayname(),
+                          size: 40,
+                        ),
+                        onOpen: () => controller.onChatTap(room),
+                      ),
+                  ],
+                  selectedIds: selected,
+                  automatic: automatic,
+                  onSave: (ids) async {
+                    await simpleController.setQuickAccess(account, ids);
+                    if (automatic) {
+                      await simpleController.applyPreferences(
+                        simpleController.preferences.copyWith(
+                          quickAccess: SimpleQuickAccess.chosen,
+                        ),
+                        enabled: simpleController.enabled,
+                        skipPreview: simpleController.skipPreview,
+                      );
+                    }
+                  },
+                ),
+              ),
+            if (simple && !controller.isSearchMode)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    visibleQuickIds.isNotEmpty
+                        ? simpleL10n.others
+                        : simpleL10n.conversations,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ),
             SliverList(
               delegate: SliverChildListDelegate([
                 if (controller.isSearchMode) ...[
@@ -129,44 +212,95 @@ class ChatListViewBody extends StatelessWidget {
                   ),
                 ],
                 if (client.rooms.isNotEmpty && !controller.isSearchMode)
-                  Container(
-                    height: 44,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: theme.dividerColor,
-                          width: 0.5,
-                        ),
-                      ),
-                    ),
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      shrinkWrap: true,
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        ...ActiveFilter.values
-                            .where((filter) => filter != ActiveFilter.tag)
-                            .map(
-                              (filter) => _FolderTab(
-                                selected: filter == controller.activeFilter,
-                                onTap: () =>
-                                    controller.setActiveFilter(filter, null),
-                                label: filter.toLocalizedString(context),
-                              ),
-                            ),
-                        ...controller.roomTags.entries.map(
-                          (entry) => _FolderTab(
-                            selected: entry.key == controller.activeTag,
-                            onTap: () => controller.setActiveFilter(
+                  if (simple)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: PopupMenuButton<String>(
+                        tooltip: simpleL10n.filter,
+                        onSelected: (value) {
+                          if (value.startsWith('tag:')) {
+                            controller.setActiveFilter(
                               ActiveFilter.tag,
-                              entry.key,
+                              value.substring(4),
+                            );
+                          } else {
+                            controller.setActiveFilter(
+                              ActiveFilter.values.byName(value),
+                              null,
+                            );
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          for (final filter in ActiveFilter.values.where(
+                            (f) => f != ActiveFilter.tag,
+                          ))
+                            CheckedPopupMenuItem(
+                              value: filter.name,
+                              checked: controller.activeFilter == filter,
+                              child: Text(filter.toLocalizedString(context)),
                             ),
-                            label: entry.key.replaceFirst('u.', ''),
+                          for (final tag in controller.roomTags.keys)
+                            CheckedPopupMenuItem(
+                              value: 'tag:$tag',
+                              checked: controller.activeTag == tag,
+                              child: Text(tag.replaceFirst('u.', '')),
+                            ),
+                        ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Wrap(
+                            spacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              const Icon(Icons.filter_list),
+                              Text(
+                                '${simpleL10n.filter}: ${controller.activeFilter == ActiveFilter.tag ? (controller.activeTag ?? '').replaceFirst('u.', '') : controller.activeFilter.toLocalizedString(context)}',
+                              ),
+                              const Icon(Icons.expand_more),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
+                    )
+                  else
+                    Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: theme.dividerColor,
+                            width: 0.5,
+                          ),
+                        ),
+                      ),
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        shrinkWrap: true,
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          ...ActiveFilter.values
+                              .where((filter) => filter != ActiveFilter.tag)
+                              .map(
+                                (filter) => _FolderTab(
+                                  selected: filter == controller.activeFilter,
+                                  onTap: () =>
+                                      controller.setActiveFilter(filter, null),
+                                  label: filter.toLocalizedString(context),
+                                ),
+                              ),
+                          ...controller.roomTags.entries.map(
+                            (entry) => _FolderTab(
+                              selected: entry.key == controller.activeTag,
+                              onTap: () => controller.setActiveFilter(
+                                ActiveFilter.tag,
+                                entry.key,
+                              ),
+                              label: entry.key.replaceFirst('u.', ''),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 if (controller.isSearchMode)
                   SearchTitle(
                     title: L10n.of(context).chats,
@@ -178,23 +312,24 @@ class ChatListViewBody extends StatelessWidget {
                   Column(
                     mainAxisAlignment: .center,
                     children: [
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Column(
-                            mainAxisSize: .min,
-                            children: [
-                              DummyChatListItem(opacity: 0.5, animate: false),
-                              DummyChatListItem(opacity: 0.3, animate: false),
-                            ],
-                          ),
-                          Icon(
-                            CupertinoIcons.chat_bubble_text_fill,
-                            size: 128,
-                            color: theme.colorScheme.secondary,
-                          ),
-                        ],
-                      ),
+                      if (!simple)
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Column(
+                              mainAxisSize: .min,
+                              children: [
+                                DummyChatListItem(opacity: 0.5, animate: false),
+                                DummyChatListItem(opacity: 0.3, animate: false),
+                              ],
+                            ),
+                            Icon(
+                              CupertinoIcons.chat_bubble_text_fill,
+                              size: 128,
+                              color: theme.colorScheme.secondary,
+                            ),
+                          ],
+                        ),
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Text(
@@ -227,10 +362,28 @@ class ChatListViewBody extends StatelessWidget {
               SliverSafeArea(
                 top: false,
                 sliver: SliverList.builder(
-                  itemCount: rooms.length,
+                  itemCount: listRooms.length,
                   itemBuilder: (BuildContext context, int i) {
-                    final room = rooms[i];
+                    final room = listRooms[i];
                     final space = spaceDelegateCandidates[room.id];
+                    if (simple &&
+                        simpleController!.preferences.cleanHome &&
+                        room.membership == Membership.join &&
+                        !room.isSpace) {
+                      return SimpleConversationTile(
+                        conversation: QuickAccessConversation(
+                          id: room.id,
+                          name: room.getLocalizedDisplayname(),
+                          unread: room.notificationCount,
+                          avatar: Avatar(
+                            mxContent: room.avatar,
+                            name: room.getLocalizedDisplayname(),
+                            size: 48,
+                          ),
+                          onOpen: () => controller.onChatTap(room),
+                        ),
+                      );
+                    }
                     return ChatListItem(
                       room,
                       space: space,
@@ -244,6 +397,7 @@ class ChatListViewBody extends StatelessWidget {
                   },
                 ),
               ),
+            if (simple) const SliverToBoxAdapter(child: SizedBox(height: 96)),
           ],
         );
       },

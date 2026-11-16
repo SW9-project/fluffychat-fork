@@ -16,6 +16,7 @@ import 'package:fluffychat/pages/chat/reply_display.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/meaning/meaning_chips.dart';
 import 'package:fluffychat/personalization/signals/tracked_target.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call.dart';
 import 'package:fluffychat/widgets/chat_settings_popup_menu.dart';
@@ -344,15 +345,16 @@ class ChatView extends StatelessWidget {
                     top: false,
                     child: Stack(
                       children: <Widget>[
-                        Positioned.fill(
-                          child: StreamBuilder(
-                            stream:
-                                controller.room.client.onChatWallpaperChanged,
-                            builder: (context, _) => ChatWallpaperBackground(
-                              wallpaper: controller.room.wallpaper,
+                        if (!SimplifiedInterfaceScope.quietChatOf(context))
+                          Positioned.fill(
+                            child: StreamBuilder(
+                              stream:
+                                  controller.room.client.onChatWallpaperChanged,
+                              builder: (context, _) => ChatWallpaperBackground(
+                                wallpaper: controller.room.wallpaper,
+                              ),
                             ),
                           ),
-                        ),
                         GestureDetector(
                           onTap: controller.clearSingleSelectedEvent,
                           child: TrackedTarget(

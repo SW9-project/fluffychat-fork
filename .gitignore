@@ -328,3 +328,7 @@ BACKLOG.md
 
 # On-device model, fetched by scripts/fetch_personalization_model.sh
 assets/models/*.litertlm
+assets/models/*.litertlm.part
+assets/models/*.xnnpack_cache
+scripts/assistant-host/.gradle/
+scripts/assistant-host/build/

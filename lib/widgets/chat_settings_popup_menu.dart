@@ -6,6 +6,8 @@
 import 'dart:async';
 
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
+import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
 import 'package:go_router/go_router.dart';
@@ -52,6 +54,24 @@ class ChatSettingsPopupMenuState extends State<ChatSettingsPopupMenu> {
         const SizedBox.shrink(),
         PopupMenuButton<ChatPopupMenuActions>(
           useRootNavigator: true,
+          tooltip: SimplifiedInterfaceScope.enabledOf(context)
+              ? SimplifiedInterfaceL10n.of(context).more
+              : null,
+          child: SimplifiedInterfaceScope.enabledOf(context)
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.more_vert),
+                      Text(
+                        SimplifiedInterfaceL10n.of(context).moreShort,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )
+              : null,
           onSelected: (choice) async {
             switch (choice) {
               case ChatPopupMenuActions.leave:

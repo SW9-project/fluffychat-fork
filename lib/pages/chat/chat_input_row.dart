@@ -10,6 +10,8 @@ import 'package:fluffychat/pages/chat/recording_input_row.dart';
 import 'package:fluffychat/pages/chat/recording_view_model.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/signals/tracked_target.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
+import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
 import 'package:fluffychat/utils/other_party_can_receive.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -32,6 +34,7 @@ class ChatInputRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final simple = SimplifiedInterfaceScope.quietChatOf(context);
     final textMessageOnly =
         controller.sendController.text.isNotEmpty ||
         controller.replyEvent != null ||
@@ -138,26 +141,27 @@ class ChatInputRow extends StatelessWidget {
                       : const SizedBox.shrink(),
                 ]
               : <Widget>[
-                  Container(
-                    height: height,
-                    width: buttonWidth,
-                    alignment: Alignment.center,
-                    child: TrackedTarget(
-                      id: 'emoji_button',
-                      kind: TargetKind.button,
-                      child: IconButton(
-                        tooltip: L10n.of(context).emojis,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        icon: Icon(
-                          controller.showEmojiPicker
-                              ? Icons.keyboard
-                              : Icons.emoji_emotions_outlined,
-                          key: ValueKey(controller.showEmojiPicker),
+                  if (!simple || controller.showEmojiPicker)
+                    Container(
+                      height: height,
+                      width: buttonWidth,
+                      alignment: Alignment.center,
+                      child: TrackedTarget(
+                        id: 'emoji_button',
+                        kind: TargetKind.button,
+                        child: IconButton(
+                          tooltip: L10n.of(context).emojis,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          icon: Icon(
+                            controller.showEmojiPicker
+                                ? Icons.keyboard
+                                : Icons.emoji_emotions_outlined,
+                            key: ValueKey(controller.showEmojiPicker),
+                          ),
+                          onPressed: controller.emojiPickerAction,
                         ),
-                        onPressed: controller.emojiPickerAction,
                       ),
                     ),
-                  ),
                   if (Matrix.of(context).isMultiAccount &&
                       Matrix.of(context).hasComplexBundles &&
                       Matrix.of(context).currentBundle!.length > 1)
@@ -220,7 +224,7 @@ class ChatInputRow extends StatelessWidget {
                   AnimatedContainer(
                     duration: FluffyThemes.animationDuration,
                     curve: FluffyThemes.animationCurve,
-                    width: textMessageOnly ? 0 : buttonWidth,
+                    width: textMessageOnly && !simple ? 0 : buttonWidth,
                     height: height,
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(),
@@ -230,10 +234,26 @@ class ChatInputRow extends StatelessWidget {
                       kind: TargetKind.button,
                       child: PopupMenuButton<AddPopupMenuActions>(
                         useRootNavigator: true,
-                        icon: const Icon(Icons.attach_file),
+                        icon: Icon(
+                          simple ? Icons.more_horiz : Icons.attach_file,
+                        ),
+                        tooltip: simple
+                            ? SimplifiedInterfaceL10n.of(context).more
+                            : L10n.of(context).sendFile,
                         iconColor: theme.colorScheme.onSurfaceVariant,
                         onSelected: controller.onAddPopupMenuButtonSelected,
                         itemBuilder: (BuildContext context) => [
+                          if (simple)
+                            PopupMenuItem<AddPopupMenuActions>(
+                              onTap: controller.emojiPickerAction,
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.emoji_emotions_outlined,
+                                ),
+                                title: Text(L10n.of(context).emojis),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
                           if (PlatformInfos.isMobile)
                             PopupMenuItem(
                               value: AddPopupMenuActions.location,

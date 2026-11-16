@@ -132,7 +132,7 @@ void main() {
 
   FakeModel picksButtons() => FakeModel(
     ModelState.ready,
-    answer: (_) => const ProposedCall('heuristic_near_miss_buttons', {}),
+    answer: (_) => const ProposedCall('change_button', {'direction': 'bigger'}),
   );
 
   testWidgets('unavailable: explains and links to manual settings', (
@@ -162,14 +162,14 @@ void main() {
     expect(model.prepareCalls, 1);
   });
 
-  testWidgets('the model gets only the prompt and the heuristic functions', (
+  testWidgets('the model gets only the prompt and enabled V2 functions', (
     tester,
   ) async {
     final model = picksButtons();
     await pump(tester, model);
     await ask(tester, 'the buttons are hard to hit');
     expect(model.prompts, ['the buttons are hard to hit']);
-    expect(model.offered.single, ['heuristic_near_miss_buttons']);
+    expect(model.offered.single, ['change_button']);
   });
 
   testWidgets('a proposal shows text and preview but changes nothing', (
@@ -178,7 +178,7 @@ void main() {
     await pump(tester, picksButtons());
     await ask(tester, 'the buttons are hard to hit');
     expect(find.text('the buttons are hard to hit'), findsOneWidget);
-    expect(find.text('Buttons can be made bigger.'), findsOneWidget);
+    expect(find.text('Make the buttons bigger?'), findsOneWidget);
     expect(find.byKey(const Key('change_preview')), findsOneWidget);
     expect(find.byKey(const Key('assist_apply')), findsOneWidget);
     expect(find.byKey(const Key('assist_no_thanks')), findsOneWidget);
@@ -334,7 +334,7 @@ void main() {
       expect(events()[1], {
         't': isA<String>(),
         'type': 'assist_proposal',
-        'heuristic': 'near-miss-buttons',
+        'heuristic': 'model-request',
         'category': 'button_scale',
         'from': 1.0,
         'to': 1.1,
