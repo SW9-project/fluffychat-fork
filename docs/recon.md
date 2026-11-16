@@ -34,7 +34,7 @@ Consequence: Phase 1 edits will conflict with any further restyle work on the sa
 - `pages/<feature>/`: one folder per screen (chat, chat_list, settings_*, ...).
 - `widgets/`: shared widgets (avatar, theme builder, matrix, dialogs, layouts).
 - `utils/`: helpers and Matrix SDK extensions.
-- `l10n/`: ARB files, including `intl_da.arb` (Danish exists).
+- `l10n/`: ARB files, including `intl_da.arb`.
 
 Proposed home for our code: `lib/personalization/` (settings model, signals, heuristics, model interface), so upstream merges stay clean.
 

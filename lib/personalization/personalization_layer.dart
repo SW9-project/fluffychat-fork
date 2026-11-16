@@ -6,9 +6,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:fluffychat/config/setting_keys.dart';
+import 'package:fluffychat/widgets/theme_builder.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
+import 'package:provider/provider.dart';
 
 import 'accessibility_controller.dart';
 import 'accessibility_scope.dart';
@@ -58,8 +60,18 @@ class _PersonalizationLayerState extends State<PersonalizationLayer> {
     _manager = SuggestionManager(
       accessibility: accessibility,
       store: AppSettings.store,
-    );
+    )..setThemeMode = _themeOf(context)?.setThemeMode;
     _loadHeuristics();
+  }
+
+  /// FluffyChat's theme, which suggestions can change. Missing only where the
+  /// layer runs without the app around it, such as in tests.
+  static ThemeController? _themeOf(BuildContext context) {
+    try {
+      return ThemeController.of(context);
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 
   Future<void> _loadHeuristics() async {

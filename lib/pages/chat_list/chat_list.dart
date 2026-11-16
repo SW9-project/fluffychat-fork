@@ -586,24 +586,23 @@ class ChatListController extends State<ChatList>
               ],
             ),
           ),
-          if (!room.isLowPriority)
-            PopupMenuItem(
-              value: ChatContextAction.favorite,
-              child: Row(
-                mainAxisSize: .min,
-                children: [
-                  Icon(
-                    room.isFavourite ? Icons.push_pin : Icons.push_pin_outlined,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    room.isFavourite
-                        ? L10n.of(context).unpin
-                        : L10n.of(context).pin,
-                  ),
-                ],
-              ),
+          PopupMenuItem(
+            value: ChatContextAction.favorite,
+            child: Row(
+              mainAxisSize: .min,
+              children: [
+                Icon(
+                  room.isFavourite ? Icons.push_pin : Icons.push_pin_outlined,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  room.isFavourite
+                      ? L10n.of(context).unpin
+                      : L10n.of(context).pin,
+                ),
+              ],
             ),
+          ),
         ],
         PopupMenuItem(
           value: ChatContextAction.leave,
@@ -666,26 +665,6 @@ class ChatListController extends State<ChatList>
         context: posContext,
         position: position,
         items: [
-          if (!room.isFavourite)
-            PopupMenuItem(
-              value: ChatContextAction.lowPriority,
-              child: Row(
-                mainAxisSize: .min,
-                children: [
-                  Icon(
-                    room.isLowPriority
-                        ? Icons.low_priority
-                        : Icons.low_priority_outlined,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    room.isLowPriority
-                        ? L10n.of(context).unsetLowPriority
-                        : L10n.of(context).setLowPriority,
-                  ),
-                ],
-              ),
-            ),
           if (activeTag == null)
             PopupMenuItem(
               value: ChatContextAction.addTag,
@@ -798,12 +777,6 @@ class ChatListController extends State<ChatList>
           context: context,
           future: () => space.setSpaceChild(room.id),
         );
-      case ChatContextAction.lowPriority:
-        await showFutureLoadingDialog(
-          context: context,
-          future: () => room.setLowPriority(!room.isLowPriority),
-        );
-        return;
       case ChatContextAction.addTag:
         final existingTags = List.of(roomTags.keys);
         existingTags.removeWhere(room.tags.containsKey);
@@ -1070,7 +1043,6 @@ enum EditBundleAction { addToBundle, removeFromBundle }
 enum ChatContextAction {
   goToSpace,
   favorite,
-  lowPriority,
   addTag,
   removeTag,
   markUnread,

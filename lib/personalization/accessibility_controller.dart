@@ -62,13 +62,38 @@ class AccessibilityController extends ChangeNotifier {
     _settings.change(category, value),
   );
 
+  /// Replaces all settings at once as a single undoable change, such as an
+  /// applied proposal that changes several values.
+  Future<void> applySettings(AccessibilitySettings next) =>
+      _commit(SettingsChangeKind.apply, _settings, next);
+
+  /// Turns [toggle] on or off as a single undoable change.
+  Future<void> setToggle(AccessibilityToggle toggle, bool on) => _commit(
+    SettingsChangeKind.apply,
+    _settings,
+    _settings.withToggle(toggle, on),
+  );
+
   /// Starts a continuous change, such as dragging a slider. Call [preview]
   /// while it runs and [endEdit] when it ends. The whole drag is one undo
   /// step.
   void beginEdit() => _editStart ??= _settings;
 
+  /// [value] is the whole size of [category], as its slider shows it.
   void preview(ScaleCategory category, double value) {
+<<<<<<< Updated upstream
     final next = _settings.change(category, value);
+=======
+    final next = _settings.withEffective(category, value);
+    if (next == _settings) return;
+    _settings = next;
+    notifyListeners();
+  }
+
+  /// Like [preview], for one chat's own text scale.
+  void previewChatText(String roomId, double value) {
+    final next = _settings.withChatText(roomId, value);
+>>>>>>> Stashed changes
     if (next == _settings) return;
     _settings = next;
     notifyListeners();

@@ -40,10 +40,98 @@ class SettingsStyleController extends State<SettingsStyle> {
     context.push('/rooms/settings/style/wallpaper/$roomId');
   }
 
+<<<<<<< Updated upstream
   void resetChatWallpaper(Room room) => showFutureLoadingDialog(
     context: context,
     future: () => room.setCustomWallpaper(null),
   );
+=======
+  double get wallpaperOpacity =>
+      _wallpaperOpacity ??
+      Matrix.of(context).client.applicationAccountConfig.wallpaperOpacity ??
+      0.5;
+
+  double? _wallpaperOpacity;
+
+  Future<void> saveWallpaperOpacity(double opacity) async {
+    final client = Matrix.of(context).client;
+    final result = await showFutureLoadingDialog(
+      context: context,
+      future: () => client.updateApplicationAccountConfig(
+        ApplicationAccountConfig(wallpaperOpacity: opacity),
+      ),
+    );
+    if (result.isValue) return;
+
+    setState(() {
+      _wallpaperOpacity = client.applicationAccountConfig.wallpaperOpacity;
+    });
+  }
+
+  void updateWallpaperOpacity(double opacity) {
+    setState(() {
+      _wallpaperOpacity = opacity;
+    });
+  }
+
+  double get wallpaperBlur =>
+      _wallpaperBlur ??
+      Matrix.of(context).client.applicationAccountConfig.wallpaperBlur ??
+      0.5;
+  double? _wallpaperBlur;
+
+  Future<void> saveWallpaperBlur(double blur) async {
+    final client = Matrix.of(context).client;
+    final result = await showFutureLoadingDialog(
+      context: context,
+      future: () => client.updateApplicationAccountConfig(
+        ApplicationAccountConfig(wallpaperBlur: blur),
+      ),
+    );
+    if (result.isValue) return;
+
+    setState(() {
+      _wallpaperBlur = client.applicationAccountConfig.wallpaperBlur;
+    });
+  }
+
+  void updateWallpaperBlur(double blur) {
+    setState(() {
+      _wallpaperBlur = blur;
+    });
+  }
+
+  void deleteChatWallpaper() {
+    final client = Matrix.of(context).client;
+    showFutureLoadingDialog(
+      context: context,
+      future: () => client.setApplicationAccountConfig(
+        ApplicationAccountConfig(
+          bubbleColor: client.applicationAccountConfig.bubbleColor,
+          otherBubbleColor: client.applicationAccountConfig.otherBubbleColor,
+        ),
+      ),
+    );
+  }
+
+  void setBubbleColors(Color? own, Color? other) {
+    final client = Matrix.of(context).client;
+    final config = client.applicationAccountConfig;
+    // Not updateApplicationAccountConfig: it can not reset a value to null.
+    showFutureLoadingDialog(
+      context: context,
+      future: () => client.setApplicationAccountConfig(
+        ApplicationAccountConfig(
+          wallpaperUrl: config.wallpaperUrl,
+          wallpaperOpacity: config.wallpaperOpacity,
+          wallpaperBlur: config.wallpaperBlur,
+          bubbleColor: own,
+          otherBubbleColor: other,
+        ),
+      ),
+    );
+  }
+>>>>>>> Stashed changes
 
   ThemeMode get currentTheme => ThemeController.of(context).themeMode;
   Color? get currentColor {

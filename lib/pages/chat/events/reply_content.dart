@@ -86,7 +86,7 @@ class ReplyContent extends StatelessWidget {
                     style: TextStyle(
                       color: ownMessage
                           ? theme.onBubbleColor
-                          : theme.colorScheme.onSurface,
+                          : theme.onOtherBubbleColor,
                       fontSize: fontSize,
                     ),
                   ),

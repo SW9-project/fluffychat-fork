@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:fluffychat/l10n/l10n.dart';
-import 'package:fluffychat/personalization/meaning/meaning_settings.dart';
 import 'package:fluffychat/personalization/study/study_events.dart';
 import 'package:fluffychat/personalization/study/study_log.dart';
 import 'package:fluffychat/personalization/study/study_screen.dart';
@@ -44,7 +43,6 @@ void main() {
     store = await SharedPreferences.getInstance();
     settings = StudySettings(store);
     StudySettings.instance = settings;
-    MeaningSettings.instance = MeaningSettings(store);
     storage = MemoryStorage();
   });
 

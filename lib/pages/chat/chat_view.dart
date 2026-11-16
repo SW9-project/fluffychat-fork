@@ -9,16 +9,23 @@ import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
 import 'package:fluffychat/pages/chat/chat_app_bar_list_tile.dart';
 import 'package:fluffychat/pages/chat/chat_app_bar_title.dart';
-import 'package:fluffychat/pages/chat/chat_background.dart';
 import 'package:fluffychat/pages/chat/chat_event_list.dart';
 import 'package:fluffychat/pages/chat/pinned_events.dart';
 import 'package:fluffychat/pages/chat/reply_display.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
-import 'package:fluffychat/personalization/meaning/meaning_chips.dart';
+import 'package:fluffychat/personalization/accessibility_settings.dart';
+import 'package:fluffychat/personalization/appearance_l10n.dart';
 import 'package:fluffychat/personalization/signals/tracked_target.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call.dart';
+import 'package:fluffychat/utils/other_party_can_receive.dart';
+import 'package:fluffychat/utils/platform_infos.dart';
+import 'package:fluffychat/widgets/bubble_color_picker.dart';
 import 'package:fluffychat/widgets/chat_settings_popup_menu.dart';
+<<<<<<< Updated upstream
+=======
+import 'package:fluffychat/widgets/mxc_image.dart';
+>>>>>>> Stashed changes
 import 'package:fluffychat/widgets/pulsating_widget.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -41,6 +48,21 @@ class ChatView extends StatelessWidget {
 
     final scrollUpBannerEventId = controller.scrollUpBannerEventId;
 
+<<<<<<< Updated upstream
+=======
+    // Like Messages on iOS 26, the glass field floats above the messages
+    // without a bar. Everything else down there needs the bar behind it.
+    final floatingInput =
+        PlatformInfos.supportsLiquidGlass &&
+        controller.selectedEvents.isEmpty &&
+        !controller.showEmojiPicker &&
+        !controller.room.isExtinct &&
+        controller.room.canSendDefaultMessages &&
+        controller.room.membership == Membership.join &&
+        controller.room.isAbandonedDMRoom != true &&
+        controller.room.otherPartyCanReceiveMessages;
+
+>>>>>>> Stashed changes
     return PopScope(
       canPop:
           controller.selectedEvents.isEmpty &&
@@ -111,12 +133,16 @@ class ChatView extends StatelessWidget {
                       )
                     : FluffyThemes.isColumnMode(context)
                     ? null
-                    : const Center(
+                    : Center(
                         child: AccessibilityIconButtons(
-                          child: TrackedTarget(
-                            id: 'back_button',
-                            kind: TargetKind.button,
-                            child: BackButton(),
+                          button: AccessibleButton.back,
+                          child: AccessibilityButtonLabel(
+                            label: AppearanceL10n.of(context).labelBack,
+                            child: const TrackedTarget(
+                              id: 'back_button',
+                              kind: TargetKind.button,
+                              child: BackButton(),
+                            ),
                           ),
                         ),
                       ),
@@ -259,7 +285,13 @@ class ChatView extends StatelessWidget {
                         icon: Icon(Icons.call_outlined),
                         onPressed: controller.startOrJoinVideoCall,
                       ),
-                    ChatSettingsPopupMenu(controller.room, true),
+                    AccessibilityIconButtons(
+                      button: AccessibleButton.menu,
+                      child: AccessibilityButtonLabel(
+                        label: AppearanceL10n.of(context).labelMenu,
+                        child: ChatSettingsPopupMenu(controller.room, true),
+                      ),
+                    ),
                   ],
                 ],
                 bottom: PreferredSize(
@@ -344,6 +376,7 @@ class ChatView extends StatelessWidget {
                     top: false,
                     child: Stack(
                       children: <Widget>[
+<<<<<<< Updated upstream
                         Positioned.fill(
                           child: StreamBuilder(
                             stream:
@@ -352,13 +385,44 @@ class ChatView extends StatelessWidget {
                               wallpaper: controller.room.wallpaper,
                             ),
                           ),
+=======
+                        StreamBuilder(
+                          stream: controller.room.onConfigChange,
+                          builder: (context, _) {
+                            final wallpaperUrl = controller.room.wallpaperUrl;
+                            if (wallpaperUrl == null) {
+                              return const SizedBox.shrink();
+                            }
+                            return Opacity(
+                              opacity: controller.room.wallpaperOpacity,
+                              child: ImageFiltered(
+                                imageFilter: ui.ImageFilter.blur(
+                                  sigmaX: controller.room.wallpaperBlur,
+                                  sigmaY: controller.room.wallpaperBlur,
+                                ),
+                                child: MxcImage(
+                                  cacheKey: wallpaperUrl.toString(),
+                                  uri: wallpaperUrl,
+                                  fit: BoxFit.cover,
+                                  height: MediaQuery.sizeOf(context).height,
+                                  width: MediaQuery.sizeOf(context).width,
+                                  isThumbnail: false,
+                                  placeholder: (_) => Container(),
+                                ),
+                              ),
+                            );
+                          },
+>>>>>>> Stashed changes
                         ),
                         GestureDetector(
                           onTap: controller.clearSingleSelectedEvent,
                           child: TrackedTarget(
                             id: 'chat_timeline',
                             kind: TargetKind.text,
-                            child: ChatEventList(controller: controller),
+                            child: BubbleColorScope(
+                              room: controller.room,
+                              child: ChatEventList(controller: controller),
+                            ),
                           ),
                         ),
                         Positioned(
@@ -366,155 +430,182 @@ class ChatView extends StatelessWidget {
                           left: 0,
                           right: 0,
                           child: SizeChangedLayoutNotifier(
-                            child: Container(
-                              key: controller.inputBarKey,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surface,
-                                border: Border(
-                                  top: BorderSide(
-                                    color: theme.dividerColor,
-                                    width: 0.5,
+                            // Like the bars of iOS, translucent above the
+                            // messages scrolled under it.
+                            child: ClipRect(
+                              child: BackdropFilter(
+                                enabled: theme.cupertinoStyle && !floatingInput,
+                                filter: ui.ImageFilter.blur(
+                                  sigmaX: 20,
+                                  sigmaY: 20,
+                                ),
+                                child: Container(
+                                  key: controller.inputBarKey,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  color: floatingInput
+                                      ? Colors.transparent
+                                      : theme.cupertinoStyle
+                                      ? theme.colorScheme.surface.withAlpha(215)
+                                      : theme.colorScheme.surface,
+                                  alignment: Alignment.center,
+                                  child: Container(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: FluffyThemes.maxTimelineWidth,
+                                    ),
+                                    child: controller.room.isExtinct
+                                        ? ElevatedButton.icon(
+                                            icon: const Icon(
+                                              Icons.chevron_right,
+                                            ),
+                                            label: Text(
+                                              L10n.of(context).enterNewChat,
+                                            ),
+                                            onPressed:
+                                                controller.goToNewRoomAction,
+                                          )
+                                        : !controller
+                                                  .room
+                                                  .canSendDefaultMessages &&
+                                              controller.room.membership !=
+                                                  Membership.invite
+                                        ? const SizedBox.shrink()
+                                        : Material(
+                                            clipBehavior: Clip.hardEdge,
+                                            color:
+                                                controller
+                                                    .selectedEvents
+                                                    .isNotEmpty
+                                                ? theme
+                                                      .colorScheme
+                                                      .tertiaryContainer
+                                                : Colors.transparent,
+                                            child:
+                                                controller.room.membership ==
+                                                    .invite
+                                                ? Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: TextButton.icon(
+                                                          style: TextButton.styleFrom(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  16,
+                                                                ),
+                                                            foregroundColor:
+                                                                theme
+                                                                    .colorScheme
+                                                                    .error,
+                                                          ),
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .cancel_outlined,
+                                                          ),
+                                                          onPressed: controller
+                                                              .leaveChat,
+                                                          label: Text(
+                                                            L10n.of(
+                                                              context,
+                                                            ).decline,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: TextButton.icon(
+                                                          style: TextButton.styleFrom(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  16,
+                                                                ),
+                                                          ),
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .check_outlined,
+                                                          ),
+                                                          onPressed: controller
+                                                              .joinChat,
+                                                          label: Text(
+                                                            L10n.of(
+                                                              context,
+                                                            ).accept,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  )
+                                                : controller
+                                                          .room
+                                                          .isAbandonedDMRoom ==
+                                                      true
+                                                ? Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: TextButton.icon(
+                                                          style: TextButton.styleFrom(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  16,
+                                                                ),
+                                                            foregroundColor:
+                                                                theme
+                                                                    .colorScheme
+                                                                    .error,
+                                                          ),
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .archive_outlined,
+                                                          ),
+                                                          onPressed: controller
+                                                              .leaveChat,
+                                                          label: Text(
+                                                            L10n.of(
+                                                              context,
+                                                            ).leave,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: TextButton.icon(
+                                                          style: TextButton.styleFrom(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  16,
+                                                                ),
+                                                          ),
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .forum_outlined,
+                                                          ),
+                                                          onPressed: controller
+                                                              .recreateChat,
+                                                          label: Text(
+                                                            L10n.of(
+                                                              context,
+                                                            ).reopenChat,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  )
+                                                : Column(
+                                                    mainAxisSize: .min,
+                                                    children: [
+                                                      ReplyDisplay(controller),
+                                                      AccessibilityIconButtons(
+                                                        child: ChatInputRow(
+                                                          controller,
+                                                        ),
+                                                      ),
+                                                      ChatEmojiPicker(
+                                                        controller,
+                                                      ),
+                                                    ],
+                                                  ),
+                                          ),
                                   ),
                                 ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Container(
-                                constraints: const BoxConstraints(
-                                  maxWidth: FluffyThemes.maxTimelineWidth,
-                                ),
-                                child: controller.room.isExtinct
-                                    ? ElevatedButton.icon(
-                                        icon: const Icon(Icons.chevron_right),
-                                        label: Text(
-                                          L10n.of(context).enterNewChat,
-                                        ),
-                                        onPressed: controller.goToNewRoomAction,
-                                      )
-                                    : !controller.room.canSendDefaultMessages &&
-                                          controller.room.membership !=
-                                              Membership.invite
-                                    ? const SizedBox.shrink()
-                                    : Material(
-                                        clipBehavior: Clip.hardEdge,
-                                        color:
-                                            controller.selectedEvents.isNotEmpty
-                                            ? theme
-                                                  .colorScheme
-                                                  .tertiaryContainer
-                                            : theme.colorScheme.surface,
-                                        child:
-                                            controller.room.membership ==
-                                                .invite
-                                            ? Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: TextButton.icon(
-                                                      style: TextButton.styleFrom(
-                                                        padding:
-                                                            const EdgeInsets.all(
-                                                              16,
-                                                            ),
-                                                        foregroundColor: theme
-                                                            .colorScheme
-                                                            .error,
-                                                      ),
-                                                      icon: const Icon(
-                                                        Icons.cancel_outlined,
-                                                      ),
-                                                      onPressed:
-                                                          controller.leaveChat,
-                                                      label: Text(
-                                                        L10n.of(
-                                                          context,
-                                                        ).decline,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    child: TextButton.icon(
-                                                      style: TextButton.styleFrom(
-                                                        padding:
-                                                            const EdgeInsets.all(
-                                                              16,
-                                                            ),
-                                                      ),
-                                                      icon: const Icon(
-                                                        Icons.check_outlined,
-                                                      ),
-                                                      onPressed:
-                                                          controller.joinChat,
-                                                      label: Text(
-                                                        L10n.of(context).accept,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            : controller
-                                                      .room
-                                                      .isAbandonedDMRoom ==
-                                                  true
-                                            ? Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: TextButton.icon(
-                                                      style: TextButton.styleFrom(
-                                                        padding:
-                                                            const EdgeInsets.all(
-                                                              16,
-                                                            ),
-                                                        foregroundColor: theme
-                                                            .colorScheme
-                                                            .error,
-                                                      ),
-                                                      icon: const Icon(
-                                                        Icons.archive_outlined,
-                                                      ),
-                                                      onPressed:
-                                                          controller.leaveChat,
-                                                      label: Text(
-                                                        L10n.of(context).leave,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    child: TextButton.icon(
-                                                      style: TextButton.styleFrom(
-                                                        padding:
-                                                            const EdgeInsets.all(
-                                                              16,
-                                                            ),
-                                                      ),
-                                                      icon: const Icon(
-                                                        Icons.forum_outlined,
-                                                      ),
-                                                      onPressed: controller
-                                                          .recreateChat,
-                                                      label: Text(
-                                                        L10n.of(
-                                                          context,
-                                                        ).reopenChat,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            : Column(
-                                                mainAxisSize: .min,
-                                                children: [
-                                                  ReplyDisplay(controller),
-                                                  MeaningChips(
-                                                    controller.meaningDraft,
-                                                  ),
-                                                  AccessibilityIconButtons(
-                                                    child: ChatInputRow(
-                                                      controller,
-                                                    ),
-                                                  ),
-                                                  ChatEmojiPicker(controller),
-                                                ],
-                                              ),
-                                      ),
                               ),
                             ),
                           ),

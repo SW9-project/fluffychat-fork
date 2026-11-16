@@ -3,30 +3,46 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:collection/collection.dart';
-
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_edge_ai/engine.dart' show SdkResponseParser;
 import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:matrix/matrix.dart';
 
+import 'litert_conversation.dart';
+import 'personalization_tools.dart';
 import 'process_abi.dart';
-import 'settings_functions.dart';
 import 'settings_intent_model.dart';
 
 /// [SettingsIntentModel] backed by FunctionGemma 270M through flutter_edge_ai
 /// and the LiteRT-LM engine. Runs fully on the device.
 ///
 /// The model file is bundled as an app asset (see `assets/models/README.md`).
+<<<<<<< Updated upstream
 /// A build without it, a device below Android 11 (API 30), a platform other than
 /// Android and iOS or a process that is not arm64 reports [ModelState.unavailable], and the app works without it.
 class FunctionGemmaModel implements SettingsIntentModel {
   static const assetPath = 'assets/models/functiongemma-270M-it.litertlm';
   static const fileName = 'functiongemma-270M-it.litertlm';
+=======
+/// A build without it, a platform other than iOS or Android, an Android device
+/// below 11 (API 30) or a process that is not arm64 reports [ModelState.unavailable], and the app works without it.
+class FunctionGemmaModel implements SettingsIntentModel {
+  static const assetPath =
+      'assets/models/functiongemma-270M-sw9-tools1.litertlm';
+  static const fileName = 'functiongemma-270M-sw9-tools1.litertlm';
+
+  /// The model file's context: the eleven declarations are ~1300 tokens, a
+  /// conversation adds up to ~200 and the answer [maxOutputTokens].
+  static const maxTokens = 2048;
+  static const maxOutputTokens = 128;
+>>>>>>> Stashed changes
 
   /// The loaded model is freed after this long without a request.
   static const idleTimeout = Duration(minutes: 2);
@@ -59,6 +75,7 @@ class FunctionGemmaModel implements SettingsIntentModel {
     if (!_disposed) _status.value = status;
   }
 
+<<<<<<< Updated upstream
   /// The LiteRT-LM engine needs an arm64 process on iOS or Android 11+, and
   /// this build must contain the model file.
   static Future<bool> isSupported() async {
@@ -72,6 +89,24 @@ class FunctionGemmaModel implements SettingsIntentModel {
       // LiteRT's CPU detection crashes the app (seen on the x86_64 emulator).
       if (info.supportedAbis.firstOrNull != 'arm64-v8a') return false;
     }
+=======
+  /// The LiteRT-LM engine needs an arm64 process on iOS, or on Android 11, and
+  /// this build must contain the model file.
+  static Future<bool> isSupported() async {
+    if (PlatformInfos.isIOS) {
+      return isIOSArm64Process && await _bundlesModel();
+    }
+    if (!PlatformInfos.isAndroid || !isAndroidArm64Process) return false;
+    final info = await DeviceInfoPlugin().androidInfo;
+    if (info.version.sdkInt < 30) return false;
+    // An arm64 process on an x86 device runs under ARM translation, where
+    // LiteRT's CPU detection crashes the app (seen on the x86_64 emulator).
+    if (info.supportedAbis.firstOrNull != 'arm64-v8a') return false;
+    return _bundlesModel();
+  }
+
+  static Future<bool> _bundlesModel() async {
+>>>>>>> Stashed changes
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
     return manifest.listAssets().contains(assetPath);
   }
@@ -127,16 +162,19 @@ class FunctionGemmaModel implements SettingsIntentModel {
   Future<InferenceModel> _load() async {
     final model = _model;
     if (model != null && !model.isClosed) return model;
-    final loaded = _model = await FlutterEdgeAi.getActiveModel(maxTokens: 1024);
+    final loaded = _model = await FlutterEdgeAi.getActiveModel(
+      maxTokens: maxTokens,
+    );
     Logs().i('On-device model loaded, backend: ${loaded.activeBackend}');
     return loaded;
   }
 
   @override
   Future<ProposedCall?> propose(
-    String text,
+    List<ModelTurn> conversation,
     List<FunctionDeclaration> functions,
   ) async {
+    if (conversation.isEmpty) throw ArgumentError('Nothing to answer');
     await _availability;
     if (_status.value.state != ModelState.ready) await prepare();
     if (_status.value.state != ModelState.ready) {
@@ -149,26 +187,26 @@ class FunctionGemmaModel implements SettingsIntentModel {
     final model = await _load();
     final loadMs = loaded ? null : stopwatch.elapsedMilliseconds;
     stopwatch.reset();
-    // One fresh chat per request: earlier requests must not steer this one.
-    final chat = await model.createChat(
-      tools: [
-        for (final f in functions)
-          Tool(
-            name: f.name,
-            description: f.description,
-            parameters: f.parameters,
-          ),
-      ],
-      supportsFunctionCalls: true,
-      modelType: ModelType.functionGemma,
-      // Greedy decoding: the same words always give the same proposal.
-      topK: 1,
-      maxOutputTokens: 128,
-    );
+    // One fresh conversation per request, holding only the turns given:
+    // nothing else the user asked before can steer this answer.
     try {
-      await chat.addQueryChunk(Message(text: text, isUser: true));
-      final response = await chat.generateChatResponse();
-      final metrics = _metricsOf(chat);
+      final earlier = conversation.sublist(0, conversation.length - 1);
+      final (:raw, :metrics) = await runLiteRtConversation(
+        model,
+        toolsJson: SdkResponseParser.serializeToolsForSdk([
+          for (final f in functions)
+            Tool(
+              name: f.name,
+              description: f.description,
+              parameters: f.parameters,
+            ),
+        ]),
+        messagesJson: earlier.isEmpty
+            ? null
+            : jsonEncode([for (final turn in earlier) messageOf(turn)]),
+        messageJson: jsonEncode(messageOf(conversation.last)),
+        maxOutputTokens: maxOutputTokens,
+      );
       _lastTiming = ModelTiming(
         totalMs: stopwatch.elapsedMilliseconds,
         timeToFirstTokenMs: metrics.timeToFirstTokenMs,
@@ -177,32 +215,52 @@ class FunctionGemmaModel implements SettingsIntentModel {
         inputTokens: metrics.inputTokens > 0 ? metrics.inputTokens : null,
         outputTokens: metrics.outputTokens > 0 ? metrics.outputTokens : null,
       );
-      return switch (response) {
-        FunctionCallResponse(:final name, :final args) => ProposedCall(
-          name,
-          args,
-        ),
-        ParallelFunctionCallResponse(:final calls) when calls.isNotEmpty =>
-          ProposedCall(calls.first.name, calls.first.args),
-        _ => null,
-      };
+      final calls = SdkResponseParser.extractToolCalls(raw);
+      if (calls.isEmpty) return null;
+      return ProposedCall(calls.first.name, calls.first.args);
     } finally {
-      await chat.close();
       _idleTimer = Timer(idleTimeout, release);
     }
   }
 
-  /// The runtime's own measurements for the last answer in [chat]. The tool
-  /// call is not streamed, so the time to the first token can only come from
-  /// here. A runtime that cannot report them never fails the request.
-  static SessionMetrics _metricsOf(InferenceChat chat) {
-    try {
-      return chat.session.getSessionMetrics();
-    } catch (e, s) {
-      Logs().w('No metrics from the on-device model', e, s);
-      return SessionMetrics();
-    }
-  }
+  /// [map] with its keys in alphabetical order. LiteRT-LM writes a call's
+  /// arguments in the order it gets them, and the training template sorted
+  /// them.
+  static Map<String, Object?> _sorted(Map<String, Object?> map) => {
+    for (final key in map.keys.toList()..sort()) key: map[key],
+  };
+
+  /// [turn] as a LiteRT-LM Conversation API message.
+  @visibleForTesting
+  static Map<String, Object?> messageOf(ModelTurn turn) => switch (turn) {
+    UserTurn(:final text) => {
+      'role': 'user',
+      'content': [
+        {'type': 'text', 'text': text},
+      ],
+    },
+    CallTurn(:final call) => {
+      'role': 'assistant',
+      'tool_calls': [
+        {
+          'type': 'function',
+          'function': {'name': call.name, 'arguments': _sorted(call.args)},
+        },
+      ],
+    },
+    ResponseTurn(:final name, :final response) => {
+      'role': 'tool',
+      'content': [
+        {'type': 'tool_response', 'name': name, 'response': _sorted(response)},
+      ],
+    },
+    ReplyTurn(:final text) => {
+      'role': 'assistant',
+      'content': [
+        {'type': 'text', 'text': text},
+      ],
+    },
+  };
 
   @override
   Future<void> release() async {

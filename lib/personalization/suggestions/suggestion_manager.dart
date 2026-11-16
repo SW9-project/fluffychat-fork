@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart' show ThemeMode;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../accessibility_controller.dart';
@@ -35,6 +36,10 @@ class SuggestionManager extends ChangeNotifier {
   final AccessibilityController accessibility;
   final SharedPreferences _store;
   final DateTime Function() _clock;
+
+  /// Sets FluffyChat's theme, for suggestions that change it. Without it,
+  /// a theme change is not applied.
+  Future<void> Function(ThemeMode mode)? setThemeMode;
 
   HeuristicsConfig _config;
   SignalWindow _window;
@@ -117,7 +122,9 @@ class SuggestionManager extends ChangeNotifier {
     StudyLog.instance.record(
       SuggestionResolved(SuggestionOutcome.applied, suggestion),
     );
-    await accessibility.apply(suggestion.category, suggestion.to);
+    final change = suggestion.change;
+    await accessibility.applySettings(change.to);
+    if (change.changesTheme) await setThemeMode?.call(change.themeTo!);
     _applied = AppliedSuggestion(suggestion, accessibility.settings);
     _undoTimer?.cancel();
     _undoTimer = Timer(_config.undoDuration, dismissApplied);
@@ -135,6 +142,10 @@ class SuggestionManager extends ChangeNotifier {
     if (accessibility.settings == applied.settingsAfter &&
         accessibility.canUndo) {
       await accessibility.undo();
+    }
+    final change = applied.suggestion.change;
+    if (change.changesTheme && change.themeFrom != null) {
+      await setThemeMode?.call(change.themeFrom!);
     }
     // Undo means the user declined the change, like "not now".
     _resolve(applied.suggestion);

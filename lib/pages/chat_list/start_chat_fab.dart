@@ -8,15 +8,27 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 class StartChatFab extends StatelessWidget {
-  const StartChatFab({super.key});
+  /// With its label, like the Material 3 button below a list.
+  final bool extended;
+
+  const StartChatFab({this.extended = false, super.key});
 
   @override
   Widget build(BuildContext context) {
+    void onPressed() => context.go('/rooms/newprivatechat');
+    if (extended) {
+      return FloatingActionButton.extended(
+        heroTag: 'start_chat_fab',
+        onPressed: onPressed,
+        icon: const Icon(Icons.edit_outlined),
+        label: Text(L10n.of(context).newChat),
+      );
+    }
     return FloatingActionButton(
       heroTag: 'start_chat_fab',
       tooltip: L10n.of(context).newChat,
-      onPressed: () => context.go('/rooms/newprivatechat'),
-      child: const Icon(Icons.edit),
+      onPressed: onPressed,
+      child: const Icon(Icons.edit_outlined),
     );
   }
 }

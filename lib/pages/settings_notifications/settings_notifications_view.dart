@@ -11,6 +11,7 @@ import 'package:fluffychat/utils/background_push.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/push_helper.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
+import 'package:fluffychat/widgets/settings_section.dart';
 import 'package:fluffychat/widgets/settings_switch_list_tile.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
@@ -41,8 +42,14 @@ class SettingsNotificationsView extends StatelessWidget {
         (rules: pushRules?.underride ?? [], kind: PushRuleKind.underride),
     ];
     final pushService = Matrix.of(context).backgroundPush;
+    final theme = Theme.of(context);
+    final background = theme.cupertinoStyle
+        ? SettingsSection.backgroundColor(theme)
+        : null;
     return Scaffold(
+      backgroundColor: background,
       appBar: AppBar(
+        backgroundColor: background,
         automaticallyImplyLeading: !FluffyThemes.isColumnMode(context),
         centerTitle: FluffyThemes.isColumnMode(context),
         title: Text(L10n.of(context).notifications),
@@ -63,7 +70,7 @@ class SettingsNotificationsView extends StatelessWidget {
                   context,
                 ).client.clientName];
             return SelectionArea(
-              child: Column(
+              child: SettingsList(
                 children: [
                   if (kDebugMode && lastReceivedPush != null)
                     ListTile(
@@ -77,15 +84,7 @@ class SettingsNotificationsView extends StatelessWidget {
                     ),
                   if (pushRules != null)
                     for (final category in pushCategories) ...[
-                      ListTile(
-                        title: Text(
-                          category.kind.localized(L10n.of(context)),
-                          style: TextStyle(
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      SettingsHeader(category.kind.localized(L10n.of(context))),
                       for (final rule in category.rules)
                         ListTile(
                           title: Text(rule.getPushRuleName(L10n.of(context))),
@@ -192,15 +191,7 @@ class SettingsNotificationsView extends StatelessWidget {
                         );
                       },
                     ),
-                  ListTile(
-                    title: Text(
-                      L10n.of(context).devices,
-                      style: TextStyle(
-                        color: theme.colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  SettingsHeader(L10n.of(context).devices),
                   FutureBuilder<List<Pusher>?>(
                     future: controller.pusherFuture ??= Matrix.of(
                       context,

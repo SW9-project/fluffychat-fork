@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:async/async.dart';
+import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/utils/localized_exception_extension.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/adaptive_dialog_action.dart';
@@ -117,6 +118,8 @@ class LoadingDialogState<T> extends State<LoadingDialog> {
         ? exception.toLocalizedString(context, widget.exceptionContext)
         : widget.title ?? L10n.of(context).loadingPleaseWait;
 
+    // iOS alerts put the spinner above centered text, Material beside it.
+    final cupertino = Theme.of(context).cupertinoStyle;
     return AlertDialog.adaptive(
       title: exception == null
           ? null
@@ -127,7 +130,9 @@ class LoadingDialogState<T> extends State<LoadingDialog> {
             ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 256),
-        child: Row(
+        child: Flex(
+          direction: cupertino ? Axis.vertical : Axis.horizontal,
+          mainAxisSize: cupertino ? .min : .max,
           crossAxisAlignment: .center,
           children: [
             if (exception == null) ...[
@@ -136,13 +141,18 @@ class LoadingDialogState<T> extends State<LoadingDialog> {
                 builder: (context, snapshot) =>
                     CircularProgressIndicator.adaptive(value: snapshot.data),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 20, height: 12),
             ],
-            Expanded(
+            Flexible(
+              fit: cupertino ? FlexFit.loose : FlexFit.tight,
               child: Text(
                 titleLabel,
                 maxLines: 4,
-                textAlign: exception == null ? TextAlign.left : null,
+                textAlign: cupertino
+                    ? TextAlign.center
+                    : exception == null
+                    ? TextAlign.left
+                    : null,
                 overflow: TextOverflow.ellipsis,
               ),
             ),

@@ -46,6 +46,38 @@ void main() {
   });
 
   group('AccessibilitySettings', () {
+    test('a size on top of another follows it until set on its own', () async {
+      const title = ScaleCategory.titleText;
+      var s = AccessibilitySettings.defaults.copyWith(ScaleCategory.text, 1.2);
+      expect(s.effective(title), 1.2);
+
+      s = s.withEffective(title, 1.5);
+      expect(s.textScale, 1.2, reason: 'only the title changes');
+      expect(s.effective(title), 1.5);
+
+      s = s.copyWith(ScaleCategory.text, 1.0);
+      expect(s.effective(title), 1.25);
+
+      final store = await _store();
+      await s.save(store);
+      expect(AccessibilitySettings.load(store), s, reason: 'not re-snapped');
+
+      expect(s.without(title).effective(title), s.textScale);
+    });
+
+    test('a size on top of another stays within its own range', () {
+      const title = ScaleCategory.titleText;
+      final big = AccessibilitySettings.defaults
+          .copyWith(ScaleCategory.text, 2.0)
+          .copyWith(title, 1.5);
+      expect(big.effective(title), title.max);
+      expect(big.titleTextScale * big.textScale, title.max);
+
+      final small = big.withEffective(title, title.min);
+      expect(small.effective(title), title.min, reason: 'can still go down');
+      expect(small.textScale, 2.0);
+    });
+
     test('defaults are 1.0 everywhere', () {
       for (final c in ScaleCategory.values) {
         expect(AccessibilitySettings.defaults[c], 1.0);

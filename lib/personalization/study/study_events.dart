@@ -3,11 +3,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import '../accessibility_controller.dart';
-import '../accessibility_settings.dart';
-import '../meaning/meaning_settings.dart';
-import '../meaning/message_meaning.dart';
-import '../model/heuristic_functions.dart';
 import '../model/settings_intent_model.dart';
+import '../model/tool_call_interpreter.dart';
 import '../suggestions/suggestion.dart';
 import 'study_settings.dart';
 
@@ -15,8 +12,7 @@ import 'study_settings.dart';
 ///
 /// Events hold ids, enums, numbers and booleans. The only text is what the
 /// participant typed to the assistant ([AssistPrompted]), which the team
-/// decided to keep. Message text is never part of an event: [MeaningSent]
-/// keeps the kind of meaning and how many times it mentions, not the words.
+/// decided to keep. Message text is never part of an event.
 sealed class StudyEvent {
   const StudyEvent();
 
@@ -123,35 +119,61 @@ class AssistAnswered extends StudyEvent {
   /// The request failed with an error, which the tab shows as no suggestion.
   final bool failed;
 
-  const AssistAnswered(this.result, {this.timing, this.failed = false});
+  /// The request answered the model's question: a tapped option or quick
+  /// reply, typed words, or a chosen chat.
+  final bool answer;
+
+  const AssistAnswered(
+    this.result, {
+    this.timing,
+    this.failed = false,
+    this.answer = false,
+  });
 
   @override
   String get type => switch (result) {
     AssistProposal() => 'assist_proposal',
-    AssistAtLimit() => 'assist_at_limit',
+    AssistClarification() => 'assist_clarification',
+    AssistNeedsChat() => 'assist_needs_chat',
+    AssistUnchanged() => 'assist_unchanged',
+    AssistNotAvailable() => 'assist_not_available',
+    AssistNoAction() => 'assist_no_action',
     AssistNoSuggestion() => 'assist_no_suggestion',
   };
 
+  /// The call as the model made it. A chat name the user typed is not kept.
+  static Map<String, Object?> _call(ProposedCall? call) => call == null
+      ? const {}
+      : {
+          'function': call.name,
+          'arguments': {
+            for (final MapEntry(:key, :value) in call.args.entries)
+              key: key == 'chat' ? '(chat)' : value,
+          },
+        };
+
   @override
   Map<String, Object?> get data => {
+    if (answer) 'answer': true,
     ...switch (result) {
-      AssistProposal(
-        :final heuristic,
-        :final category,
-        :final from,
-        :final to,
-      ) =>
-        {
-          'heuristic': heuristic.id,
-          'category': category.id,
-          'from': from,
-          'to': to,
-        },
-      AssistAtLimit(:final heuristic, :final category) => {
-        'heuristic': heuristic.id,
-        'category': category.id,
+      AssistProposal(:final call, :final change) => {
+        ..._call(call),
+        'changes': change.toJson(),
       },
-      AssistNoSuggestion(:final reason) => {
+      AssistClarification(:final call, :final options) => {
+        ..._call(call),
+        'options': options,
+      },
+      AssistNeedsChat(:final call) => _call(call),
+      AssistUnchanged(:final call, :final reason, :final category) => {
+        ..._call(call),
+        'reason': reason.name,
+        if (category != null) 'category': category.id,
+      },
+      AssistNotAvailable(:final call) => _call(call),
+      AssistNoAction(:final call) => _call(call),
+      AssistNoSuggestion(:final reason, :final call) => {
+        ..._call(call),
         'reason': failed ? 'error' : reason.name,
       },
     },
@@ -182,10 +204,9 @@ class SuggestionResolved extends StudyEvent {
 
   @override
   Map<String, Object?> get data => {
-    'heuristic': suggestion.id,
-    'category': suggestion.category.id,
-    'from': suggestion.from,
-    'to': suggestion.to,
+    // The heuristic id, or the function the model called.
+    suggestion.isUserRequest ? 'function' : 'heuristic': suggestion.id,
+    'changes': suggestion.change.toJson(),
   };
 }
 
@@ -203,77 +224,6 @@ class SettingsChanged extends StudyEvent {
   @override
   Map<String, Object?> get data => {
     'kind': commit.kind.name,
-    'changes': {
-      for (final category in ScaleCategory.values)
-        if (commit.from[category] != commit.to[category])
-          category.id: [commit.from[category], commit.to[category]],
-    },
-  };
-}
-
-/// The sender changed the proposed meaning before sending: another intent
-/// or urgency, or removed a time.
-class MeaningChanged extends StudyEvent {
-  final MessageIntent? intent;
-  final MessageUrgency? urgency;
-  final bool timeRemoved;
-
-  const MeaningChanged({this.intent, this.urgency, this.timeRemoved = false});
-
-  @override
-  String get type => 'meaning_changed';
-
-  @override
-  Map<String, Object?> get data => {
-    if (intent != null) 'intent': intent!.name,
-    if (urgency != null) 'urgency': urgency!.name,
-    if (timeRemoved) 'time_removed': true,
-  };
-}
-
-/// The sender chose to send the message without meaning.
-class MeaningRemoved extends StudyEvent {
-  const MeaningRemoved();
-
-  @override
-  String get type => 'meaning_removed';
-
-  @override
-  Map<String, Object?> get data => const {};
-}
-
-/// A message was sent with meaning. Only the kind of meaning is kept.
-class MeaningSent extends StudyEvent {
-  final MessageMeaning meaning;
-  final bool edit;
-
-  const MeaningSent(this.meaning, {this.edit = false});
-
-  @override
-  String get type => 'meaning_sent';
-
-  @override
-  Map<String, Object?> get data => {
-    'intent': meaning.intent.name,
-    'urgency': meaning.urgency.name,
-    'times': meaning.times.length,
-    'edit': edit,
-  };
-}
-
-class MeaningSettingsChanged extends StudyEvent {
-  final MeaningPreferences preferences;
-
-  const MeaningSettingsChanged(this.preferences);
-
-  @override
-  String get type => 'meaning_settings';
-
-  @override
-  Map<String, Object?> get data => {
-    'annotate_outgoing': preferences.annotateOutgoing,
-    'show_intent': preferences.showIntent,
-    'show_urgency': preferences.showUrgency,
-    'highlight_times': preferences.highlightTimes,
+    'changes': commit.to.diff(commit.from),
   };
 }

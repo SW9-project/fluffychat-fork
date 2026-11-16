@@ -26,9 +26,11 @@ class DummyChatListItem extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: titleColor,
           child: animate
-              ? CircularProgressIndicator(
+              ? CircularProgressIndicator.adaptive(
                   strokeWidth: 1,
-                  color: theme.textTheme.bodyLarge!.color,
+                  valueColor: AlwaysStoppedAnimation(
+                    theme.textTheme.bodyLarge!.color,
+                  ),
                 )
               : const SizedBox.shrink(),
         ),

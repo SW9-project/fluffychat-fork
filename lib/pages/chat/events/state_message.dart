@@ -64,6 +64,7 @@ class StateMessage extends StatelessWidget {
                               else ...[
                                 WidgetSpan(
                                   child: Padding(
+<<<<<<< Updated upstream
                                     padding: const EdgeInsets.only(right: 4.0),
                                     child: Avatar(
                                       name: event.senderFromMemoryOrFallback
@@ -77,6 +78,28 @@ class StateMessage extends StatelessWidget {
                                 ),
                                 TextSpan(
                                   text: L10n.of(context).messageNotDecryptable,
+=======
+                                    padding: const EdgeInsets.only(left: 4.0),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(7),
+                                      onTap: () =>
+                                          UtdDialog.show(context, event),
+                                      child: Icon(
+                                        Icons.info_outlined,
+                                        size: 14,
+                                        color: theme.onServiceMessageColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                            if (onExpand != null) ...[
+                              const TextSpan(text: '\n'),
+                              TextSpan(
+                                style: TextStyle(
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: theme.onServiceMessageColor,
+>>>>>>> Stashed changes
                                 ),
                                 if (!event.redacted)
                                   WidgetSpan(
@@ -108,6 +131,7 @@ class StateMessage extends StatelessWidget {
                                 ),
                               ],
                             ],
+<<<<<<< Updated upstream
                           ),
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -118,6 +142,18 @@ class StateMessage extends StatelessWidget {
                                 ? TextDecoration.lineThrough
                                 : null,
                           ),
+=======
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: theme.onServiceMessageColor,
+                          decoration: event.redacted
+                              ? TextDecoration.lineThrough
+                              : null,
+>>>>>>> Stashed changes
                         ),
                       ),
                     ),

@@ -78,6 +78,7 @@ class ChatListViewBody extends StatelessWidget {
         return CustomScrollView(
           controller: controller.scrollController,
           slivers: [
+            if (theme.cupertinoStyle) const ChatListLargeTitle(),
             ChatListHeader(controller: controller),
             SliverList(
               delegate: SliverChildListDelegate([
@@ -129,18 +130,10 @@ class ChatListViewBody extends StatelessWidget {
                   ),
                 ],
                 if (client.rooms.isNotEmpty && !controller.isSearchMode)
-                  Container(
-                    height: 44,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: theme.dividerColor,
-                          width: 0.5,
-                        ),
-                      ),
-                    ),
+                  SizedBox(
+                    height: 48,
                     child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
                       shrinkWrap: true,
                       scrollDirection: Axis.horizontal,
                       children: [
@@ -344,43 +337,36 @@ class _FolderTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-        child: IntrinsicWidth(
-          child: Column(
-            mainAxisAlignment: .end,
-            crossAxisAlignment: .stretch,
-            children: [
-              Expanded(
-                child: Center(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: selected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ),
-              AnimatedContainer(
-                duration: FluffyThemes.animationDuration,
-                curve: FluffyThemes.animationCurve,
-                height: 3,
-                decoration: BoxDecoration(
+    // Filled when selected: the accent on iOS, the secondary container of
+    // Material 3 filter chips on Android.
+    final selectedColor = theme.cupertinoStyle
+        ? theme.colorScheme.primary
+        : theme.colorScheme.secondaryContainer;
+    final onSelectedColor = theme.cupertinoStyle
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSecondaryContainer;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3.0, vertical: 6.0),
+      child: Material(
+        color: selected ? selectedColor : theme.colorScheme.surfaceContainer,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14.0),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                   color: selected
-                      ? theme.colorScheme.primary
-                      : Colors.transparent,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(3),
-                  ),
+                      ? onSelectedColor
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

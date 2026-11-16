@@ -4,7 +4,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:fluffychat/config/app_config.dart';
+import 'package:fluffychat/config/themes.dart';
+import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/pages/chat/sticker_picker_dialog.dart';
+import 'package:fluffychat/utils/adaptive_bottom_sheet.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
 import 'package:fluffychat/widgets/matrix.dart';
@@ -122,6 +128,48 @@ class _Reaction extends StatelessWidget {
       }
       content = Text(renderKey.toString(), style: TextStyle(fontSize: 14));
     }
+    // iOS: a capsule with the count inside, tinted when the user reacted.
+    if (theme.cupertinoStyle) {
+      final tint = theme.colorScheme.primary;
+      return GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 26),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: ShapeDecoration(
+            color: reacted == true
+                ? tint.withAlpha(46)
+                : theme.colorScheme.surfaceContainerHigh,
+            shape: StadiumBorder(
+              side: reacted == true
+                  ? BorderSide(color: tint.withAlpha(140))
+                  : BorderSide.none,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: .min,
+            children: [
+              content,
+              if (count > 1)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    count.toString(),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: reacted == true
+                          ? tint
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
     return Badge(
       isLabelVisible: count > 1,
       label: Text(count.toString()),
@@ -206,4 +254,98 @@ class _AdaptableReactorsDialog extends StatelessWidget {
 
     return AlertDialog(title: title, content: body);
   }
+}
+
+/// Lets the user pick any emoji or one of the room's emotes as reaction.
+Future<String?> showCustomReactionPicker(BuildContext context, Room room) {
+  final theme = Theme.of(context);
+  final l10n = L10n.of(context);
+  return showAdaptiveBottomSheet<String>(
+    context: context,
+    builder: (context) => Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.customReaction),
+        leading: CloseButton(onPressed: () => Navigator.of(context).pop(null)),
+      ),
+      body: SizedBox(
+        height: double.infinity,
+        child: DefaultTabController(
+          length: 2,
+          child: Column(
+            children: [
+              if (theme.cupertinoStyle)
+                Builder(
+                  builder: (context) {
+                    final tabs = DefaultTabController.of(context);
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: AnimatedBuilder(
+                        animation: tabs,
+                        builder: (context, _) =>
+                            CupertinoSlidingSegmentedControl<int>(
+                              groupValue: tabs.index,
+                              onValueChanged: (i) => tabs.animateTo(i ?? 0),
+                              children: {
+                                0: Text(l10n.emojis),
+                                1: Text(l10n.stickers),
+                              },
+                            ),
+                      ),
+                    );
+                  },
+                )
+              else
+                TabBar(
+                  tabs: [
+                    Tab(text: l10n.emojis),
+                    Tab(text: l10n.stickers),
+                  ],
+                ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    EmojiPicker(
+                      onEmojiSelected: (_, emoji) =>
+                          Navigator.of(context).pop(emoji.emoji),
+                      config: Config(
+                        locale: Localizations.localeOf(context),
+                        emojiViewConfig: const EmojiViewConfig(
+                          backgroundColor: Colors.transparent,
+                        ),
+                        bottomActionBarConfig: const BottomActionBarConfig(
+                          enabled: false,
+                        ),
+                        categoryViewConfig: CategoryViewConfig(
+                          initCategory: Category.SMILEYS,
+                          backspaceColor: theme.colorScheme.primary,
+                          iconColor: theme.colorScheme.primary.withAlpha(128),
+                          iconColorSelected: theme.colorScheme.primary,
+                          indicatorColor: theme.colorScheme.primary,
+                          backgroundColor: theme.colorScheme.surface,
+                        ),
+                        skinToneConfig: SkinToneConfig(
+                          dialogBackgroundColor: Color.lerp(
+                            theme.colorScheme.surface,
+                            theme.colorScheme.primaryContainer,
+                            0.75,
+                          )!,
+                          indicatorColor: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    StickerPickerDialog(
+                      room: room,
+                      usage: ImagePackUsage.emoticon,
+                      onSelected: (sticker) =>
+                          Navigator.of(context).pop(sticker.url.toString()),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

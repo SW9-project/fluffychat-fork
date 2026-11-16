@@ -8,9 +8,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_details/chat_details_view.dart';
 import 'package:fluffychat/pages/settings/settings.dart';
+import 'package:fluffychat/utils/account_config.dart';
 import 'package:fluffychat/utils/file_selector.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_text_input_dialog.dart';
+import 'package:fluffychat/widgets/bubble_color_picker.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
 import 'package:fluffychat/widgets/matrix.dart';
 import 'package:image_picker/image_picker.dart';
@@ -62,6 +64,101 @@ class ChatDetailsController extends State<ChatDetails> {
         SnackBar(content: Text(l10n.displaynameHasBeenChanged)),
       );
     }
+  }
+
+  Future<void> setBubbleColorAction() async {
+    final l10n = L10n.of(context);
+    final room = Matrix.of(context).client.getRoomById(roomId!)!;
+    var own = room.bubbleColor;
+    var other = room.otherBubbleColor;
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          Future<void> save(Color? newOwn, Color? newOther) async {
+            final result = await showFutureLoadingDialog(
+              context: context,
+              future: () => room.setBubbleColors(newOwn, newOther),
+            );
+            if (result.isError) return;
+            setSheetState(() {
+              own = newOwn;
+              other = newOther;
+            });
+          }
+
+          return SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .stretch,
+                children: [
+                  ListTile(title: Text(l10n.ownBubbleColor)),
+                  BubbleColorPicker(
+                    selected: own,
+                    disabled: other,
+                    onSelected: (color) => save(color, other),
+                    nullLabel: l10n.defaultBubbleColor,
+                  ),
+                  ListTile(title: Text(l10n.otherBubbleColor)),
+                  BubbleColorPicker(
+                    selected: other,
+                    disabled: own,
+                    onSelected: (color) => save(own, color),
+                    nullLabel: l10n.defaultBubbleColor,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Future<void> setWallpaperAction() async {
+    final room = Matrix.of(context).client.getRoomById(roomId!)!;
+    final pickedFile = (await selectFiles(
+      context,
+      type: FileType.image,
+    )).firstOrNull;
+    if (pickedFile == null || !mounted) return;
+    await showFutureLoadingDialog(
+      context: context,
+      future: () async => room.setWallpaper(
+        await room.client.uploadContent(
+          await pickedFile.readAsBytes(),
+          filename: pickedFile.name,
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Future<void> deleteWallpaperAction() async {
+    final room = Matrix.of(context).client.getRoomById(roomId!)!;
+    await showFutureLoadingDialog(
+      context: context,
+      future: () => room.setWallpaper(null),
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// Slider values while dragging, null once saved.
+  double? wallpaperOpacity, wallpaperBlur;
+
+  void updateWallpaperOpacity(double v) => setState(() => wallpaperOpacity = v);
+  void updateWallpaperBlur(double v) => setState(() => wallpaperBlur = v);
+
+  Future<void> saveWallpaperLook(String key, double value) async {
+    final room = Matrix.of(context).client.getRoomById(roomId!)!;
+    await showFutureLoadingDialog(
+      context: context,
+      future: () => room.setRoomConfig({key: value}),
+    );
+    if (mounted) setState(() => wallpaperOpacity = wallpaperBlur = null);
   }
 
   Future<void> setTopicAction() async {

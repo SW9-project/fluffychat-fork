@@ -1,0 +1,245 @@
+{
+  "version": 1,
+  "note": "The functions FunctionGemma is fine-tuned on. The model learns these exact words, so any change means training again. Properties are in alphabetical order because the model's chat template sorts them. minimum, maximum and default never reach the model. See docs/personalization-tools.md.",
+  "functions": [
+    {
+      "name": "change_text_size",
+      "description": "Make text bigger or smaller, all text or one kind, everywhere or in one chat. Use when text is hard to read or too big.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "chat": {
+            "type": "string",
+            "description": "Name or username of that chat, as written. Leave out if not given."
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["bigger", "smaller"],
+            "description": "bigger if too small or hard to read, smaller if too big."
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["everywhere", "one_chat"],
+            "default": "everywhere",
+            "description": "one_chat if only for one chat."
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "default": 1,
+            "description": "1 is a little, 3 is a lot. 1 if not said."
+          },
+          "target": {
+            "type": "string",
+            "enum": ["all", "messages", "chat_list", "titles", "message_input"],
+            "default": "all",
+            "description": "Which text, all if not said. titles is the top of the screen, message_input what the user types."
+          }
+        },
+        "required": ["direction"]
+      }
+    },
+    {
+      "name": "change_button_size",
+      "description": "Make buttons bigger or smaller, all buttons or one. Use when buttons are too small, hard to hit or too big.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "button": {
+            "type": "string",
+            "enum": [
+              "all",
+              "send",
+              "attach",
+              "emoji",
+              "microphone",
+              "back",
+              "search",
+              "menu",
+              "navigation"
+            ],
+            "default": "all",
+            "description": "Which button, all if not said. attach is the paperclip, menu the three dots, navigation the bottom tabs."
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["bigger", "smaller"],
+            "description": "bigger if too small or hard to hit, smaller if too big."
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "default": 1,
+            "description": "1 is a little, 3 is a lot. 1 if not said."
+          }
+        },
+        "required": ["direction"]
+      }
+    },
+    {
+      "name": "change_spacing",
+      "description": "Put more or less space between things to tap. Use when they are so close the user taps the wrong one, or too far apart.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "string",
+            "enum": ["more", "less"],
+            "description": "more if too close, less if too far apart."
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "default": 1,
+            "description": "1 is a little, 3 is a lot. 1 if not said."
+          }
+        },
+        "required": ["direction"]
+      }
+    },
+    {
+      "name": "set_simple_mode",
+      "description": "Turn the simple view on or off. It hides rarely needed buttons and options. Use when the app is confusing.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "true for on, false for off."
+          }
+        },
+        "required": ["enabled"]
+      }
+    },
+    {
+      "name": "set_button_labels",
+      "description": "Show or hide words next to button icons. Use when the user does not know what a button does.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "true to show, false to hide."
+          }
+        },
+        "required": ["enabled"]
+      }
+    },
+    {
+      "name": "set_high_contrast",
+      "description": "Turn high contrast on or off: stronger colors and bold text. Use when text or buttons are pale or blend into the background.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "true for on, false for off."
+          }
+        },
+        "required": ["enabled"]
+      }
+    },
+    {
+      "name": "change_avatar_size",
+      "description": "Make profile pictures bigger or smaller. Use when it is hard to see who wrote or who a chat is with.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "string",
+            "enum": ["bigger", "smaller"],
+            "description": "bigger if too small, smaller if too big."
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "default": 1,
+            "description": "1 is a little, 3 is a lot. 1 if not said."
+          }
+        },
+        "required": ["direction"]
+      }
+    },
+    {
+      "name": "set_theme",
+      "description": "Switch to a light or dark screen. Use when the screen is too bright or too dark.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["light", "dark", "system"],
+            "description": "dark if too bright, light if too dark, system to follow the phone."
+          }
+        },
+        "required": ["mode"]
+      }
+    },
+    {
+      "name": "reset_settings",
+      "description": "Put settings back to normal. Use when the user wants to undo changes.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "setting": {
+            "type": "string",
+            "enum": [
+              "all",
+              "text_size",
+              "button_size",
+              "spacing",
+              "simple_mode",
+              "button_labels",
+              "high_contrast",
+              "avatar_size"
+            ],
+            "default": "all",
+            "description": "Which setting, all if not said."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "ask_clarification",
+      "description": "Ask the user to choose. Use when the request is about the app's look or controls, but it is unclear what to change or which way.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "change_text_size",
+                "change_button_size",
+                "change_spacing",
+                "set_simple_mode",
+                "set_button_labels",
+                "set_high_contrast",
+                "change_avatar_size",
+                "set_theme",
+                "reset_settings"
+              ]
+            },
+            "description": "Functions that might fit. Only one when just its details are unclear."
+          }
+        },
+        "required": ["options"]
+      }
+    },
+    {
+      "name": "no_action",
+      "description": "Do nothing. Use when no other function fits, such as questions, small talk or other tasks.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  ]
+}

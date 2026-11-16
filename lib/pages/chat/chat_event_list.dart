@@ -10,9 +10,16 @@ import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
 import 'package:fluffychat/pages/chat/encryption_info.dart';
 import 'package:fluffychat/pages/chat/events/message.dart';
+import 'package:fluffychat/pages/chat/message_context_menu.dart';
 import 'package:fluffychat/pages/chat/seen_by_row.dart';
 import 'package:fluffychat/pages/chat/typing_indicators.dart';
+<<<<<<< Updated upstream
 import 'package:fluffychat/utils/chat_wallpaper.dart';
+=======
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/accessibility_settings.dart';
+import 'package:fluffychat/utils/account_config.dart';
+>>>>>>> Stashed changes
 import 'package:fluffychat/utils/matrix_sdk_extensions/filtered_timeline_extension.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -108,6 +115,7 @@ class ChatEventList extends StatelessWidget {
       thisEventsKeyMap[events[i].eventId] = i;
     }
 
+<<<<<<< Updated upstream
     final hasWallpaper =
         controller.room.wallpaper.type == ChatWallpaperType.image;
 
@@ -161,6 +169,58 @@ class ChatEventList extends StatelessWidget {
                       ),
               );
             }
+=======
+    final hasWallpaper = controller.room.wallpaperUrl != null;
+
+    return SelectionArea(
+      // The app-wide text scale is applied above; messages and this chat
+      // can have their own on top.
+      child: AccessibilityTextScale(
+        category: ScaleCategory.messageText,
+        roomId: controller.room.id,
+        child: ListView.custom(
+          padding: EdgeInsets.only(
+            top: 8 + MediaQuery.paddingOf(context).top,
+            bottom:
+                8 +
+                (controller.inputBarHeight ??
+                    (72 + (FluffyThemes.isColumnMode(context) ? 16 : 0))),
+            left: horizontalPadding,
+            right: horizontalPadding,
+          ),
+          reverse: true,
+          controller: controller.scrollController,
+          keyboardDismissBehavior: PlatformInfos.isIOS
+              ? ScrollViewKeyboardDismissBehavior.onDrag
+              : ScrollViewKeyboardDismissBehavior.manual,
+          childrenDelegate: SliverChildBuilderDelegate(
+            (BuildContext context, int i) {
+              // Footer to display typing indicator and read receipts:
+              if (i == 0) {
+                if (timeline.canRequestFuture) {
+                  return Center(
+                    child: TextButton.icon(
+                      onPressed: timeline.isRequestingFuture
+                          ? null
+                          : controller.requestFuture,
+                      icon: timeline.isRequestingFuture
+                          ? CircularProgressIndicator.adaptive(strokeWidth: 2)
+                          : const Icon(Icons.arrow_downward_outlined),
+                      label: Text(L10n.of(context).loadMore),
+                    ),
+                  );
+                }
+                return Column(
+                  mainAxisSize: .min,
+                  children: [
+                    if (events.isNotEmpty)
+                      SeenByRow(event: events.first, timeline: timeline),
+                    TypingIndicators(controller),
+                    EncryptionInfo(room: controller.room),
+                  ],
+                );
+              }
+>>>>>>> Stashed changes
 
             // Request history button or progress indicator:
             if (i == events.length + 1) {
@@ -247,10 +307,10 @@ class ChatEventList extends StatelessWidget {
                                 ),
                                 child: Text(
                                   event.originServerTs.localizedDate(context),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                    color: Colors.white,
+                                    fontSize: 13,
+                                    color: theme.onServiceMessageColor,
                                   ),
                                 ),
                               ),
@@ -258,6 +318,55 @@ class ChatEventList extends StatelessWidget {
                           ),
                         ),
                       ),
+<<<<<<< Updated upstream
+=======
+                    Message(
+                      event,
+                      bigEmojis: controller.bigEmojis,
+                      animateIn: animateIn,
+                      onSwipe: () => controller.replyAction(replyTo: event),
+                      onInfoTab: controller.showEventInfo,
+                      onMention: () => controller.sendController.text +=
+                          '${event.senderFromMemoryOrFallback.mention} ',
+                      highlightMarker:
+                          controller.scrollToEventIdMarker == event.eventId,
+                      onSelect: controller.onSelectMessage,
+                      scrollToEventId: controller.scrollToEventId,
+                      longPressSelect: controller.selectedEvents.isNotEmpty,
+                      onContextMenu: PlatformInfos.isIOS
+                          ? (bubbleContext) => showMessageContextMenu(
+                              bubbleContext,
+                              controller,
+                              event,
+                            )
+                          : null,
+                      selected: controller.selectedEvents.any(
+                        (e) => e.eventId == event.eventId,
+                      ),
+                      singleSelected:
+                          controller.selectedEvents.singleOrNull?.eventId ==
+                          event.eventId,
+                      onEdit: controller.editSelectedEventAction,
+                      timeline: timeline,
+                      displayReadMarker:
+                          i > 0 &&
+                          controller.readMarkerEventId == event.eventId,
+                      nextEvent: nextEvent,
+                      previousEvent: previousEvent,
+                      wallpaperMode: hasWallpaper,
+                      isCollapsed: isCollapsed,
+                      enterThread: controller.activeThreadId == null
+                          ? controller.enterThread
+                          : null,
+                      onExpand: canExpand
+                          ? () => controller.expandEventsFrom(
+                              event,
+                              !controller.expandedEventIds.contains(
+                                event.eventId,
+                              ),
+                            )
+                          : null,
+>>>>>>> Stashed changes
                     ),
                   Message(
                     event,

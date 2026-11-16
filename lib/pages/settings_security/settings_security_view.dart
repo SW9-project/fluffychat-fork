@@ -12,6 +12,7 @@ import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
 import 'package:fluffychat/widgets/matrix.dart';
+import 'package:fluffychat/widgets/settings_section.dart';
 import 'package:fluffychat/widgets/settings_switch_list_tile.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
@@ -32,8 +33,13 @@ class SettingsSecurityView extends StatelessWidget {
     final publicMasterKey =
         client.userDeviceKeys[client.userID]?.masterKey?.publicKey;
 
+    final background = theme.cupertinoStyle
+        ? SettingsSection.backgroundColor(theme)
+        : null;
     return Scaffold(
+      backgroundColor: background,
       appBar: AppBar(
+        backgroundColor: background,
         title: Text(L10n.of(context).security),
         automaticallyImplyLeading: !FluffyThemes.isColumnMode(context),
         centerTitle: FluffyThemes.isColumnMode(context),
@@ -56,17 +62,9 @@ class SettingsSecurityView extends StatelessWidget {
                   ),
                 );
               }
-              return Column(
+              return SettingsList(
                 children: [
-                  ListTile(
-                    title: Text(
-                      L10n.of(context).privacy,
-                      style: TextStyle(
-                        color: theme.colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  SettingsHeader(L10n.of(context).privacy),
                   SettingsSwitchListTile.adaptive(
                     title: L10n.of(context).sendTypingNotifications,
                     subtitle: L10n.of(
@@ -98,15 +96,9 @@ class SettingsSecurityView extends StatelessWidget {
                   ),
                   if (PlatformInfos.supportsAppLock) ...[
                     Divider(color: theme.dividerColor),
-                    ListTile(
-                      title: Text(
-                        L10n.of(context).appLock,
-                        style: TextStyle(
-                          color: theme.colorScheme.secondary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(L10n.of(context).appLockDescription),
+                    SettingsHeader(
+                      L10n.of(context).appLock,
+                      subtitle: L10n.of(context).appLockDescription,
                     ),
                     SwitchListTile.adaptive(
                       value: AppLock.of(context).isActive,
@@ -136,15 +128,9 @@ class SettingsSecurityView extends StatelessWidget {
                   ],
 
                   Divider(color: theme.dividerColor),
-                  ListTile(
-                    title: Text(
-                      L10n.of(context).shareKeysWith,
-                      style: TextStyle(
-                        color: theme.colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(L10n.of(context).shareKeysWithDescription),
+                  SettingsHeader(
+                    L10n.of(context).shareKeysWith,
+                    subtitle: L10n.of(context).shareKeysWithDescription,
                   ),
                   ListTile(
                     title: Material(
@@ -173,15 +159,7 @@ class SettingsSecurityView extends StatelessWidget {
                     ),
                   ),
                   Divider(color: theme.dividerColor),
-                  ListTile(
-                    title: Text(
-                      L10n.of(context).account,
-                      style: TextStyle(
-                        color: theme.colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  SettingsHeader(L10n.of(context).account),
                   if (publicMasterKey != null)
                     ListTile(
                       title: Text(L10n.of(context).yourPublicKey),

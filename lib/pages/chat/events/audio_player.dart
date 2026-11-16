@@ -354,9 +354,11 @@ class AudioPlayerState extends State<AudioPlayerWidget> {
                           width: buttonSize,
                           height: buttonSize,
                           child: status == AudioPlayerStatus.downloading
-                              ? CircularProgressIndicator(
+                              ? CircularProgressIndicator.adaptive(
                                   strokeWidth: 2,
-                                  color: widget.color,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    widget.color,
+                                  ),
                                   value: _downloadProgress,
                                 )
                               : InkWell(

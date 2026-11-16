@@ -100,11 +100,13 @@ class ChatListView extends StatelessWidget {
                         child: ChatListViewBody(controller),
                       ),
                     ),
+                    // iOS has the compose button in the title bar.
                     floatingActionButton:
                         !controller.isSearchMode &&
                             controller.activeSpaceId == null &&
-                            !FluffyThemes.isColumnMode(context)
-                        ? const StartChatFab()
+                            !FluffyThemes.isColumnMode(context) &&
+                            !Theme.of(context).cupertinoStyle
+                        ? const StartChatFab(extended: true)
                         : const SizedBox.shrink(),
                   ),
                 ),

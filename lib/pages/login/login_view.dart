@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/widgets/layouts/login_scaffold.dart';
 import 'package:material_ui/material_ui.dart';
@@ -114,7 +116,9 @@ class LoginView extends StatelessWidget {
                     ),
                     onPressed: controller.loading ? null : controller.login,
                     child: controller.loading
-                        ? const LinearProgressIndicator()
+                        ? Theme.of(context).cupertinoStyle
+                              ? const CupertinoActivityIndicator()
+                              : const LinearProgressIndicator()
                         : Text(L10n.of(context).login),
                   ),
                 ),

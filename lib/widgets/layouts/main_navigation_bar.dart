@@ -9,7 +9,10 @@ import 'dart:ui' as ui;
 import 'package:badges/badges.dart' as b;
 import 'package:collection/collection.dart';
 import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/liquid_glass.dart';
 import 'package:flutter/foundation.dart';
@@ -55,6 +58,14 @@ enum MainNavigationTab {
     settings => CupertinoIcons.gear_alt_fill,
   };
 
+  /// Material Symbols of the Android navigation bar, filled when selected.
+  IconData materialIcon(bool selected) => switch (this) {
+    chats => selected ? Icons.chat_bubble : Icons.chat_bubble_outline,
+    calls => selected ? Icons.call : Icons.call_outlined,
+    assistant => selected ? Icons.auto_awesome : Icons.auto_awesome_outlined,
+    settings => selected ? Icons.settings : Icons.settings_outlined,
+  };
+
   /// Icon of the native tab bar on iOS.
   String get sfSymbol => switch (this) {
     chats => 'bubble.left.and.bubble.right.fill',
@@ -65,8 +76,8 @@ enum MainNavigationTab {
 }
 
 /// Floating navigation bar between the main tabs. On iOS 26 and newer it is
-/// the native tab bar with Liquid Glass, everywhere else Flutter draws it in
-/// the same style.
+/// the native tab bar with Liquid Glass, on older iOS and macOS Flutter draws
+/// it in the same style, and everywhere else in Material 3 Expressive.
 class MainNavigationBar extends StatelessWidget {
   final MainNavigationTab activeTab;
   final ValueChanged<MainNavigationTab> onTabSelected;
@@ -84,7 +95,7 @@ class MainNavigationBar extends StatelessWidget {
   static double occupiedHeight(BuildContext context) =>
       PlatformInfos.supportsLiquidGlass
       ? _NativeTabBar.height(context)
-      : _GlassTabBar.height + _GlassTabBar.bottomMargin(context);
+      : _FloatingTabBar.height + _FloatingTabBar.bottomMargin(context);
 
   /// Notifies when [occupiedHeight] changes because UIKit has measured the
   /// native bar.
@@ -97,7 +108,7 @@ class MainNavigationBar extends StatelessWidget {
           onTabSelected: onTabSelected,
           unreadChats: unreadChats,
         )
-      : _GlassTabBar(
+      : _FloatingTabBar(
           activeTab: activeTab,
           onTabSelected: onTabSelected,
           unreadChats: unreadChats,
@@ -260,13 +271,14 @@ class _NativeTabBarState extends State<_NativeTabBar> {
   );
 }
 
-/// The bar drawn by Flutter with [LiquidGlass] for all other platforms.
-class _GlassTabBar extends StatefulWidget {
+/// The bar drawn by Flutter: with [LiquidGlass] for iOS before 26 and macOS,
+/// on a tonal Material surface everywhere else.
+class _FloatingTabBar extends StatefulWidget {
   final MainNavigationTab activeTab;
   final ValueChanged<MainNavigationTab> onTabSelected;
   final int unreadChats;
 
-  const _GlassTabBar({
+  const _FloatingTabBar({
     required this.activeTab,
     required this.onTabSelected,
     required this.unreadChats,
@@ -282,10 +294,10 @@ class _GlassTabBar extends StatefulWidget {
   }
 
   @override
-  State<_GlassTabBar> createState() => _GlassTabBarState();
+  State<_FloatingTabBar> createState() => _FloatingTabBarState();
 }
 
-class _GlassTabBarState extends State<_GlassTabBar>
+class _FloatingTabBarState extends State<_FloatingTabBar>
     with SingleTickerProviderStateMixin {
   static const SpringDescription _spring = SpringDescription(
     mass: 1,
@@ -299,7 +311,7 @@ class _GlassTabBarState extends State<_GlassTabBar>
   late double _indicatorStart = widget.activeTab.index.toDouble();
 
   @override
-  void didUpdateWidget(_GlassTabBar oldWidget) {
+  void didUpdateWidget(_FloatingTabBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.activeTab != widget.activeTab) {
       _indicatorStart = _indicatorPosition(oldWidget.activeTab);
@@ -331,32 +343,36 @@ class _GlassTabBarState extends State<_GlassTabBar>
     final l10n = L10n.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
     const borderRadius = BorderRadius.all(
-      Radius.circular(_GlassTabBar.height / 2),
+      Radius.circular(_FloatingTabBar.height / 2),
     );
-    final indicatorColor = theme.colorScheme.onSurface.withValues(
-      alpha: theme.brightness == Brightness.light ? 0.07 : 0.12,
-    );
+    final cupertino = theme.cupertinoStyle;
+    final indicatorColor = cupertino
+        ? theme.colorScheme.onSurface.withValues(
+            alpha: theme.brightness == Brightness.light ? 0.07 : 0.12,
+          )
+        : theme.colorScheme.secondaryContainer;
 
     final bar = Padding(
       padding: EdgeInsets.fromLTRB(
         20 + padding.left,
         0,
         20 + padding.right,
-        _GlassTabBar.bottomMargin(context),
+        _FloatingTabBar.bottomMargin(context),
       ),
       child: Center(
         heightFactor: 1,
         child: ConstrainedBox(
           constraints: const BoxConstraints(
             maxWidth: 440,
-            minHeight: _GlassTabBar.height,
-            maxHeight: _GlassTabBar.height,
+            minHeight: _FloatingTabBar.height,
+            maxHeight: _FloatingTabBar.height,
           ),
           child: MediaQuery.withClampedTextScaling(
             maxScaleFactor: 1.2,
-            child: LiquidGlass(
-              borderRadius: borderRadius,
-              child: Material(
+            child: _surface(
+              theme,
+              borderRadius,
+              Material(
                 type: MaterialType.transparency,
                 child: Padding(
                   padding: const EdgeInsets.all(4.0),
@@ -409,7 +425,7 @@ class _GlassTabBarState extends State<_GlassTabBar>
                             children: MainNavigationTab.values
                                 .map(
                                   (tab) => Expanded(
-                                    child: _GlassTabBarItem(
+                                    child: _FloatingTabBarItem(
                                       tab: tab,
                                       label: tab.localizedLabel(l10n),
                                       selected: tab == widget.activeTab,
@@ -441,7 +457,7 @@ class _GlassTabBarState extends State<_GlassTabBar>
     // bar, so that the navigation buttons stay readable.
     if (!PlatformInfos.isAndroid || padding.bottom == 0) return bar;
     final fadeHeight =
-        _GlassTabBar.height / 2 + _GlassTabBar.bottomMargin(context);
+        _FloatingTabBar.height / 2 + _FloatingTabBar.bottomMargin(context);
     final fadeColor = theme.colorScheme.surface;
     return Stack(
       // Keeps the shadow of the bar.
@@ -473,16 +489,32 @@ class _GlassTabBarState extends State<_GlassTabBar>
       ],
     );
   }
+
+  /// Liquid Glass on Apple platforms, otherwise a tonal surface with a soft
+  /// shadow like the floating toolbars of Material 3 Expressive.
+  static Widget _surface(
+    ThemeData theme,
+    BorderRadius borderRadius,
+    Widget child,
+  ) => theme.cupertinoStyle
+      ? LiquidGlass(borderRadius: borderRadius, child: child)
+      : Material(
+          color: theme.colorScheme.surfaceContainer,
+          surfaceTintColor: Colors.transparent,
+          elevation: 3,
+          borderRadius: borderRadius,
+          child: child,
+        );
 }
 
-class _GlassTabBarItem extends StatefulWidget {
+class _FloatingTabBarItem extends StatefulWidget {
   final MainNavigationTab tab;
   final String label;
   final bool selected;
   final String? badge;
   final VoidCallback onTap;
 
-  const _GlassTabBarItem({
+  const _FloatingTabBarItem({
     required this.tab,
     required this.label,
     required this.selected,
@@ -491,18 +523,23 @@ class _GlassTabBarItem extends StatefulWidget {
   });
 
   @override
-  State<_GlassTabBarItem> createState() => _GlassTabBarItemState();
+  State<_FloatingTabBarItem> createState() => _FloatingTabBarItemState();
 }
 
-class _GlassTabBarItemState extends State<_GlassTabBarItem> {
+class _FloatingTabBarItemState extends State<_FloatingTabBarItem> {
   bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cupertino = theme.cupertinoStyle;
     final color = widget.selected
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurface;
+        ? cupertino
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSecondaryContainer
+        : cupertino
+        ? theme.colorScheme.onSurface
+        : theme.colorScheme.onSurfaceVariant;
     final badge = widget.badge;
 
     return Semantics(
@@ -530,16 +567,32 @@ class _GlassTabBarItemState extends State<_GlassTabBarItem> {
                 badgeAnimation: const b.BadgeAnimation.scale(),
                 // Red like the badges of the native tab bar.
                 badgeStyle: b.BadgeStyle(
-                  badgeColor: CupertinoDynamicColor.resolve(
-                    CupertinoColors.systemRed,
-                    context,
-                  ),
+                  badgeColor: cupertino
+                      ? CupertinoDynamicColor.resolve(
+                          CupertinoColors.systemRed,
+                          context,
+                        )
+                      : theme.colorScheme.error,
                 ),
                 badgeContent: Text(
                   badge ?? '',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  style: TextStyle(
+                    color: cupertino ? Colors.white : theme.colorScheme.onError,
+                    fontSize: 12,
+                  ),
                 ),
-                child: Icon(widget.tab.icon, size: 24, color: color),
+                child: Icon(
+                  cupertino
+                      ? widget.tab.icon
+                      : widget.tab.materialIcon(widget.selected),
+                  // Only this button's own size: the bar has a fixed height.
+                  size:
+                      24 *
+                      AccessibilityScope.of(
+                        context,
+                      ).onTop(ScaleCategory.navigationButton),
+                  color: color,
+                ),
               ),
               Text(
                 widget.label,

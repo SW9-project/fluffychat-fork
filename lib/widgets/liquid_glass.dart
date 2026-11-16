@@ -5,11 +5,14 @@
 
 import 'dart:ui' as ui;
 
+import 'package:fluffychat/utils/platform_infos.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A translucent surface in the style of the iOS "Liquid Glass" material. It
-/// blurs and saturates the content behind it, is lit from the top and has a
-/// specular highlight along its rim.
+/// The iOS "Liquid Glass" material. Since iOS 26 it is the native UIKit
+/// material behind [child]. Elsewhere a translucent imitation: it blurs and
+/// saturates the content behind it, is lit from the top and has a specular
+/// highlight along its rim.
 class LiquidGlass extends StatelessWidget {
   final Widget child;
   final BorderRadius borderRadius;
@@ -19,6 +22,51 @@ class LiquidGlass extends StatelessWidget {
     required this.borderRadius,
     super.key,
   });
+
+  @override
+  Widget build(BuildContext context) => PlatformInfos.supportsLiquidGlass
+      ? _NativeLiquidGlass(borderRadius: borderRadius, child: child)
+      : _FlutterLiquidGlass(borderRadius: borderRadius, child: child);
+}
+
+class _NativeLiquidGlass extends StatelessWidget {
+  final Widget child;
+  final BorderRadius borderRadius;
+
+  const _NativeLiquidGlass({required this.child, required this.borderRadius});
+
+  @override
+  Widget build(BuildContext context) {
+    // shortcut: one radius for all corners, the native view takes four if
+    // a shape ever needs them.
+    final params = {
+      'cornerRadius': borderRadius.topLeft.x,
+      'isDark': Theme.of(context).brightness == Brightness.dark,
+    };
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: UiKitView(
+              // A new key recreates the view, which reads its parameters once.
+              key: ValueKey(Object.hashAll(params.values)),
+              viewType: 'fluffychat/liquid_glass_view',
+              creationParams: params,
+              creationParamsCodec: const StandardMessageCodec(),
+            ),
+          ),
+        ),
+        child,
+      ],
+    );
+  }
+}
+
+class _FlutterLiquidGlass extends StatelessWidget {
+  final Widget child;
+  final BorderRadius borderRadius;
+
+  const _FlutterLiquidGlass({required this.child, required this.borderRadius});
 
   static final ui.ImageFilter _backdropFilter = ui.ImageFilter.compose(
     outer: ui.ColorFilter.matrix(_saturationMatrix(1.8)),

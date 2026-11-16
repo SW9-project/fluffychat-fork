@@ -49,7 +49,7 @@ class _ImportEmoteArchiveDialogState extends State<ImportEmoteArchiveDialog> {
     return AlertDialog(
       title: Text(L10n.of(context).importEmojis),
       content: _loading
-          ? Center(child: CircularProgressIndicator(value: _progress))
+          ? Center(child: CircularProgressIndicator.adaptive(value: _progress))
           : SingleChildScrollView(
               child: Wrap(
                 alignment: WrapAlignment.spaceEvenly,

@@ -63,6 +63,7 @@ void main() {
       ),
     );
     await controller.apply(ScaleCategory.text, 1.5);
+<<<<<<< Updated upstream
     await tester.pump();
     expect(appScaler.scale(10), 15);
     expect(inputScaler.scale(10), 15);
@@ -71,6 +72,17 @@ void main() {
     await tester.pump();
     expect(appScaler.scale(10), 15);
     expect(inputScaler.scale(10), 20);
+=======
+    await controller.apply(ScaleCategory.inputText, 1.2);
+    await tester.pump();
+    expect(appScaler.scale(10), 15);
+    expect(inputScaler.scale(10), closeTo(18, 0.001));
+
+    // The whole input size never goes past its own maximum of 2.0.
+    await controller.apply(ScaleCategory.inputText, 2.0);
+    await tester.pump();
+    expect(inputScaler.scale(10), closeTo(20, 0.001));
+>>>>>>> Stashed changes
   });
 
   testWidgets('icon buttons follow button and touch target scale', (
