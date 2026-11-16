@@ -41,6 +41,16 @@ class PersonalizationL10n {
   final String notChanged;
   final String changeUndone;
   final String thinking;
+  final String voiceStart;
+  final String voiceStop;
+  final String voiceListening;
+  final String voiceFinishing;
+  final String voiceHeardNothing;
+  final String voiceTimeLimit;
+  final String voicePermissionDenied;
+  final String voiceNotOnDevice;
+  final String voiceLanguageMissing;
+  final String voiceError;
   final String previewNow;
   final String previewSuggested;
   final String meaningQuestion;
@@ -105,6 +115,16 @@ class PersonalizationL10n {
     required this.notChanged,
     required this.changeUndone,
     required this.thinking,
+    required this.voiceStart,
+    required this.voiceStop,
+    required this.voiceListening,
+    required this.voiceFinishing,
+    required this.voiceHeardNothing,
+    required this.voiceTimeLimit,
+    required this.voicePermissionDenied,
+    required this.voiceNotOnDevice,
+    required this.voiceLanguageMissing,
+    required this.voiceError,
     required this.previewNow,
     required this.previewSuggested,
     required this.meaningQuestion,
@@ -181,6 +201,25 @@ class PersonalizationL10n {
     notChanged: 'Nothing was changed.',
     changeUndone: 'The change was undone.',
     thinking: 'Thinking…',
+    voiceStart: 'Speak',
+    voiceStop: 'Stop recording',
+    voiceListening: 'Listening. Tap to stop.',
+    voiceFinishing: 'Writing down what you said…',
+    voiceHeardNothing: 'I did not hear anything. Try again.',
+    voiceTimeLimit:
+        'The recording stopped after 2 minutes. Check the text before you '
+        'send it.',
+    voicePermissionDenied:
+        'To speak, allow the app to use the microphone. You can still type.',
+    voiceNotOnDevice:
+        "Speaking doesn't work on this phone. You can still type.",
+    voiceLanguageMissing:
+        'To speak, the phone needs English for offline speech recognition. '
+        "Install it in the phone's settings, under Languages, Voice input or "
+        'On-device speech recognition. You can still type.',
+    voiceError:
+        'The recording stopped because of a problem. Try again, or type '
+        'instead.',
     previewNow: 'Now',
     previewSuggested: 'Suggested',
     meaningQuestion: 'Question',
@@ -278,6 +317,27 @@ class PersonalizationL10n {
     notChanged: 'Intet blev ændret.',
     changeUndone: 'Ændringen blev fortrudt.',
     thinking: 'Tænker…',
+    voiceStart: 'Tal',
+    voiceStop: 'Stop optagelsen',
+    voiceListening: 'Lytter. Tryk for at stoppe.',
+    voiceFinishing: 'Skriver det ned, du sagde…',
+    voiceHeardNothing: 'Jeg hørte ikke noget. Prøv igen.',
+    voiceTimeLimit:
+        'Optagelsen stoppede efter 2 minutter. Tjek teksten, før du sender '
+        'den.',
+    voicePermissionDenied:
+        'For at tale skal appen have lov til at bruge mikrofonen. Du kan '
+        'stadig skrive.',
+    voiceNotOnDevice:
+        'Du kan ikke tale til assistenten på denne telefon. Du kan stadig '
+        'skrive.',
+    voiceLanguageMissing:
+        'For at tale skal telefonen have engelsk til offline talegenkendelse. '
+        'Installer det i telefonens indstillinger under Sprog, Stemmeinput '
+        'eller Talegenkendelse på enheden. Du kan stadig skrive.',
+    voiceError:
+        'Optagelsen stoppede på grund af en fejl. Prøv igen, eller skriv i '
+        'stedet.',
     previewNow: 'Nu',
     previewSuggested: 'Forslag',
     meaningQuestion: 'Spørgsmål',

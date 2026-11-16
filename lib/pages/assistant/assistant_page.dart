@@ -12,6 +12,8 @@ import 'package:fluffychat/personalization/personalization_layer.dart';
 import 'package:fluffychat/personalization/study/study_events.dart';
 import 'package:fluffychat/personalization/study/study_log.dart';
 import 'package:fluffychat/personalization/study/study_settings.dart';
+import 'package:fluffychat/personalization/voice/speech_transcriber.dart';
+import 'package:fluffychat/personalization/voice/system_transcriber.dart';
 import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -29,16 +31,24 @@ class _AssistantPageState extends State<AssistantPage> {
   /// the app can reach it.
   SettingsIntentModel? _model;
 
+  /// On-device voice input for the prompt, with the same lifetime as
+  /// [_model]. Leaving the tab ends a recording.
+  SpeechTranscriber? _transcriber;
+
   @override
   void initState() {
     super.initState();
     final condition = StudySettings.instance.value.condition;
     StudyLog.instance.record(AssistOpened(condition));
-    if (condition == StudyCondition.assist) _model = FunctionGemmaModel();
+    if (condition == StudyCondition.assist) {
+      _model = FunctionGemmaModel();
+      _transcriber = SystemTranscriber();
+    }
   }
 
   @override
   void dispose() {
+    _transcriber?.dispose();
     _model?.dispose();
     super.dispose();
   }
@@ -57,6 +67,7 @@ class _AssistantPageState extends State<AssistantPage> {
             ? const SizedBox.expand()
             : AssistView(
                 model: _model,
+                transcriber: _transcriber,
                 manager: manager,
                 accessibility: accessibility,
                 onOpenAccessibilitySettings: () =>

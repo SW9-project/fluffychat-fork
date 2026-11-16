@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:material_ui/material_ui.dart';
@@ -17,6 +19,7 @@ import '../study/study_events.dart';
 import '../study/study_log.dart';
 import '../suggestions/suggestion.dart';
 import '../suggestions/suggestion_manager.dart';
+import '../voice/speech_transcriber.dart';
 import 'change_preview.dart';
 
 /// The Assist tab: the user describes a problem with the UI, the on-device
@@ -29,10 +32,18 @@ import 'change_preview.dart';
 ///
 /// The study log (Phase 5) records each prompt and the answer, with the
 /// model's timing, when the researcher turned logging on.
+///
+/// With a [transcriber], a mic button lets the user speak the prompt
+/// instead: one tap starts recording, a second tap stops it, and the words
+/// land in the prompt field for the user to check before sending. Voice
+/// never sends a prompt on its own.
 class AssistView extends StatefulWidget {
   /// The on-device model, or null when the assistant is off in the current
   /// study condition.
   final SettingsIntentModel? model;
+
+  /// On-device speech to text for the prompt, or null for no voice input.
+  final SpeechTranscriber? transcriber;
   final SuggestionManager manager;
   final AccessibilityController accessibility;
   final VoidCallback onOpenAccessibilitySettings;
@@ -42,6 +53,7 @@ class AssistView extends StatefulWidget {
     required this.manager,
     required this.accessibility,
     required this.onOpenAccessibilitySettings,
+    this.transcriber,
     super.key,
   });
 
@@ -60,12 +72,33 @@ class _Exchange {
   _Exchange(this.prompt);
 }
 
-class _AssistViewState extends State<AssistView> {
+/// What the line above the prompt field tells the user after a recording.
+enum _VoiceNotice {
+  heardNothing,
+  timeLimit,
+  permissionDenied,
+  notOnDevice,
+  languageMissing,
+  error,
+}
+
+class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<_Exchange> _exchanges = [];
   bool _busy = false;
   ModelState? _modelState;
+
+  /// True from the user's tap on the mic until the recording's text is in
+  /// the field.
+  bool _voiceActive = false;
+
+  /// The field's text when the recording started. The spoken words go after
+  /// it.
+  String _textBeforeVoice = '';
+  _VoiceNotice? _voiceNotice;
+  Timer? _elapsedTimer;
+  int _elapsedSeconds = 0;
 
   List<Heuristic> get _heuristics => widget.manager.config.heuristics;
 
@@ -73,14 +106,56 @@ class _AssistViewState extends State<AssistView> {
   void initState() {
     super.initState();
     widget.model?.status.addListener(_onModelStatus);
+    _listenToVoice(widget.transcriber);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void didUpdateWidget(AssistView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.transcriber != widget.transcriber) {
+      _forgetVoice(oldWidget.transcriber);
+      _listenToVoice(widget.transcriber);
+    }
     if (oldWidget.model == widget.model) return;
     oldWidget.model?.status.removeListener(_onModelStatus);
     widget.model?.status.addListener(_onModelStatus);
+  }
+
+  void _listenToVoice(SpeechTranscriber? transcriber) {
+    transcriber?.status.addListener(_onVoiceStatus);
+    transcriber?.text.addListener(_onVoiceText);
+  }
+
+  /// Stops listening to [transcriber] and cancels a recording in progress.
+  void _forgetVoice(SpeechTranscriber? transcriber) {
+    if (transcriber == null) return;
+    transcriber.status.removeListener(_onVoiceStatus);
+    transcriber.text.removeListener(_onVoiceText);
+    _elapsedTimer?.cancel();
+    if (_voiceActive || _isRecording(transcriber.status.value)) {
+      _voiceActive = false;
+      transcriber.cancel();
+    }
+  }
+
+  static bool _isRecording(TranscriberStatus status) =>
+      status == TranscriberStatus.recording ||
+      status == TranscriberStatus.finishing;
+
+  bool get _voiceBusy {
+    final transcriber = widget.transcriber;
+    return transcriber != null && _isRecording(transcriber.status.value);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Not on inactive: the permission dialog makes the app inactive.
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _cancelVoice();
+    }
   }
 
   /// Records when the model changes state, not every progress update.
@@ -93,20 +168,121 @@ class _AssistViewState extends State<AssistView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.model?.status.removeListener(_onModelStatus);
+    _forgetVoice(widget.transcriber);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  Future<void> _toggleVoice() async {
+    final transcriber = widget.transcriber;
+    if (transcriber == null || _busy) return;
+    switch (transcriber.status.value) {
+      case TranscriberStatus.ready || TranscriberStatus.failed:
+        FocusScope.of(context).unfocus();
+        setState(() {
+          _voiceNotice = null;
+          _voiceActive = true;
+          _textBeforeVoice = _controller.text;
+        });
+        await transcriber.start();
+      case TranscriberStatus.recording:
+        await transcriber.stop();
+      case TranscriberStatus.finishing || TranscriberStatus.unavailable:
+        return;
+    }
+  }
+
+  /// Ends a recording and puts the field back as it was before it.
+  void _cancelVoice() {
+    final transcriber = widget.transcriber;
+    if (transcriber == null) return;
+    if (!_voiceActive && !_isRecording(transcriber.status.value)) return;
+    final wasActive = _voiceActive;
+    _voiceActive = false;
+    _elapsedTimer?.cancel();
+    if (wasActive) _setField(_textBeforeVoice);
+    transcriber.cancel();
+    if (mounted) setState(() {});
+  }
+
+  void _onVoiceStatus() {
+    final transcriber = widget.transcriber;
+    if (transcriber == null || !mounted) return;
+    switch (transcriber.status.value) {
+      case TranscriberStatus.recording:
+        if (_elapsedTimer?.isActive != true) {
+          _elapsedSeconds = 0;
+          _elapsedTimer = Timer.periodic(
+            const Duration(seconds: 1),
+            (_) => setState(() => _elapsedSeconds++),
+          );
+        }
+      case TranscriberStatus.finishing:
+        _elapsedTimer?.cancel();
+      case TranscriberStatus.ready ||
+          TranscriberStatus.failed ||
+          TranscriberStatus.unavailable:
+        _elapsedTimer?.cancel();
+        if (_voiceActive) {
+          _finishVoice(transcriber.text.value, transcriber.lastEnd);
+        }
+    }
+    setState(() {});
+  }
+
+  /// Shows the live text while recording. The field is read-only then.
+  void _onVoiceText() {
+    final transcriber = widget.transcriber;
+    if (transcriber == null || !_voiceActive) return;
+    if (!_isRecording(transcriber.status.value)) return;
+    _setField(_withSpoken(transcriber.text.value));
+  }
+
+  /// The recording is over: its words stay in the field for the user to
+  /// check and send.
+  void _finishVoice(String spoken, TranscriberEnd? end) {
+    _voiceActive = false;
+    final heard = spoken.trim();
+    _setField(heard.isEmpty ? _textBeforeVoice : _withSpoken(heard));
+    _voiceNotice = switch (end) {
+      null ||
+      TranscriberEnd.timeLimit when heard.isEmpty => _VoiceNotice.heardNothing,
+      null => null,
+      TranscriberEnd.timeLimit => _VoiceNotice.timeLimit,
+      TranscriberEnd.permissionDenied => _VoiceNotice.permissionDenied,
+      TranscriberEnd.notOnDevice => _VoiceNotice.notOnDevice,
+      TranscriberEnd.languageMissing => _VoiceNotice.languageMissing,
+      TranscriberEnd.restartFailed ||
+      TranscriberEnd.error => _VoiceNotice.error,
+    };
+  }
+
+  /// [spoken] after the text the field had before the recording, with one
+  /// space between.
+  String _withSpoken(String spoken) {
+    final before = _textBeforeVoice.trimRight();
+    final words = spoken.trim();
+    if (words.isEmpty) return _textBeforeVoice;
+    return before.isEmpty ? words : '$before $words';
+  }
+
+  void _setField(String text) => _controller.value = TextEditingValue(
+    text: text,
+    selection: TextSelection.collapsed(offset: text.length),
+  );
+
   Future<void> _ask() async {
     final model = widget.model;
     final text = _controller.text.trim();
-    if (model == null || text.isEmpty || _busy) return;
+    if (model == null || text.isEmpty || _busy || _voiceBusy) return;
     final exchange = _Exchange(text);
     setState(() {
       _exchanges.add(exchange);
       _busy = true;
+      _voiceNotice = null;
       _controller.clear();
     });
     _scrollToEnd();
@@ -269,6 +445,7 @@ class _AssistViewState extends State<AssistView> {
     );
   }
 
+  /// Rebuilt by [_onVoiceStatus] when the transcriber's status changes.
   Widget _conversation(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = PersonalizationL10n.of(context);
@@ -294,36 +471,149 @@ class _AssistViewState extends State<AssistView> {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-            child: Row(
+            child: Column(
+              mainAxisSize: .min,
+              crossAxisAlignment: .stretch,
               children: [
-                Expanded(
-                  child: TextField(
-                    key: const Key('assist_input'),
-                    controller: _controller,
-                    enabled: !_busy,
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _ask(),
-                    decoration: InputDecoration(hintText: l10n.askHint),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  key: const Key('assist_send'),
-                  onPressed: _busy ? null : _ask,
-                  tooltip: l10n.ask,
-                  icon: const Icon(Icons.send),
-                  style: IconButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                  ),
+                ?_voiceLine(context),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: const Key('assist_input'),
+                        controller: _controller,
+                        enabled: !_busy,
+                        // Shows the live text while recording; editable
+                        // again after stop.
+                        readOnly: _voiceBusy,
+                        minLines: 1,
+                        maxLines: 4,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _ask(),
+                        decoration: InputDecoration(hintText: l10n.askHint),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ?_micButton(context),
+                    IconButton.filled(
+                      key: const Key('assist_send'),
+                      onPressed: _busy || _voiceBusy ? null : _ask,
+                      tooltip: l10n.ask,
+                      icon: const Icon(Icons.send),
+                      style: IconButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  /// The mic button, or null when this device has no voice input.
+  Widget? _micButton(BuildContext context) {
+    final transcriber = widget.transcriber;
+    if (transcriber == null) return null;
+    final status = transcriber.status.value;
+    if (status == TranscriberStatus.unavailable) return null;
+    final theme = Theme.of(context);
+    final l10n = PersonalizationL10n.of(context);
+    final recording = status == TranscriberStatus.recording;
+    final finishing = status == TranscriberStatus.finishing;
+    final iconSize = IconTheme.of(context).size ?? 24;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: IconButton.filled(
+        key: const Key('assist_mic'),
+        onPressed: _busy || finishing ? null : _toggleVoice,
+        tooltip: recording
+            ? l10n.voiceStop
+            : finishing
+            ? l10n.voiceFinishing
+            : l10n.voiceStart,
+        icon: finishing
+            ? SizedBox.square(
+                dimension: iconSize,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(recording ? Icons.stop : Icons.mic),
+        style: recording
+            ? IconButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+              )
+            : IconButton.styleFrom(
+                backgroundColor: theme.colorScheme.secondaryContainer,
+                foregroundColor: theme.colorScheme.onSecondaryContainer,
+              ),
+      ),
+    );
+  }
+
+  /// "Listening" with the elapsed time while recording, a progress line
+  /// while finishing, or the notice after a recording. Null when there is
+  /// nothing to say.
+  Widget? _voiceLine(BuildContext context) {
+    final transcriber = widget.transcriber;
+    if (transcriber == null) return null;
+    final theme = Theme.of(context);
+    final l10n = PersonalizationL10n.of(context);
+    final Widget line;
+    switch (transcriber.status.value) {
+      case TranscriberStatus.recording:
+        final minutes = _elapsedSeconds ~/ 60;
+        final seconds = (_elapsedSeconds % 60).toString().padLeft(2, '0');
+        line = Row(
+          key: const Key('assist_listening'),
+          children: [
+            Icon(Icons.mic, color: theme.colorScheme.error),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.voiceListening,
+                style: TextStyle(
+                  color: theme.colorScheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Text('$minutes:$seconds', key: const Key('assist_voice_timer')),
+          ],
+        );
+      case TranscriberStatus.finishing:
+        line = Row(
+          key: const Key('assist_voice_finishing'),
+          children: [
+            const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(l10n.voiceFinishing)),
+          ],
+        );
+      case TranscriberStatus.ready ||
+          TranscriberStatus.failed ||
+          TranscriberStatus.unavailable:
+        final notice = _voiceNotice;
+        if (notice == null) return null;
+        line = Text(key: const Key('assist_voice_message'), switch (notice) {
+          _VoiceNotice.heardNothing => l10n.voiceHeardNothing,
+          _VoiceNotice.timeLimit => l10n.voiceTimeLimit,
+          _VoiceNotice.permissionDenied => l10n.voicePermissionDenied,
+          _VoiceNotice.notOnDevice => l10n.voiceNotOnDevice,
+          _VoiceNotice.languageMissing => l10n.voiceLanguageMissing,
+          _VoiceNotice.error => l10n.voiceError,
+        });
+    }
+    return Padding(
+      padding: const EdgeInsets.only(right: 8, bottom: 8),
+      child: Semantics(liveRegion: true, child: line),
     );
   }
 
