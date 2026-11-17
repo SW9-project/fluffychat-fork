@@ -138,6 +138,9 @@ public class SpeechToTextPlugin :
     private val defaultLanguageTag: String = Locale.getDefault().toLanguageTag()
     private var timer: Timer? = null
     private lateinit var timerTask: TimerTask
+    // SW9 patch: counts listen sessions, so an end-of-speech timer from an
+    // earlier session cannot end the current one. See PATCHES.md.
+    private var sessionNumber: Int = 0
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
 
@@ -313,6 +316,10 @@ public class SpeechToTextPlugin :
         }
 
         resultSent = false
+        // SW9 patch: a new session drops the previous session's
+        // end-of-speech timer. See PATCHES.md.
+        sessionNumber += 1
+        cancelEndOfSpeechTimer()
         createRecognizer(onDevice, listenMode, pauseFor)
         minRms = 1000.0F
         maxRms = -100.0F
@@ -378,7 +385,20 @@ public class SpeechToTextPlugin :
     }
 
     private fun cancelListening(result: Result) {
-        if (sdkVersionTooLow() || isNotInitialized() || isNotListening()) {
+        if (sdkVersionTooLow() || isNotInitialized()) {
+            result.success(false)
+            return
+        }
+        if (isNotListening()) {
+            // SW9 patch: after an error the plugin stops tracking a session
+            // that the recognition service may still run, holding the mic.
+            // Cancel it anyway; the service ignores a cancel without a
+            // session. See PATCHES.md.
+            handler.post {
+                run {
+                    speechRecognizer?.cancel()
+                }
+            }
             result.success(false)
             return
         }
@@ -760,22 +780,38 @@ public class SpeechToTextPlugin :
 
 
     override fun onPartialResults(results: Bundle?) = updateResults(results, false)
-    override fun onResults(results: Bundle?) = updateResults(results, true)
-    override fun onBeginningOfSpeech() {
-        if (timer != null) {
-            timer?.cancel()
-            timer = null
+    override fun onResults(results: Bundle?) {
+        updateResults(results, true)
+        // SW9 patch: the final result ends the session. Report that now
+        // instead of after the end-of-speech timer, so the app can start the
+        // next session without calling stop on a finished one (which the
+        // recognition service answers with ERROR_CLIENT). See PATCHES.md.
+        if (isListening()) {
+            notifyListening(isRecording = false)
         }
+    }
+    override fun onBeginningOfSpeech() {
+        cancelEndOfSpeechTimer()
     }
 
     override fun onEndOfSpeech() {
+        // SW9 patch: Android System Intelligence calls onEndOfSpeech twice.
+        // Upstream armed a second timer and lost the first, which then ended
+        // the next session a second later. Keep one timer, and let it end only
+        // the session that armed it. See PATCHES.md.
+        cancelEndOfSpeechTimer()
+        val armedFor = sessionNumber
         (previousPauseFor ?: 1000).also {
             timerTask = object : TimerTask() {
                 override fun run() {
-                    timer = null
                     handler.post {
                         run {
-                            notifyListening(isRecording = false)
+                            if (armedFor != sessionNumber) {
+                                debugLog("Ignoring end-of-speech timer from an earlier session")
+                            } else {
+                                timer = null
+                                notifyListening(isRecording = false)
+                            }
                         }
                     }
                 }
@@ -784,6 +820,11 @@ public class SpeechToTextPlugin :
                 schedule(timerTask, it.toLong())
             }
         }
+    }
+
+    private fun cancelEndOfSpeechTimer() {
+        timer?.cancel()
+        timer = null
     }
 
     override fun onError(errorCode: Int) {
@@ -826,6 +867,14 @@ public class SpeechToTextPlugin :
         val speechError = JSONObject()
         speechError.put("errorMsg", errorMsg)
         speechError.put("permanent", true)
+        // SW9 patch: on the main thread, send the error at once. Posted, it
+        // reached Dart after the notListening and done statuses that follow
+        // it, so the app had already started the next session and took the
+        // error for that one. See PATCHES.md.
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            channel?.invokeMethod(SpeechToTextCallbackMethods.notifyError.name, speechError.toString())
+            return
+        }
         handler.post {
             run {
                 channel?.invokeMethod(SpeechToTextCallbackMethods.notifyError.name, speechError.toString())
