@@ -667,6 +667,49 @@ void main() {
       expect(find.byKey(const Key('assist_input')), findsOneWidget);
     });
 
+    testWidgets('while the pack downloads, the mic waits and typing works', (
+      tester,
+    ) async {
+      final model = picksButtons();
+      voice.statusValue = TranscriberStatus.preparing;
+      await pump(tester, model, transcriber: voice);
+      expect(micIcon(Icons.downloading), findsOneWidget);
+      expect(micEnabled(tester), isFalse);
+      expect(find.textContaining('downloading English speech'), findsOne);
+      expect(sendEnabled(tester), isTrue);
+      // The download spinner never settles, so pump by hand.
+      await tester.enterText(
+        find.byKey(const Key('assist_input')),
+        'the buttons are hard to hit',
+      );
+      await tester.tap(find.byKey(const Key('assist_send')));
+      await tester.pump();
+      expect(model.prompts, ['the buttons are hard to hit']);
+
+      voice.statusValue = TranscriberStatus.ready;
+      await tester.pump();
+      expect(micIcon(Icons.mic), findsOneWidget);
+      expect(micEnabled(tester), isTrue);
+      expect(find.textContaining('downloading English speech'), findsNothing);
+    });
+
+    testWidgets('the missing-pack message goes once the pack arrives', (
+      tester,
+    ) async {
+      await pump(tester, picksButtons(), transcriber: voice);
+      await tapMic(tester);
+      voice.fail(TranscriberEnd.languageMissing, unavailable: true);
+      await tester.pump();
+      expect(find.textContaining('offline speech recognition'), findsOne);
+      voice.statusValue = TranscriberStatus.preparing;
+      await tester.pump();
+      expect(find.textContaining('downloading English speech'), findsOne);
+      voice.statusValue = TranscriberStatus.ready;
+      await tester.pump();
+      expect(find.textContaining('offline speech recognition'), findsNothing);
+      expect(micEnabled(tester), isTrue);
+    });
+
     testWidgets('a denied permission explains and typing still works', (
       tester,
     ) async {

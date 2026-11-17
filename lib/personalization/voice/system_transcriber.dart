@@ -15,6 +15,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text_platform_interface/speech_to_text_platform_interface.dart'
     show SpeechToTextPlatform;
 
+import 'language_pack.dart';
 import 'speech_transcriber.dart';
 
 /// What one recording looked like underneath, for judging whether the
@@ -76,6 +77,10 @@ enum _SessionState {
 ///
 /// Only Android 12 (API 31) and later with an on-device recognition service
 /// is supported. iOS is off until it is decided whether the study needs it.
+///
+/// Each time it is created (when the Assist tab opens), it checks the
+/// language pack and asks the system to download it when it is missing. The
+/// status is [TranscriberStatus.preparing] until the pack is there.
 class SystemTranscriber implements SpeechTranscriber {
   /// A recording stops by itself after this long. This guards against a
   /// forgotten open microphone, not against pauses.
@@ -90,6 +95,13 @@ class SystemTranscriber implements SpeechTranscriber {
   /// How long to wait for a session's final result after it stopped
   /// listening. After that its last partial result is used.
   static const finalResultTimeout = Duration(milliseconds: 2500);
+
+  /// How often the language pack is checked while it downloads.
+  static const packCheckInterval = Duration(seconds: 5);
+
+  /// After this long without the pack, the mic is offered anyway, and a
+  /// recording explains what is missing.
+  static const packWaitLimit = Duration(minutes: 15);
 
   /// Errors that only mean the session ended without (more) speech.
   static const _sessionEndErrors = {'error_no_match', 'error_speech_timeout'};
@@ -119,6 +131,7 @@ class SystemTranscriber implements SpeechTranscriber {
   final String localeId;
 
   final SpeechToText _speech;
+  final LanguagePackService? _languagePack;
   final bool Function() _logStats;
 
   final ValueNotifier<TranscriberStatus> _status = ValueNotifier(
@@ -131,6 +144,13 @@ class SystemTranscriber implements SpeechTranscriber {
   bool _disposed = false;
   TranscriberEnd? _lastEnd;
   RecordingStats? _lastStats;
+
+  // The language pack.
+  bool _downloadRequested = false;
+
+  /// Checks made while waiting for the pack.
+  int _packWaits = 0;
+  Timer? _packTimer;
 
   // One recording.
   bool _initializing = false;
@@ -148,22 +168,23 @@ class SystemTranscriber implements SpeechTranscriber {
   _SessionState _sessionState = _SessionState.idle;
   String _sessionText = '';
   bool _retried = false;
-
-  /// While our own `stop` after a final result is in flight, the next
-  /// session waits for it, see [_stopForRestart].
-  bool _holdRestart = false;
-  bool _restartPending = false;
   Timer? _startTimer;
   Timer? _finalTimer;
   Timer? _retryTimer;
 
-  /// [speech], [isSupported] and [logStats] are for tests.
+  /// [speech], [isSupported], [languagePack] and [logStats] are for tests.
+  /// Without [languagePack], Android uses [AndroidLanguagePack] and other
+  /// platforms check no pack.
   SystemTranscriber({
     this.localeId = 'en_US',
     SpeechToText? speech,
     Future<bool> Function()? isSupported,
+    LanguagePackService? languagePack,
     bool Function()? logStats,
   }) : _speech = speech ?? SpeechToText(),
+       _languagePack =
+           languagePack ??
+           (PlatformInfos.isAndroid ? const AndroidLanguagePack() : null),
        _logStats = logStats ?? _defaultLogStats {
     _availability = _checkAvailability(
       isSupported ?? SystemTranscriber.isSupported,
@@ -183,8 +204,7 @@ class SystemTranscriber implements SpeechTranscriber {
   RecordingStats? get lastStats => _lastStats;
 
   /// Android 12 or later, with an on-device recognition service. Asks for no
-  /// permission. Whether the language pack is installed only shows on the
-  /// first recording.
+  /// permission. The language pack is checked separately.
   static Future<bool> isSupported() async {
     if (!PlatformInfos.isAndroid) return false;
     final info = await DeviceInfoPlugin().androidInfo;
@@ -203,10 +223,83 @@ class SystemTranscriber implements SpeechTranscriber {
 
   Future<void> _checkAvailability(Future<bool> Function() check) async {
     try {
-      if (await check()) _setStatus(TranscriberStatus.ready);
+      if (!await check()) return;
     } catch (e, s) {
       Logs().w('Voice input unavailable', e, s);
+      return;
     }
+    await _preparePack();
+  }
+
+  /// Checks the language pack, asks the system to download it when it is
+  /// missing, and checks again every [packCheckInterval] until it is there.
+  ///
+  /// After a recording found the pack missing ([afterLanguageError]), a pack
+  /// that cannot be downloaded keeps the mic hidden instead of offering it
+  /// again.
+  Future<void> _preparePack({bool afterLanguageError = false}) async {
+    _packTimer?.cancel();
+    final pack = _languagePack;
+    final fallback = afterLanguageError
+        ? TranscriberStatus.unavailable
+        : TranscriberStatus.ready;
+    if (pack == null) {
+      _setPackStatus(fallback);
+      return;
+    }
+    var state = await _checkPack(pack);
+    if (_disposed) return;
+    if (state == LanguagePackState.needsDownload && !_downloadRequested) {
+      _downloadRequested = true;
+      _packWaits = 0;
+      bool started;
+      try {
+        started = await pack.download(localeId);
+      } catch (e, s) {
+        Logs().w('Voice input: language pack download failed', e, s);
+        started = false;
+      }
+      if (_disposed) return;
+      // Without a download, the first recording explains what is missing.
+      if (!started) {
+        _setPackStatus(fallback);
+        return;
+      }
+      state = LanguagePackState.downloading;
+    }
+    switch (state) {
+      case LanguagePackState.installed:
+        _setPackStatus(TranscriberStatus.ready);
+      case LanguagePackState.unknown:
+        _setPackStatus(fallback);
+      case LanguagePackState.unsupported:
+        _setPackStatus(TranscriberStatus.unavailable);
+      case LanguagePackState.downloading || LanguagePackState.needsDownload:
+        if (packCheckInterval * _packWaits++ >= packWaitLimit) {
+          _setPackStatus(fallback);
+          return;
+        }
+        _setPackStatus(TranscriberStatus.preparing);
+        _packTimer = Timer(
+          packCheckInterval,
+          () => _preparePack(afterLanguageError: afterLanguageError),
+        );
+    }
+  }
+
+  Future<LanguagePackState> _checkPack(LanguagePackService pack) async {
+    try {
+      return await pack.check(localeId);
+    } catch (e, s) {
+      Logs().w('Voice input: language pack check failed', e, s);
+      return LanguagePackState.unknown;
+    }
+  }
+
+  /// A pack result never interrupts a recording.
+  void _setPackStatus(TranscriberStatus status) {
+    if (_inRecording || _initializing) return;
+    _setStatus(status);
   }
 
   void _setStatus(TranscriberStatus status) {
@@ -248,7 +341,11 @@ class SystemTranscriber implements SpeechTranscriber {
     await _availability;
     if (_disposed || _initializing) return;
     final status = _status.value;
-    if (status == TranscriberStatus.unavailable || _inRecording) return;
+    if (status == TranscriberStatus.unavailable ||
+        status == TranscriberStatus.preparing ||
+        _inRecording) {
+      return;
+    }
 
     _lastEnd = null;
     _committed.clear();
@@ -297,7 +394,6 @@ class SystemTranscriber implements SpeechTranscriber {
     _sessionText = '';
     _finalTimer?.cancel();
     _finalTimer = null;
-    _restartPending = false;
     if (chained) _restarts++;
     try {
       await _speech.listen(
@@ -363,31 +459,13 @@ class SystemTranscriber implements SpeechTranscriber {
       _endSession();
       return;
     }
-    // The platform is done with this session's audio. Stopping it now lets
-    // the next session start without waiting for the plugin's
-    // end-of-speech timer.
+    // The final result ends the session. The patched plugin follows it at
+    // once with `notListening` and `done`, which start the next session
+    // (PATCHES.md, change 6). Never call `stop` here: on a finished session
+    // the recognition service answers with ERROR_CLIENT, which then arrives
+    // during the next session.
     _markSessionEnding();
     _finalTimer ??= Timer(finalResultTimeout, _endSession);
-    _stopForRestart(session);
-  }
-
-  /// Ends a session that delivered its final result. The next session only
-  /// starts once this `stop` returned: the plugin arms a timer at the end of
-  /// `stop` that would otherwise turn the next session's first partial
-  /// result into a final one, and `listen` clears that timer.
-  Future<void> _stopForRestart(int session) async {
-    _holdRestart = true;
-    try {
-      await _speech.stop();
-    } catch (e, s) {
-      Logs().w('Voice input: stop after final result failed', e, s);
-    }
-    _holdRestart = false;
-    if (!_restartPending) return;
-    _restartPending = false;
-    if (_disposed || !_userWantsRecording || session != _session) return;
-    if (_sessionState != _SessionState.idle) return;
-    _startSession(chained: true);
   }
 
   void _onStatus(String status) {
@@ -436,6 +514,10 @@ class SystemTranscriber implements SpeechTranscriber {
     }
     if (_languageErrors.contains(message)) {
       _fail(TranscriberEnd.languageMissing, unavailable: true);
+      // Ask for the pack now; the mic comes back once it is there.
+      _downloadRequested = false;
+      _packWaits = 0;
+      unawaited(_preparePack(afterLanguageError: true));
     } else if (_permissionErrors.contains(message)) {
       _fail(TranscriberEnd.permissionDenied);
     } else {
@@ -468,12 +550,7 @@ class SystemTranscriber implements SpeechTranscriber {
       _finished = null;
       return;
     }
-    if (!_userWantsRecording || _disposed) return;
-    if (_holdRestart) {
-      _restartPending = true;
-    } else {
-      _startSession(chained: true);
-    }
+    if (_userWantsRecording && !_disposed) _startSession(chained: true);
   }
 
   void _commitSession() {
@@ -490,7 +567,6 @@ class SystemTranscriber implements SpeechTranscriber {
   }
 
   void _cancelTimers() {
-    _restartPending = false;
     _capTimer?.cancel();
     _startTimer?.cancel();
     _finalTimer?.cancel();
@@ -590,6 +666,7 @@ class SystemTranscriber implements SpeechTranscriber {
     final active = _inRecording || _initializing;
     _userWantsRecording = false;
     _cancelTimers();
+    _packTimer?.cancel();
     _finished?.complete();
     _finished = null;
     _disposed = true;

@@ -51,6 +51,8 @@ class PersonalizationL10n {
   final String voiceNotOnDevice;
   final String voiceLanguageMissing;
   final String voiceError;
+  final String voicePreparing;
+  final String voicePreparingShort;
   final String previewNow;
   final String previewSuggested;
   final String meaningQuestion;
@@ -125,6 +127,8 @@ class PersonalizationL10n {
     required this.voiceNotOnDevice,
     required this.voiceLanguageMissing,
     required this.voiceError,
+    required this.voicePreparing,
+    required this.voicePreparingShort,
     required this.previewNow,
     required this.previewSuggested,
     required this.meaningQuestion,
@@ -220,6 +224,10 @@ class PersonalizationL10n {
     voiceError:
         'The recording stopped because of a problem. Try again, or type '
         'instead.',
+    voicePreparing:
+        'Getting voice input ready: the phone is downloading English speech '
+        'recognition. This happens once. You can type in the meantime.',
+    voicePreparingShort: 'Downloading speech recognition…',
     previewNow: 'Now',
     previewSuggested: 'Suggested',
     meaningQuestion: 'Question',
@@ -338,6 +346,10 @@ class PersonalizationL10n {
     voiceError:
         'Optagelsen stoppede på grund af en fejl. Prøv igen, eller skriv i '
         'stedet.',
+    voicePreparing:
+        'Gør stemmeinput klar: telefonen henter engelsk talegenkendelse. Det '
+        'sker kun én gang. Du kan skrive imens.',
+    voicePreparingShort: 'Henter talegenkendelse…',
     previewNow: 'Nu',
     previewSuggested: 'Forslag',
     meaningQuestion: 'Spørgsmål',
