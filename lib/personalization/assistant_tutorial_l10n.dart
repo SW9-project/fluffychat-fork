@@ -28,9 +28,9 @@ class AssistantTutorialL10n {
     'Gør appen lettere for dig',
   );
   String get welcomeBody => _text(
-    'Assistant helps you change text, buttons and more. You choose what changes.',
-    'Assistant te ayuda a cambiar el texto, los botones y más. Tú decides qué cambiar.',
-    'Assistant hjælper dig med at ændre tekst, knapper og mere. Du bestemmer ændringerne.',
+    'Assistant helps you change text, buttons and the layout. You review each change before applying it.',
+    'Assistant te ayuda a cambiar el texto, los botones y la interfaz. Tú revisas cada cambio antes de aplicarlo.',
+    'Assistant hjælper med tekst, knapper og layout. Du ser hver ændring, før du anvender den.',
   );
   String get setup => _text(
     'If you see Set up, tap it once to get started.',
@@ -42,10 +42,10 @@ class AssistantTutorialL10n {
     'Pide, revisa y aplica',
     'Spørg, se og anvend',
   );
-  String get askBody => _text(
-    'Write what you need and tap Ask. Check the preview, then choose Apply. Undo reverses the last change.',
-    'Escribe qué necesitas y pulsa Ask. Revisa la vista previa y elige Apply. Undo deshace el último cambio.',
-    'Skriv, hvad du har brug for, og tryk Spørg. Se forhåndsvisningen, og vælg Anvend. Fortryd ophæver den seneste ændring.',
+  String askBody(String ask, String apply, String undo) => _text(
+    'Type what you need, or use the microphone. Tap $ask, review the preview, then $apply. $undo takes you back.',
+    'Escribe qué necesitas o usa el micrófono. Pulsa $ask, revisa la vista previa y elige $apply. $undo permite volver atrás.',
+    'Skriv, hvad du har brug for, eller brug mikrofonen. Tryk $ask, se forhåndsvisningen, og vælg $apply. $undo fører dig tilbage.',
   );
   String get example => _text(
     'Make the text bigger',
@@ -58,9 +58,38 @@ class AssistantTutorialL10n {
     'Du kan også bruge $settings',
   );
   String manualBody(String settings, String accessibility) => _text(
-    'Prefer to choose yourself? Find $settings in the bottom bar, then open $accessibility. You can change things without Assistant.',
-    '¿Prefieres elegir los ajustes tú? Abre $settings en la barra inferior y entra en $accessibility. Puedes cambiar las cosas sin Assistant.',
-    'Vil du hellere vælge selv? Find $settings i den nederste bjælke, og åbn $accessibility. Du kan ændre ting uden Assistant.',
+    'You can choose the same changes yourself. Tap $settings at the bottom right, then $accessibility.',
+    'También puedes elegir los cambios tú. Pulsa $settings abajo a la derecha y entra en $accessibility.',
+    'Du kan også vælge ændringerne selv. Tryk $settings nederst til højre og derefter $accessibility.',
+  );
+  String get bottomBar =>
+      _text('Bottom bar', 'Barra inferior', 'Nederste bjælke');
+  String get practice =>
+      _text('Try an example', 'Prueba un ejemplo', 'Prøv et eksempel');
+  String get practiceHint => _text(
+    'Practice only. Your settings stay the same.',
+    'Es una práctica. Tus ajustes se mantienen.',
+    'Kun en øvelse. Dine indstillinger bevares.',
+  );
+  String get sample => _text('Your message', 'Tu mensaje', 'Din besked');
+  String get currentSize =>
+      _text('Current text size', 'Tamaño actual', 'Nuværende tekststørrelse');
+  String get largerSize =>
+      _text('Larger text', 'Texto más grande', 'Større tekst');
+  String get exampleApplied => _text(
+    'The example text is bigger.',
+    'El texto del ejemplo es más grande.',
+    'Eksempelteksten er større.',
+  );
+  String get exampleUndone => _text(
+    'Back to the original size.',
+    'De vuelta al tamaño original.',
+    'Tilbage til den oprindelige størrelse.',
+  );
+  String replayHint(String settings) => _text(
+    'You can replay this guide from $settings.',
+    'Puedes repetir esta guía desde $settings.',
+    'Du kan se vejledningen igen i $settings.',
   );
   String get openSettings => _text(
     'Open accessibility settings',

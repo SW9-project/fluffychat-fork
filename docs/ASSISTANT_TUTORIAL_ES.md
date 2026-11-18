@@ -1,6 +1,7 @@
 # Tutorial de Assistant
 
-Rama: `feat/assistant-onboarding`, desde `simple_interface_preview`.
+Rama actual: `feat/assistant-tutorial-enhancements`, desde
+`feat/assistant-onboarding` (actualizada con `main`).
 
 Se abre en la primera visita a Assistant, con tres pasos cortos:
 
@@ -42,3 +43,27 @@ Analisis estatico sin incidencias. APK compilado e instalado en FluffyChat_Light
 Revision visual de los tres pasos y comprobacion de que completar desactiva
 la apertura automatica y el interruptor de Settings la reactiva para la
 siguiente visita. Tutorial dejado abierto en el primer paso.
+
+## Mejora del tutorial
+
+Se mantienen los tres pasos y los controles de repetición existentes.
+El segundo paso permite practicar Ask, ver los tamaños actual y propuesto,
+Apply y Undo. El ejemplo avisa que es una práctica: solo cambia su propio
+estado visual, sin escribir ajustes, preparar el modelo ni enviar mensajes.
+No es obligatorio completarlo para continuar o salir del tutorial.
+
+Los pasos primero y tercero muestran los iconos de la barra inferior en su
+orden real y destacan Assistant o Settings. El último recuerda cómo repetir
+la guía. El texto también explica que se puede escribir o usar el micrófono.
+Los nombres de Ask, Apply y Undo proceden de las traducciones del asistente.
+
+Omitir y el progreso están siempre visibles en la cabecera. Los botones
+respetan también los tamaños de botón personalizados. La comparación pasa a
+una columna cuando falta anchura o aumenta el texto. Los tamaños del ejemplo
+tienen etiquetas para el lector de pantalla y Apply/Undo anuncian su resultado.
+
+Validación de esta revisión: 68 pruebas aprobadas y análisis sin incidencias.
+Incluye práctica sin persistencia y contenido alcanzable en 320 × 640 con texto
+y zonas de pulsación al 200 %. Revisión visual adicional del widget con Roboto
+y Material Icons, en capturas de 360 × 760; las capturas están en
+`build/ui-review/tutorial-enhanced-*.png`. Esta revisión no instala una nueva APK.

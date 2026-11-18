@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/accessibility_controller.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/assistant_tutorial.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -39,6 +42,44 @@ void main() {
     await tester.tap(find.byKey(Key('assistant_tutorial_$name')));
     await tester.pumpAndSettle();
   }
+
+  Future<void> practice(WidgetTester tester, String action) async {
+    final button = find.byKey(Key('tutorial_example_$action'));
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('practice previews, applies and undoes without saving settings', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(app(gate()));
+    await tester.pumpAndSettle();
+    await tap(tester, 'next');
+    expect(find.byKey(const Key('tutorial_example_apply')), findsNothing);
+    await practice(tester, 'ask');
+    expect(find.byKey(const Key('tutorial_sample_current')), findsOneWidget);
+    expect(find.byKey(const Key('tutorial_sample_larger')), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Suggested. Larger text. Your message'),
+      findsOneWidget,
+    );
+    await practice(tester, 'apply');
+    expect(find.text('The example text is bigger.'), findsOneWidget);
+    expect(find.byKey(const Key('tutorial_sample_larger')), findsOneWidget);
+    expect(store.getKeys(), isEmpty);
+    await practice(tester, 'undo');
+    expect(find.text('Back to the original size.'), findsOneWidget);
+    expect(find.byKey(const Key('tutorial_sample_larger')), findsNothing);
+    expect(find.byKey(const Key('tutorial_sample_current')), findsOneWidget);
+    expect(store.getKeys(), isEmpty);
+    expect(openedSettings, 0);
+    await tap(tester, 'skip');
+    expect(store.getKeys(), {assistantTutorialPendingKey});
+    semantics.dispose();
+  });
 
   testWidgets('first visit offers three steps without changing app settings', (
     tester,
@@ -132,7 +173,17 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(app(gate(), scale: 2));
+      final accessibility = AccessibilityController(store);
+      addTearDown(accessibility.dispose);
+      await tester.runAsync(
+        () => accessibility.apply(ScaleCategory.touchTarget, 2),
+      );
+      await tester.pumpWidget(
+        AccessibilityScope(
+          controller: accessibility,
+          child: app(gate(), scale: 2),
+        ),
+      );
       await tester.pumpAndSettle();
       for (var step = 0; step < 3; step++) {
         expect(tester.takeException(), isNull);
@@ -140,8 +191,22 @@ void main() {
           tester
               .getSize(find.byKey(const Key('assistant_tutorial_next')))
               .height,
-          greaterThanOrEqualTo(48),
+          greaterThanOrEqualTo(96),
         );
+        expect(
+          find.byKey(const Key('assistant_tutorial_skip')).hitTestable(),
+          findsOneWidget,
+        );
+        if (step == 1) {
+          await practice(tester, 'ask');
+          await practice(tester, 'apply');
+          await practice(tester, 'undo');
+          expect(tester.takeException(), isNull);
+          expect(
+            find.byKey(const Key('assistant_tutorial_skip')).hitTestable(),
+            findsOneWidget,
+          );
+        }
         if (step == 2) {
           await tester.ensureVisible(
             find.byKey(const Key('assistant_tutorial_settings')),

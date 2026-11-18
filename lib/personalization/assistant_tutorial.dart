@@ -3,10 +3,12 @@
 
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'accessibility_scope.dart';
+import 'assistant_tutorial_example.dart';
 import 'assistant_tutorial_l10n.dart';
 import 'personalization_l10n.dart';
 import 'simple_view_dialog.dart';
@@ -154,13 +156,17 @@ class _TutorialState extends State<_Tutorial> {
     ][_step];
     final body = [
       text.welcomeBody,
-      text.askBody,
+      text.askBody(
+        PersonalizationL10n.of(context).ask,
+        PersonalizationL10n.of(context).applyChange,
+        PersonalizationL10n.of(context).undo,
+      ),
       text.manualBody(
         L10n.of(context).settings,
         PersonalizationL10n.of(context).accessibility,
       ),
     ][_step];
-    final height = sizes.touchTarget(48);
+    final height = sizes.buttonBox(48);
     return Dialog.fullscreen(
       child: SafeArea(
         child: Center(
@@ -170,26 +176,47 @@ class _TutorialState extends State<_Tutorial> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                  child: Text(text.title, style: theme.textTheme.titleLarge),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              text.title,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                          ),
+                          TextButton(
+                            key: const Key('assistant_tutorial_skip'),
+                            style: TextButton.styleFrom(
+                              minimumSize: Size(0, height),
+                            ),
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text(text.skip),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        text.step(_step + 1),
+                        style: theme.textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: (_step + 1) / 3,
+                        semanticsLabel: text.step(_step + 1),
+                      ),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scroll,
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          text.step(_step + 1),
-                          style: theme.textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 12),
-                        LinearProgressIndicator(
-                          value: (_step + 1) / 3,
-                          semanticsLabel: text.step(_step + 1),
-                        ),
-                        const SizedBox(height: 32),
                         Semantics(
                           header: true,
                           liveRegion: true,
@@ -200,7 +227,7 @@ class _TutorialState extends State<_Tutorial> {
                         ),
                         const SizedBox(height: 16),
                         Text(body, style: theme.textTheme.bodyLarge),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 20),
                         _visual(context),
                         if (_step == 0) ...[
                           const SizedBox(height: 24),
@@ -217,6 +244,11 @@ class _TutorialState extends State<_Tutorial> {
                             label: Text(text.openSettings),
                             onPressed: () => Navigator.of(context).pop(true),
                           ),
+                          const SizedBox(height: 12),
+                          Text(
+                            text.replayHint(L10n.of(context).settings),
+                            style: theme.textTheme.bodyMedium,
+                          ),
                         ],
                       ],
                     ),
@@ -229,14 +261,6 @@ class _TutorialState extends State<_Tutorial> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      TextButton(
-                        key: const Key('assistant_tutorial_skip'),
-                        style: TextButton.styleFrom(
-                          minimumSize: Size(0, height),
-                        ),
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text(text.skip),
-                      ),
                       if (_step > 0)
                         OutlinedButton(
                           key: const Key('assistant_tutorial_back'),
@@ -270,66 +294,88 @@ class _TutorialState extends State<_Tutorial> {
   }
 
   Widget _visual(BuildContext context) {
+    if (_step == 1) return const AssistantTutorialExample();
     final theme = Theme.of(context);
     final text = AssistantTutorialL10n.of(context);
-    Widget tile(IconData icon, String label) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 40, color: theme.colorScheme.primary),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleMedium,
-        ),
-      ],
-    );
+    final selected = _step == 0
+        ? MainNavigationTab.assistant
+        : MainNavigationTab.settings;
     return ExcludeSemantics(
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: _step == 1
-            ? Column(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(text.bottomBar, style: theme.textTheme.labelLarge),
+            const SizedBox(height: 12),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    for (final tab in MainNavigationTab.values)
+                      Expanded(
+                        child: Container(
+                          key: tab == selected
+                              ? const Key('tutorial_navigation_selected')
+                              : null,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: tab == selected
+                                ? theme.colorScheme.primaryContainer
+                                : null,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            tab.materialIcon(tab == selected),
+                            color: tab == selected
+                                ? theme.colorScheme.onPrimaryContainer
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              selected.localizedLabel(L10n.of(context)),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+            if (_step == 2) ...[
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Icon(Icons.arrow_downward),
+              ),
+              Row(
                 children: [
-                  const Icon(Icons.chat_bubble_outline, size: 40),
-                  const SizedBox(height: 12),
-                  Text(
-                    '“${text.example}”',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 20),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 20,
-                    children: [
-                      Text('Aa', style: theme.textTheme.titleMedium),
-                      const Icon(Icons.arrow_forward),
-                      Text('Aa', style: theme.textTheme.headlineLarge),
-                    ],
-                  ),
-                ],
-              )
-            : _step == 0
-            ? tile(Icons.auto_awesome_outlined, L10n.of(context).assistant)
-            : Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 20,
-                runSpacing: 20,
-                children: [
-                  tile(Icons.settings_outlined, L10n.of(context).settings),
-                  const Icon(Icons.arrow_forward),
-                  tile(
+                  Icon(
                     Icons.accessibility_new,
-                    PersonalizationL10n.of(context).accessibility,
+                    color: theme.colorScheme.primary,
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      PersonalizationL10n.of(context).accessibility,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right),
                 ],
               ),
+            ],
+          ],
+        ),
       ),
     );
   }
