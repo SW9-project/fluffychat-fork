@@ -8,6 +8,10 @@ enum TranscriberStatus {
   /// This device cannot recognise speech on the device. The mic is hidden.
   unavailable,
 
+  /// The phone is downloading the language pack. The mic shows but cannot be
+  /// used yet.
+  preparing,
+
   /// Ready to record.
   ready,
 

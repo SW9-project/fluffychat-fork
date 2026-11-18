@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+import 'package:fluffychat/personalization/voice/language_pack.dart';
 import 'package:fluffychat/personalization/voice/speech_transcriber.dart';
 import 'package:fluffychat/personalization/voice/system_transcriber.dart';
 import 'package:flutter/services.dart';
@@ -98,7 +99,9 @@ class FakeSpeechPlatform extends SpeechToTextPlatform {
     _stopListening();
   }
 
-  /// The platform ends the session with [error], as on silence.
+  /// The platform ends the session with [error], as on silence. The patched
+  /// plugin sends the error before the statuses that end the session
+  /// (packages/speech_to_text/PATCHES.md, change 5).
   void endWithError(String error) {
     onError?.call(jsonEncode({'errorMsg': error, 'permanent': true}));
     _stopListening();
@@ -106,6 +109,26 @@ class FakeSpeechPlatform extends SpeechToTextPlatform {
 
   int get onDeviceListenCalls =>
       listenCalls.where((o) => o?.onDevice == true).length;
+}
+
+/// Answers [states] one check after another, then repeats the last one.
+class FakeLanguagePack implements LanguagePackService {
+  final List<LanguagePackState> states;
+  bool downloadStarts;
+  int checks = 0;
+  int downloads = 0;
+
+  FakeLanguagePack(this.states, {this.downloadStarts = true});
+
+  @override
+  Future<LanguagePackState> check(String localeId) async =>
+      states[checks++ < states.length ? checks - 1 : states.length - 1];
+
+  @override
+  Future<bool> download(String localeId) async {
+    downloads++;
+    return downloadStarts;
+  }
 }
 
 void main() {
@@ -116,9 +139,13 @@ void main() {
     SpeechToTextPlatform.instance = platform;
   });
 
-  SystemTranscriber create({bool supported = true}) => SystemTranscriber(
+  SystemTranscriber create({
+    bool supported = true,
+    LanguagePackService? pack,
+  }) => SystemTranscriber(
     speech: SpeechToText.withMethodChannel(),
     isSupported: () async => supported,
+    languagePack: pack,
     logStats: () => false,
   );
 
@@ -210,7 +237,26 @@ void main() {
     await finish(tester, transcriber);
   });
 
-  testWidgets('a new session is not cut short by the stop before it', (
+  testWidgets('chaining never calls stop on a finished session', (
+    tester,
+  ) async {
+    // Android System Intelligence answers stop on a finished session with
+    // ERROR_CLIENT, which then lands in the next session.
+    final transcriber = await recording(tester);
+    platform.endSession('one');
+    await tester.pump();
+    platform.endWithError('error_no_match');
+    await tester.pump();
+    platform.endSession('two');
+    await tester.pump();
+    expect(platform.listenCalls.length, 4);
+    expect(platform.stopCalls, 0);
+    await transcriber.stop();
+    expect(platform.stopCalls, 1);
+    await finish(tester, transcriber);
+  });
+
+  testWidgets('a new session is not cut short by partial results', (
     tester,
   ) async {
     final transcriber = await recording(tester);
@@ -348,6 +394,126 @@ void main() {
     expect(platform.cancelCalls, 1);
     expect(platform.listening, isFalse);
     await finish(tester, transcriber);
+  });
+
+  group('language pack', () {
+    Future<SystemTranscriber> opened(
+      WidgetTester tester,
+      FakeLanguagePack pack,
+    ) async {
+      final transcriber = create(pack: pack);
+      await tester.pump();
+      return transcriber;
+    }
+
+    testWidgets('an installed pack is not downloaded', (tester) async {
+      final pack = FakeLanguagePack([LanguagePackState.installed]);
+      final transcriber = await opened(tester, pack);
+      expect(transcriber.status.value, TranscriberStatus.ready);
+      expect(pack.downloads, 0);
+      await finish(tester, transcriber);
+    });
+
+    testWidgets('a missing pack is downloaded when the tab opens', (
+      tester,
+    ) async {
+      final pack = FakeLanguagePack([
+        LanguagePackState.needsDownload,
+        LanguagePackState.downloading,
+        LanguagePackState.installed,
+      ]);
+      final transcriber = await opened(tester, pack);
+      expect(pack.downloads, 1);
+      expect(transcriber.status.value, TranscriberStatus.preparing);
+      await transcriber.start();
+      expect(platform.listenCalls, isEmpty);
+      await tester.pump(SystemTranscriber.packCheckInterval);
+      expect(transcriber.status.value, TranscriberStatus.preparing);
+      await tester.pump(SystemTranscriber.packCheckInterval);
+      expect(transcriber.status.value, TranscriberStatus.ready);
+      expect(pack.downloads, 1);
+      await finish(tester, transcriber);
+    });
+
+    testWidgets('a download that is not started offers the mic anyway', (
+      tester,
+    ) async {
+      final pack = FakeLanguagePack([
+        LanguagePackState.needsDownload,
+      ], downloadStarts: false);
+      final transcriber = await opened(tester, pack);
+      expect(transcriber.status.value, TranscriberStatus.ready);
+      await finish(tester, transcriber);
+    });
+
+    testWidgets('waiting for the pack ends after the limit', (tester) async {
+      final pack = FakeLanguagePack([LanguagePackState.needsDownload]);
+      final transcriber = await opened(tester, pack);
+      expect(transcriber.status.value, TranscriberStatus.preparing);
+      await tester.pump(
+        SystemTranscriber.packWaitLimit - SystemTranscriber.packCheckInterval,
+      );
+      expect(transcriber.status.value, TranscriberStatus.preparing);
+      await tester.pump(SystemTranscriber.packCheckInterval);
+      expect(transcriber.status.value, TranscriberStatus.ready);
+      expect(pack.downloads, 1);
+      await finish(tester, transcriber);
+    });
+
+    testWidgets('an unsupported language hides the mic', (tester) async {
+      final transcriber = await opened(
+        tester,
+        FakeLanguagePack([LanguagePackState.unsupported]),
+      );
+      expect(transcriber.status.value, TranscriberStatus.unavailable);
+      await finish(tester, transcriber);
+    });
+
+    testWidgets('an unknown pack offers the mic', (tester) async {
+      final transcriber = await opened(
+        tester,
+        FakeLanguagePack([LanguagePackState.unknown]),
+      );
+      expect(transcriber.status.value, TranscriberStatus.ready);
+      await finish(tester, transcriber);
+    });
+
+    testWidgets('a recording that finds the pack missing downloads it', (
+      tester,
+    ) async {
+      final pack = FakeLanguagePack([
+        LanguagePackState.unknown,
+        LanguagePackState.needsDownload,
+        LanguagePackState.installed,
+      ]);
+      final transcriber = await opened(tester, pack);
+      await transcriber.start();
+      await tester.pump();
+      platform.endWithError('error_language_unavailable');
+      await tester.pump();
+      expect(transcriber.lastEnd, TranscriberEnd.languageMissing);
+      expect(transcriber.status.value, TranscriberStatus.preparing);
+      expect(pack.downloads, 1);
+      expect(platform.listenCalls.length, 1);
+      await tester.pump(SystemTranscriber.packCheckInterval);
+      expect(transcriber.status.value, TranscriberStatus.ready);
+      await finish(tester, transcriber);
+    });
+
+    testWidgets('a pack that cannot be checked stays hidden after the error', (
+      tester,
+    ) async {
+      final transcriber = await opened(
+        tester,
+        FakeLanguagePack([LanguagePackState.unknown]),
+      );
+      await transcriber.start();
+      await tester.pump();
+      platform.endWithError('error_language_unavailable');
+      await tester.pump();
+      expect(transcriber.status.value, TranscriberStatus.unavailable);
+      await finish(tester, transcriber);
+    });
   });
 
   testWidgets('dispose during a recording cancels the recogniser', (

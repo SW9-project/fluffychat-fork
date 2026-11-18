@@ -200,7 +200,9 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
         await transcriber.start();
       case TranscriberStatus.recording:
         await transcriber.stop();
-      case TranscriberStatus.finishing || TranscriberStatus.unavailable:
+      case TranscriberStatus.finishing ||
+          TranscriberStatus.unavailable ||
+          TranscriberStatus.preparing:
         return;
     }
   }
@@ -234,10 +236,15 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
         _elapsedTimer?.cancel();
       case TranscriberStatus.ready ||
           TranscriberStatus.failed ||
-          TranscriberStatus.unavailable:
+          TranscriberStatus.unavailable ||
+          TranscriberStatus.preparing:
         _elapsedTimer?.cancel();
         if (_voiceActive) {
           _finishVoice(transcriber.text.value, transcriber.lastEnd);
+        } else if (transcriber.status.value == TranscriberStatus.ready &&
+            _voiceNotice == _VoiceNotice.languageMissing) {
+          // The pack arrived after a recording found it missing.
+          _voiceNotice = null;
         }
     }
     setState(() {});
@@ -538,23 +545,32 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     final l10n = PersonalizationL10n.of(context);
     final recording = status == TranscriberStatus.recording;
     final finishing = status == TranscriberStatus.finishing;
+    final preparing = status == TranscriberStatus.preparing;
     final iconSize = IconTheme.of(context).size ?? 24;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: IconButton.filled(
         key: const Key('assist_mic'),
-        onPressed: _busy || finishing ? null : _toggleVoice,
+        onPressed: _busy || finishing || preparing ? null : _toggleVoice,
         tooltip: recording
             ? l10n.voiceStop
             : finishing
             ? l10n.voiceFinishing
+            : preparing
+            ? l10n.voicePreparingShort
             : l10n.voiceStart,
         icon: finishing
             ? SizedBox.square(
                 dimension: iconSize,
                 child: const CircularProgressIndicator(strokeWidth: 2),
               )
-            : Icon(recording ? Icons.stop : Icons.mic),
+            : Icon(
+                recording
+                    ? Icons.stop
+                    : preparing
+                    ? Icons.downloading
+                    : Icons.mic,
+              ),
         style: recording
             ? IconButton.styleFrom(
                 backgroundColor: theme.colorScheme.error,
@@ -608,6 +624,18 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
             ),
             const SizedBox(width: 12),
             Expanded(child: Text(l10n.voiceFinishing)),
+          ],
+        );
+      case TranscriberStatus.preparing:
+        line = Row(
+          key: const Key('assist_voice_preparing'),
+          children: [
+            const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(l10n.voicePreparing)),
           ],
         );
       case TranscriberStatus.ready ||
