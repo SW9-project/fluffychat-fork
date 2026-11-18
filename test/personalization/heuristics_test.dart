@@ -220,9 +220,9 @@ void main() {
       final suggestion = HeuristicsEngine([
         alwaysTrue,
       ]).evaluate(const [], AccessibilitySettings.defaults, now).single;
-      expect(suggestion.category, ScaleCategory.button);
-      expect(suggestion.from, 1.0);
-      expect(suggestion.to, 1.1);
+      expect(suggestion.change.onlyCategory, ScaleCategory.button);
+      expect(suggestion.change.from[ScaleCategory.button], 1.0);
+      expect(suggestion.change.to[ScaleCategory.button], 1.2);
     });
 
     test('suggests nothing when the category is already at its max', () {

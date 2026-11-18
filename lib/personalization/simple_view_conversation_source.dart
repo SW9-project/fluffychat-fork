@@ -9,7 +9,7 @@ import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
 import 'package:fluffychat/widgets/layouts/two_column_layout.dart';
 import 'package:fluffychat/widgets/matrix.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:matrix/matrix.dart' show Membership;
+import 'package:matrix/matrix.dart' show Client, Membership, Room;
 import 'package:provider/provider.dart';
 
 import 'accessibility_scope.dart';
@@ -17,6 +17,26 @@ import 'quick_access_conversations.dart';
 import 'simple_view_conversations.dart';
 import 'simple_view_preview_scene.dart';
 import 'simplified_interface.dart';
+
+/// The key shortcuts and open counts are stored under, per account.
+String simpleViewAccount(Client client) =>
+    '${client.homeserver}|${client.userID}';
+
+/// The joined chats a shortcut can point to, as the chat list shows them.
+Iterable<Room> simpleViewRooms(Client client) {
+  final hidden = AppSettings.hideRoomsInSpaces.value
+      ? client.rooms
+            .where((r) => r.isSpace)
+            .expand((r) => r.spaceChildren.map((child) => child.roomId))
+            .toSet()
+      : const <String?>{};
+  return client.rooms.where(
+    (room) =>
+        !room.isSpace &&
+        room.membership == Membership.join &&
+        !hidden.contains(room.id),
+  );
+}
 
 /// Resolves the active account at use time, without loading message history.
 class SimpleViewConversationSource extends StatelessWidget {
@@ -26,24 +46,15 @@ class SimpleViewConversationSource extends StatelessWidget {
   SimpleViewConversations _read(BuildContext context) {
     final matrix = Matrix.of(context);
     final client = matrix.client;
-    final hidden = AppSettings.hideRoomsInSpaces.value
-        ? client.rooms
-              .where((r) => r.isSpace)
-              .expand((r) => r.spaceChildren.map((child) => child.roomId))
-              .toSet()
-        : <String?>{};
     return SimpleViewConversations(
-      '${client.homeserver}|${client.userID}',
+      simpleViewAccount(client),
       [
-        for (final room in client.rooms)
-          if (!room.isSpace &&
-              room.membership == Membership.join &&
-              !hidden.contains(room.id))
-            QuickAccessConversation(
-              id: room.id,
-              name: room.getLocalizedDisplayname(),
-              onOpen: () {},
-            ),
+        for (final room in simpleViewRooms(client))
+          QuickAccessConversation(
+            id: room.id,
+            name: room.getLocalizedDisplayname(),
+            onOpen: () {},
+          ),
       ],
       createPreview: (requestContext) {
         final home = requestContext

@@ -5,7 +5,7 @@ import 'dart:convert';
 
 import 'package:fluffychat/personalization/model/assistant_model_config.dart';
 import 'package:fluffychat/personalization/model/emulator_host_model.dart';
-import 'package:fluffychat/personalization/model/settings_functions.dart';
+import 'package:fluffychat/personalization/model/personalization_tools.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -44,7 +44,9 @@ void main() {
       }),
     );
     addTearDown(model.dispose);
-    final call = await model.propose('Text is tiny', functions);
+    final call = await model.propose(const [
+      UserTurn('Text is tiny'),
+    ], functions);
     expect(model.status.value.state, ModelState.ready);
     expect(call?.name, 'heuristic_text_zoom');
     expect(call?.args, {'steps': 2});
@@ -101,7 +103,7 @@ void main() {
       ),
     );
     addTearDown(model.dispose);
-    expect(await model.propose('Hello', functions), isNull);
+    expect(await model.propose(const [UserTurn('Hello')], functions), isNull);
   });
 
   test('malformed proposals and server errors are not accepted', () async {
@@ -117,9 +119,15 @@ void main() {
       }),
     );
     addTearDown(model.dispose);
-    await expectLater(model.propose('Tiny', functions), throwsFormatException);
+    await expectLater(
+      model.propose(const [UserTurn('Tiny')], functions),
+      throwsFormatException,
+    );
     malformed = false;
-    await expectLater(model.propose('Tiny', functions), throwsStateError);
+    await expectLater(
+      model.propose(const [UserTurn('Tiny')], functions),
+      throwsStateError,
+    );
     expect(model.lastTiming, isNull);
   });
 }

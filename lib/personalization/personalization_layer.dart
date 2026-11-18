@@ -6,9 +6,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:fluffychat/config/setting_keys.dart';
+import 'package:fluffychat/widgets/theme_builder.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
+import 'package:provider/provider.dart';
 
 import 'accessibility_controller.dart';
 import 'accessibility_scope.dart';
@@ -18,10 +20,10 @@ import 'study/study_log.dart';
 import 'suggestions/suggestion_manager.dart';
 
 /// Holds the app-wide [SuggestionManager] and the heuristics file, and
-/// starts the study log (Phase 5), which records nothing until the researcher
+/// starts the study log, which records nothing until the researcher
 /// turns it on.
 ///
-/// Since Phase 3b nothing here suggests a change on its own: interaction
+/// Nothing here suggests a change on its own: interaction
 /// signals and automatic heuristic evaluation are disconnected, and changes
 /// are only proposed in the Assist tab after the user asks. The on-device
 /// model lives in the Assist tab too, not here.
@@ -58,8 +60,18 @@ class _PersonalizationLayerState extends State<PersonalizationLayer> {
     _manager = SuggestionManager(
       accessibility: accessibility,
       store: AppSettings.store,
-    );
+    )..setThemeMode = _themeOf(context)?.setThemeMode;
     _loadHeuristics();
+  }
+
+  /// FluffyChat's theme, which suggestions can change. Missing only where the
+  /// layer runs without the app around it, such as in tests.
+  static ThemeController? _themeOf(BuildContext context) {
+    try {
+      return ThemeController.of(context);
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 
   Future<void> _loadHeuristics() async {

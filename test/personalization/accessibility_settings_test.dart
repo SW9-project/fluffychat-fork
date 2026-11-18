@@ -46,6 +46,44 @@ void main() {
   });
 
   group('AccessibilitySettings', () {
+    test('line spacing overrides the message line height only when set', () {
+      const s = AccessibilitySettings.defaults;
+      expect(s.lineHeight, isNull);
+      expect(s.copyWith(ScaleCategory.lineSpacing, 2.0).lineHeight, 2.5);
+    });
+
+    test('a size on top of another follows it until set on its own', () async {
+      const title = ScaleCategory.titleText;
+      var s = AccessibilitySettings.defaults.copyWith(ScaleCategory.text, 1.2);
+      expect(s.effective(title), 1.2);
+
+      s = s.withEffective(title, 1.5);
+      expect(s.textScale, 1.2, reason: 'only the title changes');
+      expect(s.effective(title), 1.5);
+
+      s = s.copyWith(ScaleCategory.text, 1.0);
+      expect(s.effective(title), 1.25);
+
+      final store = await _store();
+      await s.save(store);
+      expect(AccessibilitySettings.load(store), s, reason: 'not re-snapped');
+
+      expect(s.without(title).effective(title), s.textScale);
+    });
+
+    test('a size on top of another stays within its own range', () {
+      const title = ScaleCategory.titleText;
+      final big = AccessibilitySettings.defaults
+          .copyWith(ScaleCategory.text, 2.0)
+          .copyWith(title, 1.5);
+      expect(big.effective(title), title.max);
+      expect(big.titleTextScale * big.textScale, title.max);
+
+      final small = big.withEffective(title, title.min);
+      expect(small.effective(title), title.min, reason: 'can still go down');
+      expect(small.textScale, 2.0);
+    });
+
     test('defaults are 1.0 everywhere', () {
       for (final c in ScaleCategory.values) {
         expect(AccessibilitySettings.defaults[c], 1.0);
@@ -80,28 +118,9 @@ void main() {
       expect(s.touchTarget(20), AccessibilitySettings.minTouchTarget);
       expect(s.touchTarget(56), 56);
       expect(
-        s.copyWith(ScaleCategory.touchTarget, 1.5).touchTarget(20),
+        s.copyWith(ScaleCategory.touchTarget, 2.0).touchTarget(20),
         AccessibilitySettings.minTouchTarget,
       );
-    });
-
-    test('typing text follows the text size, not the other way round', () {
-      final s = AccessibilitySettings.defaults.change(ScaleCategory.text, 1.4);
-      expect(s.textScale, 1.4);
-      expect(s.inputTextScale, 1.4);
-
-      final t = s.change(ScaleCategory.inputText, 1.8);
-      expect(t.textScale, 1.4);
-      expect(t.inputTextScale, 1.8);
-
-      final u = t.change(ScaleCategory.text, 0.8);
-      expect(u.textScale, 0.8);
-      expect(u.inputTextScale, 0.8);
-    });
-
-    test('touch area and picture size go up to 1.5', () {
-      expect(ScaleCategory.touchTarget.max, 1.5);
-      expect(ScaleCategory.avatar.max, 1.5);
     });
 
     test('button boxes fit the scaled icon', () {
@@ -125,7 +144,7 @@ void main() {
       final store = await _store();
       final s = AccessibilitySettings.defaults
           .copyWith(ScaleCategory.text, 1.4)
-          .copyWith(ScaleCategory.touchTarget, 1.3);
+          .copyWith(ScaleCategory.touchTarget, 1.7);
       await s.save(store);
       expect(AccessibilitySettings.load(store), s);
     });
@@ -233,13 +252,13 @@ void main() {
     test('reset restores defaults and is undoable', () async {
       final store = await _store();
       final controller = AccessibilityController(store);
-      await controller.apply(ScaleCategory.avatar, 1.5);
+      await controller.apply(ScaleCategory.avatar, 2.0);
       await controller.reset();
       expect(controller.settings, AccessibilitySettings.defaults);
       expect(store.getDouble(ScaleCategory.avatar.storageKey), 1.0);
 
       await controller.undo();
-      expect(controller.settings.avatarScale, 1.5);
+      expect(controller.settings.avatarScale, 2.0);
     });
 
     test('settings survive a restart', () async {

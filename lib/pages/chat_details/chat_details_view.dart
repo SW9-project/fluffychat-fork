@@ -4,10 +4,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fluffychat/config/app_config.dart';
+import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+
 import 'package:fluffychat/pages/chat_details/chat_details.dart';
 import 'package:fluffychat/pages/chat_details/participant_list_item.dart';
 import 'package:fluffychat/pages/settings/settings.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/utils/account_config.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
@@ -87,14 +91,20 @@ class ChatDetailsView extends StatelessWidget {
               if (room.canonicalAlias.isNotEmpty)
                 IconButton(
                   tooltip: L10n.of(context).share,
-                  icon: const Icon(Icons.qr_code_rounded),
+                  icon: LabeledIcon(
+                    icon: const Icon(Icons.qr_code_rounded),
+                    label: L10n.of(context).share,
+                  ),
                   onPressed: () =>
                       showQrCodeViewer(context, room.canonicalAlias),
                 )
               else if (directChatMatrixID != null)
                 IconButton(
                   tooltip: L10n.of(context).share,
-                  icon: const Icon(Icons.qr_code_rounded),
+                  icon: LabeledIcon(
+                    icon: const Icon(Icons.qr_code_rounded),
+                    label: L10n.of(context).share,
+                  ),
                   onPressed: () =>
                       showQrCodeViewer(context, directChatMatrixID),
                 ),
@@ -364,6 +374,36 @@ class ChatDetailsView extends StatelessWidget {
                           const SizedBox(height: 16),
                         ],
                         Divider(color: theme.dividerColor),
+                        ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: theme.colorScheme.surfaceContainer,
+                            foregroundColor: iconColor,
+                            child: const Icon(Icons.format_color_fill_outlined),
+                          ),
+                          title: Text(L10n.of(context).bubbleColor),
+                          trailing: Builder(
+                            builder: (context) {
+                              final bubbles = theme.withBubbleColors(
+                                room.bubbleColor,
+                                room.otherBubbleColor,
+                              );
+                              return Row(
+                                mainAxisSize: .min,
+                                children: [
+                                  Icon(
+                                    Icons.circle,
+                                    color: bubbles.otherBubbleColor,
+                                  ),
+                                  Icon(
+                                    Icons.circle,
+                                    color: bubbles.bubbleColor,
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          onTap: controller.setBubbleColorAction,
+                        ),
                         StreamBuilder(
                           stream: room.client.onChatWallpaperChanged,
                           builder: (context, _) => ListTile(

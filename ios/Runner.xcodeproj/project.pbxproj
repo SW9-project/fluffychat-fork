@@ -11,6 +11,8 @@
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		48B8A66B61A57356B7F9DC84 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B21A625E10968E1E8DB640C /* Pods_Runner.framework */; };
 		4C1A9E2B7D3F4A6B8E0C5D22 /* LiquidGlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1A9E2B7D3F4A6B8E0C5D21 /* LiquidGlassTabBar.swift */; };
+		4C1A9E2B7D3F4A6B8E0C5D32 /* LiquidGlassView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1A9E2B7D3F4A6B8E0C5D31 /* LiquidGlassView.swift */; };
+		4C1A9E2B7D3F4A6B8E0C5D42 /* NativeMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1A9E2B7D3F4A6B8E0C5D41 /* NativeMenuButton.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -77,6 +79,8 @@
 		24DBF5F3EF4FE29702A7CE33 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		4C1A9E2B7D3F4A6B8E0C5D21 /* LiquidGlassTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassTabBar.swift; sourceTree = "<group>"; };
+		4C1A9E2B7D3F4A6B8E0C5D31 /* LiquidGlassView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassView.swift; sourceTree = "<group>"; };
+		4C1A9E2B7D3F4A6B8E0C5D41 /* NativeMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMenuButton.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
@@ -212,6 +216,8 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				4C1A9E2B7D3F4A6B8E0C5D21 /* LiquidGlassTabBar.swift */,
+				4C1A9E2B7D3F4A6B8E0C5D31 /* LiquidGlassView.swift */,
+				4C1A9E2B7D3F4A6B8E0C5D41 /* NativeMenuButton.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -467,6 +473,8 @@
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				4C1A9E2B7D3F4A6B8E0C5D22 /* LiquidGlassTabBar.swift in Sources */,
+				4C1A9E2B7D3F4A6B8E0C5D32 /* LiquidGlassView.swift in Sources */,
+				4C1A9E2B7D3F4A6B8E0C5D42 /* NativeMenuButton.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

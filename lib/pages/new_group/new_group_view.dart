@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/new_group/new_group.dart';
@@ -166,7 +167,9 @@ class NewGroupView extends StatelessWidget {
                       ? null
                       : controller.submitAction,
                   child: controller.loading
-                      ? const LinearProgressIndicator()
+                      ? Theme.of(context).cupertinoStyle
+                            ? const CupertinoActivityIndicator()
+                            : const LinearProgressIndicator()
                       : Text(
                           controller.createGroupType == CreateGroupType.space
                               ? L10n.of(context).createNewSpace

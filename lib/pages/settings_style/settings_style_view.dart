@@ -3,16 +3,20 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_wallpaper/wallpaper_editor.dart';
+import 'package:fluffychat/utils/account_config.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/color_value.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/widgets/avatar.dart';
+import 'package:fluffychat/widgets/bubble_color_picker.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
 import 'package:fluffychat/widgets/matrix.dart';
+import 'package:fluffychat/widgets/settings_section.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -31,52 +35,61 @@ class SettingsStyleView extends StatelessWidget {
 
     const colorPickerSize = 32.0;
     final client = Matrix.of(context).client;
+    final background = theme.cupertinoStyle
+        ? SettingsSection.backgroundColor(theme)
+        : theme.colorScheme.surface;
+    final l10n = L10n.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.cupertinoStyle ? background : null,
         automaticallyImplyLeading: !FluffyThemes.isColumnMode(context),
         centerTitle: FluffyThemes.isColumnMode(context),
         title: Text(L10n.of(context).changeTheme),
       ),
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: background,
       body: MaxWidthBody(
-        child: Column(
+        child: SettingsList(
           crossAxisAlignment: .stretch,
           children: [
             Padding(
               padding: const EdgeInsets.all(12.0),
-              child: SegmentedButton<ThemeMode>(
-                selected: {controller.currentTheme},
-                onSelectionChanged: (selected) =>
-                    controller.switchTheme(selected.single),
-                segments: [
-                  ButtonSegment(
-                    value: ThemeMode.light,
-                    label: Text(L10n.of(context).lightTheme),
-                    icon: const Icon(Icons.light_mode_outlined),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.dark,
-                    label: Text(L10n.of(context).darkTheme),
-                    icon: const Icon(Icons.dark_mode_outlined),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.system,
-                    label: Text(L10n.of(context).systemTheme),
-                    icon: const Icon(Icons.auto_mode_outlined),
-                  ),
-                ],
-              ),
+              child: theme.cupertinoStyle
+                  ? CupertinoSlidingSegmentedControl<ThemeMode>(
+                      groupValue: controller.currentTheme,
+                      onValueChanged: (mode) {
+                        if (mode != null) controller.switchTheme(mode);
+                      },
+                      children: {
+                        ThemeMode.light: Text(l10n.lightTheme),
+                        ThemeMode.dark: Text(l10n.darkTheme),
+                        ThemeMode.system: Text(l10n.systemTheme),
+                      },
+                    )
+                  : SegmentedButton<ThemeMode>(
+                      selected: {controller.currentTheme},
+                      onSelectionChanged: (selected) =>
+                          controller.switchTheme(selected.single),
+                      segments: [
+                        ButtonSegment(
+                          value: ThemeMode.light,
+                          label: Text(L10n.of(context).lightTheme),
+                          icon: const Icon(Icons.light_mode_outlined),
+                        ),
+                        ButtonSegment(
+                          value: ThemeMode.dark,
+                          label: Text(L10n.of(context).darkTheme),
+                          icon: const Icon(Icons.dark_mode_outlined),
+                        ),
+                        ButtonSegment(
+                          value: ThemeMode.system,
+                          label: Text(L10n.of(context).systemTheme),
+                          icon: const Icon(Icons.auto_mode_outlined),
+                        ),
+                      ],
+                    ),
             ),
             Divider(color: theme.dividerColor),
-            ListTile(
-              title: Text(
-                L10n.of(context).setColorTheme,
-                style: TextStyle(
-                  color: theme.colorScheme.secondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            SettingsHeader(L10n.of(context).setColorTheme),
             DynamicColorBuilder(
               builder: (light, dark) {
                 final systemColor =
@@ -134,28 +147,56 @@ class SettingsStyleView extends StatelessWidget {
                 );
               },
             ),
-            Divider(color: theme.dividerColor),
-            ListTile(
-              title: Text(
-                L10n.of(context).messagesStyle,
-                style: TextStyle(
-                  color: theme.colorScheme.secondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            StreamBuilder(
+              stream: client.onChatWallpaperChanged,
+              builder: (context, _) =>
+                  ChatStylePreview(wallpaper: client.defaultChatWallpaper),
             ),
-            const WallpaperEditor(),
-            // The font size slider moved to the accessibility settings.
             Divider(color: theme.dividerColor),
-            ListTile(
-              title: Text(
-                L10n.of(context).chatWallpapers,
-                style: TextStyle(
-                  color: theme.colorScheme.secondary,
-                  fontWeight: FontWeight.bold,
-                ),
+            SettingsHeader(L10n.of(context).messagesStyle),
+            StreamBuilder(
+              stream: client.onSync.stream.where(
+                (syncUpdate) =>
+                    syncUpdate.accountData?.any(
+                      (accountData) =>
+                          accountData.type ==
+                          ApplicationAccountConfigExtension.accountDataKey,
+                    ) ??
+                    false,
               ),
+              builder: (context, snapshot) {
+                final accountConfig = client.applicationAccountConfig;
+                return Column(
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .stretch,
+                  children: [
+                    ListTile(title: Text(L10n.of(context).ownBubbleColor)),
+                    BubbleColorPicker(
+                      selected: accountConfig.bubbleColor,
+                      disabled: accountConfig.otherBubbleColor,
+                      onSelected: (color) => controller.setBubbleColors(
+                        color,
+                        accountConfig.otherBubbleColor,
+                      ),
+                      nullLabel: L10n.of(context).defaultBubbleColor,
+                    ),
+                    ListTile(title: Text(L10n.of(context).otherBubbleColor)),
+                    BubbleColorPicker(
+                      selected: accountConfig.otherBubbleColor,
+                      disabled: accountConfig.bubbleColor,
+                      onSelected: (color) => controller.setBubbleColors(
+                        accountConfig.bubbleColor,
+                        color,
+                      ),
+                      nullLabel: L10n.of(context).defaultBubbleColor,
+                    ),
+                  ],
+                );
+              },
             ),
+            const WallpaperEditor(showPreview: false),
+            Divider(color: theme.dividerColor),
+            SettingsHeader(L10n.of(context).chatWallpapers),
             StreamBuilder(
               stream: client.onChatWallpaperChanged,
               builder: (context, _) {

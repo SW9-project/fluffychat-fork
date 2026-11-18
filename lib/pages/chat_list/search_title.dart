@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/config/themes.dart';
 import 'package:material_ui/material_ui.dart';
 
 class SearchTitle extends StatelessWidget {
@@ -24,6 +25,31 @@ class SearchTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // A section header of iOS: a bold title without icon and dividers.
+    if (theme.cupertinoStyle) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          color: color,
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ?trailing,
+            ],
+          ),
+        ),
+      );
+    }
 
     return Material(
       shape: Border(

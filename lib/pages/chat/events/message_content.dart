@@ -11,8 +11,6 @@ import 'package:fluffychat/pages/chat/events/poll.dart';
 import 'package:fluffychat/pages/chat/events/video_player.dart';
 import 'package:fluffychat/pages/image_viewer/image_viewer.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
-import 'package:fluffychat/personalization/meaning/meaning_decoration.dart';
-import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
@@ -181,18 +179,21 @@ class MessageContent extends StatelessWidget {
             final bigEmotes =
                 !event.isRichMessage && bigEmojis.contains(event.body);
 
-            return MeaningDecoration(
-              content: event.content,
-              textColor: textColor,
-              child: Padding(
-                padding:
-                    EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: SimplifiedInterfaceScope.quietChatOf(context)
-                          ? 12
-                          : 6,
-                    ) *
-                    AccessibilityScope.of(context).textScale,
+            final media = MediaQuery.of(context);
+            return Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6) *
+                  AccessibilityScope.of(context).messageScale(event.room.id),
+              // Overrides the line height of every text inside the message.
+              child: MediaQuery(
+                data: media.applyTextStyleOverrides(
+                  lineHeightScaleFactorOverride:
+                      AccessibilityScope.of(context).lineHeight ??
+                      media.lineHeightScaleFactorOverride,
+                  letterSpacingOverride: media.letterSpacingOverride,
+                  wordSpacingOverride: media.wordSpacingOverride,
+                  paragraphSpacingOverride: media.paragraphSpacingOverride,
+                ),
                 child: HtmlMessage(
                   html: html,
                   textColor: textColor,

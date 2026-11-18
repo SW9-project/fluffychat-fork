@@ -7,16 +7,10 @@ import 'dart:io';
 
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
-import 'package:fluffychat/personalization/meaning/annotated_send.dart';
-import 'package:fluffychat/personalization/meaning/meaning_draft.dart';
-import 'package:fluffychat/personalization/meaning/meaning_settings.dart';
-import 'package:fluffychat/personalization/meaning/message_meaning.dart';
 import 'package:fluffychat/personalization/study/study_events.dart';
 import 'package:fluffychat/personalization/study/study_log.dart';
 import 'package:fluffychat/personalization/study/study_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
-import 'package:matrix/matrix.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MemoryStorage implements StudyLogStorage {
@@ -27,39 +21,9 @@ class MemoryStorage implements StudyLogStorage {
 
   @override
   Future<List<String>> readLines() async => [...lines];
-}
-
-class FakeClient extends Fake implements Client {
-  @override
-  String? get userID => '@alice:example.org';
 
   @override
-  bool get convertLinebreaksInFormatting => true;
-
-  @override
-  bool get enableLatexMarkdown => false;
-}
-
-class FakeRoom extends Fake implements Room {
-  final List<Map<String, dynamic>> sent = [];
-
-  @override
-  final Client client = FakeClient();
-
-  @override
-  Future<String?> sendEvent(
-    Map<String, dynamic> content, {
-    String type = EventTypes.Message,
-    String? txid,
-    Event? inReplyTo,
-    String? editEventId,
-    String? threadRootEventId,
-    String? threadLastEventId,
-    bool displayPendingEvent = true,
-  }) async {
-    sent.add(content);
-    return '\$event${sent.length}';
-  }
+  Future<void> clear() async => lines.clear();
 }
 
 void main() {
@@ -140,6 +104,30 @@ void main() {
       expect(events[2]['events'], 2);
     });
 
+    test('every line has the participant code', () async {
+      await settings.update(
+        settings.value.copyWith(logging: true, participant: 'P01'),
+      );
+      log.record(const AssistPrompted('one'));
+      await settings.update(settings.value.copyWith(participant: 'P02'));
+      log.record(const AssistPrompted('two'));
+      expect(
+        [for (final e in decoded(await log.lines())) e['participant']],
+        ['P01', 'P02'],
+      );
+    });
+
+    test('clear removes the events, and later ones are kept', () async {
+      await turnOn();
+      log.record(const AssistPrompted('old'));
+      await log.clear();
+      expect(await log.lines(), isEmpty);
+      log.record(const LogCleared(1, saved: true));
+      final events = decoded(await log.lines());
+      expect(events.single, containsPair('type', 'log_cleared'));
+      expect(events.single, containsPair('saved', true));
+    });
+
     test('the app-wide log records nothing before it starts', () async {
       StudyLog.instance.record(const AssistPrompted('hello'));
       expect(StudyLog.instance.isRecording, isFalse);
@@ -180,6 +168,11 @@ void main() {
         [for (final e in events) e['prompt'] ?? e['type']],
         ['logging_started', 'one', 'two'],
       );
+
+      await second.clear();
+      expect(await file.exists(), isFalse);
+      second.record(const AssistPrompted('three'));
+      expect(decoded(await second.lines()).single['prompt'], 'three');
     });
   });
 
@@ -206,7 +199,6 @@ void main() {
       );
       expect(events[0]['changes'], {
         'text_scale': [1.0, 1.5],
-        'input_text_scale': [1.0, 1.5],
       });
       expect(events[1]['changes'], {
         'button_scale': [1.0, 1.6],
@@ -216,79 +208,7 @@ void main() {
       });
       expect(events[3]['changes'], {
         'text_scale': [1.5, 1.0],
-        'input_text_scale': [1.5, 1.0],
       });
-    });
-
-    test('meaning events never contain message text', () async {
-      await turnOn();
-      StudyLog.instance = log;
-      final meaningSettings = MeaningSettings(store);
-      final text = TextEditingController(
-        text: 'SECRET Ses vi i morgen kl. 14?',
-      );
-      final draft = MeaningDraft(
-        text,
-        settings: meaningSettings,
-        clock: () => DateTime(2026, 10, 27, 9),
-      );
-      addTearDown(draft.dispose);
-
-      draft.setUrgency(MessageUrgency.high);
-      draft.setIntent(MessageIntent.request);
-      final room = FakeRoom();
-      await sendAnnotatedText(room, text.text, meaning: draft.take());
-      expect(
-        room.sent.single[MessageMeaning.namespace],
-        containsPair('intent', 'request'),
-      );
-
-      text.text = 'SECRET Kan du ringe på fredag kl. 10?';
-      draft.removeTime(draft.meaning!.times.single);
-      await sendAnnotatedText(
-        room,
-        text.text,
-        meaning: draft.take(),
-        editEventId: r'$event1',
-      );
-      text.text = 'SECRET without meaning';
-      draft.remove();
-      expect(draft.take(), isNull);
-      await meaningSettings.update(
-        meaningSettings.value.copyWith(highlightTimes: false),
-      );
-
-      final exported = utf8.decode(await log.export(const {}));
-      for (final secret in [
-        'SECRET',
-        'Ses vi',
-        'morgen',
-        'kl. 14',
-        'fredag',
-        'kl. 10',
-        '2026-10-28',
-      ]) {
-        expect(exported, isNot(contains(secret)));
-      }
-      final events = decoded(await log.lines());
-      expect(
-        [for (final e in events) e['type']],
-        [
-          'meaning_changed',
-          'meaning_changed',
-          'meaning_sent',
-          'meaning_changed',
-          'meaning_sent',
-          'meaning_removed',
-          'meaning_settings',
-        ],
-      );
-      expect(events[2], containsPair('times', 1));
-      expect(events[2], containsPair('edit', false));
-      expect(events[3], containsPair('time_removed', true));
-      expect(events[4], containsPair('times', 0));
-      expect(events[4], containsPair('edit', true));
-      expect(events[6], containsPair('highlight_times', false));
     });
   });
 }

@@ -4,167 +4,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:async/async.dart';
+import 'package:collection/collection.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/matrix.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart' hide Result;
 import 'package:url_launcher/url_launcher_string.dart';
 
-import '../../utils/fluffy_share.dart';
 import 'chat_list.dart';
 
 class ClientChooserButton extends StatelessWidget {
   final ChatListController controller;
 
   const ClientChooserButton(this.controller, {super.key});
-
-  List<PopupMenuEntry<Object>> _bundleMenuItems(BuildContext context) {
-    final matrix = Matrix.of(context);
-    final bundles = matrix.accountBundles.keys.toList()
-      ..sort(
-        (a, b) => a!.isValidMatrixIdStrict() == b!.isValidMatrixIdStrict()
-            ? 0
-            : a.isValidMatrixIdStrict() && !b.isValidMatrixIdStrict()
-            ? -1
-            : 1,
-      );
-    return <PopupMenuEntry<Object>>[
-      PopupMenuItem(
-        value: SettingsAction.newGroup,
-        child: Row(
-          children: [
-            const Icon(Icons.group_add_outlined),
-            const SizedBox(width: 18),
-            Flexible(child: Text(L10n.of(context).createGroup)),
-          ],
-        ),
-      ),
-      PopupMenuItem(
-        value: SettingsAction.setStatus,
-        child: Row(
-          children: [
-            const Icon(Icons.edit_outlined),
-            const SizedBox(width: 18),
-            Flexible(child: Text(L10n.of(context).setStatus)),
-          ],
-        ),
-      ),
-      PopupMenuItem(
-        value: SettingsAction.invite,
-        child: Row(
-          children: [
-            Icon(Icons.adaptive.share_outlined),
-            const SizedBox(width: 18),
-            Flexible(child: Text(L10n.of(context).inviteContact)),
-          ],
-        ),
-      ),
-      PopupMenuItem(
-        value: SettingsAction.archive,
-        child: Row(
-          children: [
-            const Icon(Icons.archive_outlined),
-            const SizedBox(width: 18),
-            Flexible(child: Text(L10n.of(context).archive)),
-          ],
-        ),
-      ),
-      PopupMenuItem(
-        value: SettingsAction.settings,
-        child: Row(
-          children: [
-            const Icon(Icons.settings_outlined),
-            const SizedBox(width: 18),
-            Flexible(child: Text(L10n.of(context).settings)),
-          ],
-        ),
-      ),
-      PopupMenuItem(
-        value: SettingsAction.support,
-        child: Row(
-          children: [
-            Icon(Icons.favorite, color: Colors.red),
-            const SizedBox(width: 18),
-            Flexible(child: Text(L10n.of(context).supportFluffyChat)),
-          ],
-        ),
-      ),
-      const PopupMenuDivider(),
-      for (final bundle in bundles) ...[
-        if (matrix.accountBundles[bundle]!.length != 1 ||
-            matrix.accountBundles[bundle]!.single!.userID != bundle)
-          PopupMenuItem(
-            value: null,
-            child: Column(
-              crossAxisAlignment: .start,
-              mainAxisSize: .min,
-              children: [
-                Text(
-                  bundle!,
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.titleMedium!.color,
-                    fontSize: 14,
-                  ),
-                ),
-                const Divider(height: 1),
-              ],
-            ),
-          ),
-        ...matrix.accountBundles[bundle]!
-            .whereType<Client>()
-            .where((client) => client.isLogged())
-            .map(
-              (client) => PopupMenuItem(
-                value: client,
-                child: FutureBuilder<Profile?>(
-                  future: client.fetchOwnProfile(),
-                  builder: (context, snapshot) {
-                    final displayname =
-                        snapshot.data?.displayName ?? client.userID!.localpart!;
-                    return Row(
-                      key: ValueKey('switch_account_$displayname'),
-                      children: [
-                        Avatar(
-                          mxContent: snapshot.data?.avatarUrl,
-                          name: displayname,
-                          size: 32,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            displayname,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          onPressed: () => controller.editBundlesForAccount(
-                            client.userID,
-                            bundle,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-      ],
-      PopupMenuItem(
-        value: SettingsAction.addAccount,
-        child: Row(
-          children: [
-            const Icon(Icons.person_add_outlined),
-            const SizedBox(width: 18),
-            Flexible(child: Text(L10n.of(context).addAccount)),
-          ],
-        ),
-      ),
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -175,67 +33,118 @@ class ClientChooserButton extends StatelessWidget {
     matrix.accountBundles.forEach((key, value) => clientCount += value.length);
     return FutureBuilder<Profile>(
       future: client?.isLogged() == true ? client?.fetchOwnProfile() : null,
-      builder: (context, snapshot) => Material(
-        clipBehavior: Clip.hardEdge,
-        borderRadius: BorderRadius.circular(99),
-        color: Colors.transparent,
-        child: PopupMenuButton<Object>(
-          key: Key('accounts_and_settings_buttons'),
-          tooltip: L10n.of(context).accountsAndSettings,
-          onSelected: (o) => _clientSelected(o, context),
-          itemBuilder: _bundleMenuItems,
-          icon: Avatar(
-            mxContent: snapshot.data?.avatarUrl,
-            name: snapshot.data?.displayName ?? client?.userID?.localpart,
-            size: 32,
+      builder: (context, snapshot) {
+        final avatar = Avatar(
+          mxContent: snapshot.data?.avatarUrl,
+          name: snapshot.data?.displayName ?? client?.userID?.localpart,
+          size: 32,
+        );
+        if (PlatformInfos.isIOS) return _nativeMenu(context, avatar);
+        return Material(
+          clipBehavior: Clip.hardEdge,
+          borderRadius: BorderRadius.circular(99),
+          color: Colors.transparent,
+          child: PopupMenuButton<SettingsAction>(
+            key: Key('accounts_and_settings_buttons'),
+            tooltip: L10n.of(context).accountsAndSettings,
+            // Above the floating bar, which hides for menus in the shell.
+            useRootNavigator: true,
+            onSelected: (action) => _clientSelected(action, context),
+            itemBuilder: (context) {
+              final titles = _titles(L10n.of(context));
+              return [
+                for (final (i, action) in _menu.keys.indexed)
+                  PopupMenuItem(
+                    value: action,
+                    child: Row(
+                      children: [
+                        Icon(_menu[action]!.$2),
+                        const SizedBox(width: 18),
+                        Flexible(child: Text(titles[i])),
+                      ],
+                    ),
+                  ),
+              ];
+            },
+            icon: avatar,
           ),
-        ),
+        );
+      },
+    );
+  }
+
+  /// The same actions on every platform, with their SF Symbol and Material
+  /// icon.
+  static const _menu = {
+    SettingsAction.archive: ('archivebox', Icons.archive_outlined),
+    SettingsAction.newGroup: ('person.2', Icons.group_add_outlined),
+    SettingsAction.setStatus: ('pencil', Icons.edit_outlined),
+    SettingsAction.support: ('heart', Icons.favorite_border),
+  };
+
+  static List<String> _titles(L10n l10n) => [
+    l10n.archive,
+    l10n.createGroup,
+    l10n.setStatus,
+    l10n.supportFluffyChat,
+  ];
+
+  /// A native `UIMenu` over the avatar, see `NativeMenuButton.swift`.
+  Widget _nativeMenu(BuildContext context, Widget avatar) {
+    final l10n = L10n.of(context);
+    final params = {
+      'label': l10n.accountsAndSettings,
+      'titles': _titles(l10n),
+      'symbols': _menu.values.map((item) => item.$1).toList(),
+      'isDark': Theme.of(context).brightness == Brightness.dark,
+    };
+    return SizedBox.square(
+      dimension: 40,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          avatar,
+          Positioned.fill(
+            child: UiKitView(
+              // A new key recreates the view, which reads its parameters once.
+              key: ValueKey(const DeepCollectionEquality().hash(params)),
+              viewType: 'fluffychat/menu_button',
+              creationParams: params,
+              creationParamsCodec: const StandardMessageCodec(),
+              gestureRecognizers: {Factory(EagerGestureRecognizer.new)},
+              onPlatformViewCreated: (id) =>
+                  MethodChannel(
+                    'fluffychat/menu_button/$id',
+                  ).setMethodCallHandler((call) async {
+                    if (call.method != 'selected' || !context.mounted) {
+                      return;
+                    }
+                    _clientSelected(
+                      _menu.keys.elementAt(call.arguments as int),
+                      context,
+                    );
+                  }),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Future<void> _clientSelected(Object object, BuildContext context) async {
-    if (object is Client) {
-      controller.setActiveClient(object);
-    } else if (object is String) {
-      controller.setActiveBundle(object);
-    } else if (object is SettingsAction) {
-      switch (object) {
-        case SettingsAction.addAccount:
-          if (!context.mounted) return;
-          context.go('/rooms/settings/addaccount');
-          break;
-        case SettingsAction.newGroup:
-          context.go('/rooms/newgroup');
-          break;
-        case SettingsAction.invite:
-          FluffyShare.shareInviteLink(context);
-          break;
-        case SettingsAction.support:
-          launchUrlString(
-            'https://ko-fi.com/post/How-can-I-support-FluffyChat-J2G325WE6I',
-          );
-          break;
-        case SettingsAction.settings:
-          context.go('/rooms/settings');
-          break;
-        case SettingsAction.archive:
-          context.go('/rooms/archive');
-          break;
-        case SettingsAction.setStatus:
-          controller.setStatus();
-          break;
-      }
+  void _clientSelected(SettingsAction action, BuildContext context) {
+    switch (action) {
+      case SettingsAction.newGroup:
+        context.go('/rooms/newgroup');
+      case SettingsAction.support:
+        launchUrlString(
+          'https://ko-fi.com/post/How-can-I-support-FluffyChat-J2G325WE6I',
+        );
+      case SettingsAction.archive:
+        context.go('/rooms/archive');
+      case SettingsAction.setStatus:
+        controller.setStatus();
     }
   }
 }
 
-enum SettingsAction {
-  addAccount,
-  newGroup,
-  setStatus,
-  invite,
-  support,
-  settings,
-  archive,
-}
+enum SettingsAction { newGroup, setStatus, support, archive }

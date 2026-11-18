@@ -7,10 +7,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'assistant_model_config.dart';
-import 'settings_functions.dart';
+import 'personalization_tools.dart';
 import 'settings_intent_model.dart';
 
-/// Explicit debug-build option for x86 Android emulators. The v2 model
+/// Explicit debug-build option for x86 Android emulators. The model
 /// runs on this computer, reached only through `adb reverse tcp:8787 tcp:8787`.
 /// Normal and release builds continue to use the on-device model.
 class EmulatorHostModel implements SettingsIntentModel {
@@ -59,9 +59,12 @@ class EmulatorHostModel implements SettingsIntentModel {
 
   @override
   Future<ProposedCall?> propose(
-    String text,
+    List<ModelTurn> conversation,
     List<FunctionDeclaration> functions,
   ) async {
+    // shortcut: the host takes one prompt, so only the latest user text is
+    // sent; teach AssistantHost.java about turns to test follow-up questions.
+    final text = conversation.whereType<UserTurn>().lastOrNull?.text ?? '';
     _lastTiming = null;
     if (_status.value.state != ModelState.ready) await prepare();
     if (_status.value.state != ModelState.ready) {

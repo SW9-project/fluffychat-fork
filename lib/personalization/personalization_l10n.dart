@@ -43,17 +43,6 @@ class PersonalizationL10n {
   final String thinking;
   final String previewNow;
   final String previewSuggested;
-  final String meaningQuestion;
-  final String meaningInformation;
-  final String meaningRequest;
-  final String meaningUrgent;
-  final String meaningRemove;
-  final String meaningTitle;
-  final String meaningAnnotate;
-  final String meaningAnnotateDescription;
-  final String meaningShowIntent;
-  final String meaningShowUrgency;
-  final String meaningHighlightTimes;
   final String assistOff;
   final String studyTitle;
   final String studyCondition;
@@ -68,6 +57,15 @@ class PersonalizationL10n {
   final String studyParticipant;
   final String Function(int count) studyEvents;
   final String studySave;
+  final String studySaveAndClear;
+  final String studySaveAndClearConfirm;
+  final String studySaveAndClearInfo;
+  final String studyDelete;
+  final String studyDeleteConfirm;
+  final String studyDeleteInfo;
+  final String studyDeleteAction;
+  final String studyCleared;
+  final String changeBackInSettings;
   final String studyLatest;
   final String studyNoEvents;
   final Map<ScaleCategory, String> categoryTitles;
@@ -107,17 +105,6 @@ class PersonalizationL10n {
     required this.thinking,
     required this.previewNow,
     required this.previewSuggested,
-    required this.meaningQuestion,
-    required this.meaningInformation,
-    required this.meaningRequest,
-    required this.meaningUrgent,
-    required this.meaningRemove,
-    required this.meaningTitle,
-    required this.meaningAnnotate,
-    required this.meaningAnnotateDescription,
-    required this.meaningShowIntent,
-    required this.meaningShowUrgency,
-    required this.meaningHighlightTimes,
     required this.assistOff,
     required this.studyTitle,
     required this.studyCondition,
@@ -132,6 +119,15 @@ class PersonalizationL10n {
     required this.studyParticipant,
     required this.studyEvents,
     required this.studySave,
+    required this.studySaveAndClear,
+    required this.studySaveAndClearConfirm,
+    required this.studySaveAndClearInfo,
+    required this.studyDelete,
+    required this.studyDeleteConfirm,
+    required this.studyDeleteInfo,
+    required this.studyDeleteAction,
+    required this.studyCleared,
+    required this.changeBackInSettings,
     required this.studyLatest,
     required this.studyNoEvents,
     required this.categoryTitles,
@@ -183,19 +179,6 @@ class PersonalizationL10n {
     thinking: 'Thinking…',
     previewNow: 'Now',
     previewSuggested: 'Suggested',
-    meaningQuestion: 'Question',
-    meaningInformation: 'Information',
-    meaningRequest: 'Request',
-    meaningUrgent: 'Urgent',
-    meaningRemove: 'Send without meaning',
-    meaningTitle: 'Message meaning',
-    meaningAnnotate: 'Add meaning to my messages',
-    meaningAnnotateDescription:
-        'Before sending, you see whether your message is a question, a '
-        'request or urgent, and which times it mentions. You can change it.',
-    meaningShowIntent: 'Mark questions and requests',
-    meaningShowUrgency: 'Mark urgent messages',
-    meaningHighlightTimes: 'Highlight times and dates',
     assistOff:
         'The assistant is turned off. You can change the sizes yourself.',
     studyTitle: 'Study',
@@ -223,6 +206,20 @@ class PersonalizationL10n {
     studyParticipant: 'Participant code',
     studyEvents: _studyEventsEn,
     studySave: 'Save log file',
+    studySaveAndClear: 'Save and clear',
+    studySaveAndClearConfirm: 'Save and clear the log?',
+    studySaveAndClearInfo:
+        'The log is cleared only after the file is saved. Use this when a '
+        'participant is done.',
+    studyDelete: 'Delete log',
+    studyDeleteConfirm: 'Delete the log?',
+    studyDeleteInfo:
+        'All recorded events on this phone are deleted and cannot be '
+        'restored. Use this when a participant withdraws.',
+    studyDeleteAction: 'Delete',
+    studyCleared: 'The log was cleared.',
+    changeBackInSettings:
+        'You can also change it back in the Accessibility settings.',
     studyLatest: 'Latest events',
     studyNoEvents: 'Nothing recorded yet.',
     categoryTitles: {
@@ -231,6 +228,19 @@ class PersonalizationL10n {
       ScaleCategory.button: 'Button size',
       ScaleCategory.touchTarget: 'Touch area',
       ScaleCategory.avatar: 'Picture size',
+      ScaleCategory.messageText: 'Message text',
+      ScaleCategory.chatListText: 'Chat list text',
+      ScaleCategory.titleText: 'Title text',
+      ScaleCategory.sendButton: 'Send button',
+      ScaleCategory.attachButton: 'Attach button',
+      ScaleCategory.emojiButton: 'Emoji button',
+      ScaleCategory.microphoneButton: 'Microphone button',
+      ScaleCategory.backButton: 'Back button',
+      ScaleCategory.searchButton: 'Search button',
+      ScaleCategory.menuButton: 'Menu button',
+      ScaleCategory.navigationButton: 'Bottom tabs',
+      ScaleCategory.spacing: 'Spacing',
+      ScaleCategory.lineSpacing: 'Line spacing',
     },
     categoryDescriptions: {
       ScaleCategory.text: 'Size of all text in the app',
@@ -238,6 +248,21 @@ class PersonalizationL10n {
       ScaleCategory.button: 'Size of icons on buttons',
       ScaleCategory.touchTarget: 'How large the area you can tap is',
       ScaleCategory.avatar: 'Size of profile pictures',
+      ScaleCategory.messageText: 'Text in messages, on top of the text size',
+      ScaleCategory.chatListText:
+          'Chat names and previews in the chat list, on top of the text size',
+      ScaleCategory.titleText:
+          'Titles at the top of the screen, on top of the text size',
+      ScaleCategory.sendButton: 'On top of the button size',
+      ScaleCategory.attachButton: 'The paperclip, on top of the button size',
+      ScaleCategory.emojiButton: 'On top of the button size',
+      ScaleCategory.microphoneButton: 'On top of the button size',
+      ScaleCategory.backButton: 'On top of the button size',
+      ScaleCategory.searchButton: 'On top of the button size',
+      ScaleCategory.menuButton: 'The three dots, on top of the button size',
+      ScaleCategory.navigationButton: 'Icons of the tabs at the bottom',
+      ScaleCategory.spacing: 'Space between things you can tap',
+      ScaleCategory.lineSpacing: 'Space between lines in messages',
     },
   );
 
@@ -280,19 +305,6 @@ class PersonalizationL10n {
     thinking: 'Tænker…',
     previewNow: 'Nu',
     previewSuggested: 'Forslag',
-    meaningQuestion: 'Spørgsmål',
-    meaningInformation: 'Information',
-    meaningRequest: 'Anmodning',
-    meaningUrgent: 'Haster',
-    meaningRemove: 'Send uden betydning',
-    meaningTitle: 'Beskeders betydning',
-    meaningAnnotate: 'Tilføj betydning til mine beskeder',
-    meaningAnnotateDescription:
-        'Før du sender, ser du, om din besked er et spørgsmål, en anmodning '
-        'eller haster, og hvilke tidspunkter den nævner. Du kan ændre det.',
-    meaningShowIntent: 'Markér spørgsmål og anmodninger',
-    meaningShowUrgency: 'Markér beskeder, der haster',
-    meaningHighlightTimes: 'Fremhæv tidspunkter og datoer',
     assistOff: 'Assistenten er slået fra. Du kan selv ændre størrelserne.',
     studyTitle: 'Studie',
     studyCondition: 'Betingelse',
@@ -319,6 +331,20 @@ class PersonalizationL10n {
     studyParticipant: 'Deltagerkode',
     studyEvents: _studyEventsDa,
     studySave: 'Gem logfil',
+    studySaveAndClear: 'Gem og ryd',
+    studySaveAndClearConfirm: 'Gem og ryd loggen?',
+    studySaveAndClearInfo:
+        'Loggen ryddes først, når filen er gemt. Brug det, når en deltager '
+        'er færdig.',
+    studyDelete: 'Slet loggen',
+    studyDeleteConfirm: 'Slet loggen?',
+    studyDeleteInfo:
+        'Alle optagede hændelser på telefonen slettes og kan ikke gendannes. '
+        'Brug det, hvis en deltager trækker sig.',
+    studyDeleteAction: 'Slet',
+    studyCleared: 'Loggen blev ryddet.',
+    changeBackInSettings:
+        'Du kan også ændre det tilbage i tilgængelighedsindstillingerne.',
     studyLatest: 'Seneste hændelser',
     studyNoEvents: 'Intet optaget endnu.',
     categoryTitles: {
@@ -327,6 +353,19 @@ class PersonalizationL10n {
       ScaleCategory.button: 'Knapstørrelse',
       ScaleCategory.touchTarget: 'Trykområde',
       ScaleCategory.avatar: 'Billedstørrelse',
+      ScaleCategory.messageText: 'Tekst i beskeder',
+      ScaleCategory.chatListText: 'Tekst i chatlisten',
+      ScaleCategory.titleText: 'Titeltekst',
+      ScaleCategory.sendButton: 'Send-knap',
+      ScaleCategory.attachButton: 'Vedhæft-knap',
+      ScaleCategory.emojiButton: 'Emoji-knap',
+      ScaleCategory.microphoneButton: 'Mikrofonknap',
+      ScaleCategory.backButton: 'Tilbage-knap',
+      ScaleCategory.searchButton: 'Søgeknap',
+      ScaleCategory.menuButton: 'Menuknap',
+      ScaleCategory.navigationButton: 'Faner nederst',
+      ScaleCategory.spacing: 'Afstand',
+      ScaleCategory.lineSpacing: 'Linjeafstand',
     },
     categoryDescriptions: {
       ScaleCategory.text: 'Størrelsen på al tekst i appen',
@@ -335,6 +374,21 @@ class PersonalizationL10n {
       ScaleCategory.button: 'Størrelsen på ikoner på knapper',
       ScaleCategory.touchTarget: 'Hvor stort området er, som du kan trykke på',
       ScaleCategory.avatar: 'Størrelsen på profilbilleder',
+      ScaleCategory.messageText: 'Tekst i beskeder, oven i tekststørrelsen',
+      ScaleCategory.chatListText:
+          'Chatnavne og forhåndsvisninger i chatlisten, oven i tekststørrelsen',
+      ScaleCategory.titleText:
+          'Titler øverst på skærmen, oven i tekststørrelsen',
+      ScaleCategory.sendButton: 'Oven i knapstørrelsen',
+      ScaleCategory.attachButton: 'Papirclipsen, oven i knapstørrelsen',
+      ScaleCategory.emojiButton: 'Oven i knapstørrelsen',
+      ScaleCategory.microphoneButton: 'Oven i knapstørrelsen',
+      ScaleCategory.backButton: 'Oven i knapstørrelsen',
+      ScaleCategory.searchButton: 'Oven i knapstørrelsen',
+      ScaleCategory.menuButton: 'De tre prikker, oven i knapstørrelsen',
+      ScaleCategory.navigationButton: 'Ikonerne på fanerne nederst',
+      ScaleCategory.spacing: 'Afstand mellem ting, du kan trykke på',
+      ScaleCategory.lineSpacing: 'Afstand mellem linjer i beskeder',
     },
   );
 }

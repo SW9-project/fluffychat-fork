@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:async/async.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/personalization_l10n.dart';
@@ -12,6 +13,7 @@ import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
 import 'package:fluffychat/widgets/matrix.dart';
+import 'package:fluffychat/widgets/settings_section.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart' hide Result;
@@ -33,11 +35,15 @@ class SettingsView extends StatelessWidget {
       context,
     ).routeInformationProvider.value.uri.path;
 
+    final background = SettingsSection.backgroundColor(theme);
+    final chevron = settingsChevron(theme);
     return MainNavigationBarInsets(
       child: Scaffold(
+        backgroundColor: background,
         appBar: AppBar(
           title: Text(L10n.of(context).settings),
           automaticallyImplyLeading: false,
+          backgroundColor: background,
         ),
         body: ListTileTheme(
           iconColor: theme.colorScheme.onSurface,
@@ -176,112 +182,183 @@ class SettingsView extends StatelessWidget {
                   );
                 },
               ),
-              SwitchListTile.adaptive(
-                controlAffinity: ListTileControlAffinity.trailing,
-                value: controller.cryptoIdentityConnected == true,
-                secondary: const Icon(Icons.backup_outlined),
-                title: Text(L10n.of(context).chatBackup),
-                onChanged: controller.firstRunBootstrapAction,
-                contentPadding: EdgeInsets.only(left: 16, right: 8),
-              ),
               FutureBuilder(
                 future: Result.capture(
                   Matrix.of(context).client.getAuthMetadata(),
                 ).then((result) => result.asValue?.value),
                 builder: (context, snapshot) {
                   final accountManageUrl = snapshot.data?.accountManagementUri;
-                  if (accountManageUrl == null) {
-                    return const SizedBox.shrink();
-                  }
-                  return ListTile(
-                    leading: const Icon(Icons.account_circle_outlined),
-                    title: Text(L10n.of(context).manageAccount),
-                    trailing: const Icon(Icons.open_in_new_outlined),
-                    onTap: () => launchUrl(
-                      accountManageUrl,
-                      mode: LaunchMode.inAppBrowserView,
-                    ),
+                  return SettingsSection(
+                    children: [
+                      SwitchListTile.adaptive(
+                        controlAffinity: ListTileControlAffinity.trailing,
+                        value: controller.cryptoIdentityConnected == true,
+                        secondary: const SettingsIcon(
+                          Icons.backup_outlined,
+                          CupertinoIcons.cloud_upload_fill,
+                          CupertinoColors.systemBlue,
+                        ),
+                        title: Text(L10n.of(context).chatBackup),
+                        onChanged: controller.firstRunBootstrapAction,
+                        contentPadding: EdgeInsets.only(left: 16, right: 8),
+                      ),
+                      if (accountManageUrl != null)
+                        ListTile(
+                          leading: const SettingsIcon(
+                            Icons.account_circle_outlined,
+                            CupertinoIcons.person_crop_circle_fill,
+                            CupertinoColors.systemGrey,
+                          ),
+                          title: Text(L10n.of(context).manageAccount),
+                          trailing: const Icon(Icons.open_in_new_outlined),
+                          onTap: () => launchUrl(
+                            accountManageUrl,
+                            mode: LaunchMode.inAppBrowserView,
+                          ),
+                        ),
+                    ],
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.format_paint_outlined),
-                title: Text(L10n.of(context).changeTheme),
-                tileColor: activeRoute.startsWith('/rooms/settings/style')
-                    ? theme.colorScheme.surfaceContainerHigh
-                    : null,
-                onTap: () => context.go('/rooms/settings/style'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.accessibility_new_outlined),
-                title: Text(PersonalizationL10n.of(context).accessibility),
-                tileColor:
-                    activeRoute.startsWith('/rooms/settings/accessibility')
-                    ? theme.colorScheme.surfaceContainerHigh
-                    : null,
-                onTap: () => context.go('/rooms/settings/accessibility'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.notifications_outlined),
-                title: Text(L10n.of(context).notifications),
-                tileColor:
-                    activeRoute.startsWith('/rooms/settings/notifications')
-                    ? theme.colorScheme.surfaceContainerHigh
-                    : null,
-                onTap: () => context.go('/rooms/settings/notifications'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.devices_outlined),
-                title: Text(L10n.of(context).devices),
-                onTap: () => context.go('/rooms/settings/devices'),
-                tileColor: activeRoute.startsWith('/rooms/settings/devices')
-                    ? theme.colorScheme.surfaceContainerHigh
-                    : null,
-              ),
-              ListTile(
-                leading: const Icon(Icons.forum_outlined),
-                title: Text(L10n.of(context).chat),
-                onTap: () => context.go('/rooms/settings/chat'),
-                tileColor: activeRoute.startsWith('/rooms/settings/chat')
-                    ? theme.colorScheme.surfaceContainerHigh
-                    : null,
-              ),
-              ListTile(
-                leading: const Icon(Icons.shield_outlined),
-                title: Text(L10n.of(context).security),
-                onTap: () => context.go('/rooms/settings/security'),
-                tileColor: activeRoute.startsWith('/rooms/settings/security')
-                    ? theme.colorScheme.surfaceContainerHigh
-                    : null,
-              ),
-              Divider(color: theme.dividerColor),
-              ListTile(
-                leading: const Icon(Icons.dns_outlined),
-                title: Text(
-                  L10n.of(context).aboutHomeserver(
-                    Matrix.of(context).client.userID?.domain ?? 'homeserver',
+              SettingsSection(
+                children: [
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.format_paint_outlined,
+                      CupertinoIcons.paintbrush_fill,
+                      CupertinoColors.systemIndigo,
+                    ),
+                    trailing: chevron,
+                    title: Text(L10n.of(context).changeTheme),
+                    tileColor: activeRoute.startsWith('/rooms/settings/style')
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : null,
+                    onTap: () => context.go('/rooms/settings/style'),
                   ),
-                ),
-                onTap: () => context.go('/rooms/settings/homeserver'),
-                tileColor: activeRoute.startsWith('/rooms/settings/homeserver')
-                    ? theme.colorScheme.surfaceContainerHigh
-                    : null,
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.accessibility_new_outlined,
+                      CupertinoIcons.person_fill,
+                      CupertinoColors.systemBlue,
+                    ),
+                    trailing: chevron,
+                    title: Text(PersonalizationL10n.of(context).accessibility),
+                    tileColor:
+                        activeRoute.startsWith('/rooms/settings/accessibility')
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : null,
+                    onTap: () => context.go('/rooms/settings/accessibility'),
+                  ),
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.notifications_outlined,
+                      CupertinoIcons.bell_fill,
+                      CupertinoColors.systemRed,
+                    ),
+                    trailing: chevron,
+                    title: Text(L10n.of(context).notifications),
+                    tileColor:
+                        activeRoute.startsWith('/rooms/settings/notifications')
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : null,
+                    onTap: () => context.go('/rooms/settings/notifications'),
+                  ),
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.devices_outlined,
+                      CupertinoIcons.device_phone_portrait,
+                      CupertinoColors.systemGrey,
+                    ),
+                    trailing: chevron,
+                    title: Text(L10n.of(context).devices),
+                    onTap: () => context.go('/rooms/settings/devices'),
+                    tileColor: activeRoute.startsWith('/rooms/settings/devices')
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : null,
+                  ),
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.forum_outlined,
+                      CupertinoIcons.chat_bubble_2_fill,
+                      CupertinoColors.systemGreen,
+                    ),
+                    trailing: chevron,
+                    title: Text(L10n.of(context).chat),
+                    onTap: () => context.go('/rooms/settings/chat'),
+                    tileColor: activeRoute.startsWith('/rooms/settings/chat')
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : null,
+                  ),
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.shield_outlined,
+                      CupertinoIcons.lock_shield_fill,
+                      CupertinoColors.systemBlue,
+                    ),
+                    trailing: chevron,
+                    title: Text(L10n.of(context).security),
+                    onTap: () => context.go('/rooms/settings/security'),
+                    tileColor:
+                        activeRoute.startsWith('/rooms/settings/security')
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : null,
+                  ),
+                ],
               ),
-              ListTile(
-                leading: const Icon(Icons.privacy_tip_outlined),
-                title: Text(L10n.of(context).privacy),
-                onTap: () => launchUrlString(AppSettings.privacyPolicy.value),
+              SettingsSection(
+                children: [
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.dns_outlined,
+                      CupertinoIcons.globe,
+                      CupertinoColors.systemTeal,
+                    ),
+                    trailing: chevron,
+                    title: Text(
+                      L10n.of(context).aboutHomeserver(
+                        Matrix.of(context).client.userID?.domain ??
+                            'homeserver',
+                      ),
+                    ),
+                    onTap: () => context.go('/rooms/settings/homeserver'),
+                    tileColor:
+                        activeRoute.startsWith('/rooms/settings/homeserver')
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : null,
+                  ),
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.privacy_tip_outlined,
+                      CupertinoIcons.hand_raised_fill,
+                      CupertinoColors.systemBlue,
+                    ),
+                    title: Text(L10n.of(context).privacy),
+                    onTap: () =>
+                        launchUrlString(AppSettings.privacyPolicy.value),
+                  ),
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.info_outline_rounded,
+                      CupertinoIcons.info,
+                      CupertinoColors.systemGrey,
+                    ),
+                    title: Text(L10n.of(context).about),
+                    onTap: () => PlatformInfos.showDialog(context),
+                  ),
+                ],
               ),
-              ListTile(
-                leading: const Icon(Icons.info_outline_rounded),
-                title: Text(L10n.of(context).about),
-                onTap: () => PlatformInfos.showDialog(context),
-              ),
-              Divider(color: theme.dividerColor),
-              ListTile(
-                leading: const Icon(Icons.logout_outlined),
-                title: Text(L10n.of(context).logout),
-                onTap: controller.logoutAction,
+              SettingsSection(
+                children: [
+                  ListTile(
+                    leading: const SettingsIcon(
+                      Icons.logout_outlined,
+                      CupertinoIcons.square_arrow_right,
+                      CupertinoColors.systemRed,
+                    ),
+                    title: Text(L10n.of(context).logout),
+                    onTap: controller.logoutAction,
+                  ),
+                ],
               ),
             ],
           ),

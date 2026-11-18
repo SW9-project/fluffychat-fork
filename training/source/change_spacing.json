@@ -1,0 +1,99 @@
+{
+  "function": "change_spacing",
+  "groups": [
+    {
+      "args": {"direction": "more"},
+      "prompts": [
+        "the buttons are too close together",
+        "I keep pressing the wrong button",
+        "more space between the buttons please",
+        "I hit the button next to the one I want",
+        "everything is too cramped",
+        "the icons are squished together",
+        "put more space between things",
+        "spread out the buttons",
+        "I accidentally press the wrong thing all the time",
+        "the buttons are crammed",
+        "too close together, I tap the wrong one",
+        "can you space the buttons out more",
+        "my finger touches two buttons at once",
+        "add more room between the icons",
+        "the buttons are right next to each other, I keep hitting the neighbour",
+        "the controls are packed too tightly",
+        "more spacing",
+        "increase the spacing",
+        "the gap between buttons is too small",
+        "butons too close",
+        "the send and microphone buttons are too close",
+        "I keep pressing attach when I want the emoji",
+        "it's too crowded, I hit the wrong icons",
+        "spaces between buttons bigger pls",
+        "the items are too close to each other",
+        "please leave more room between the things I tap",
+        "I tap the wrong chat in the list because they're too close",
+        "the chats in the list are too squeezed together",
+        "more padding between buttons",
+        "it's hard to press the right one, they're so close",
+        "the buttons are touching each other",
+        "give the buttons some breathing room",
+        "too little space between the icons",
+        "I press two things at the same time",
+        "with my tremor I hit the button beside the one I want",
+        "space things out more",
+        "the buttons are too tight",
+        "can there be bigger gaps between the buttons",
+        "wider spacing please",
+        "i always hit the wrong one theyre too close",
+        "I wanted to send but pressed the microphone, they are too close",
+        "the icons are jammed together",
+        "Could you please put a little more distance between the buttons?",
+        "the things to tap are glued together",
+        "more gap between the icons pls",
+        "the buttons need more space around them",
+        "i keep hitting the button beside it",
+        "everything is so close together I make mistakes",
+        "space out the icons please",
+        "it's too squashed, I press the wrong buttons",
+        "put the buttons further apart",
+        "the chats in the list are too close, I open the wrong one",
+        "the buttons are too near each other"
+      ]
+    },
+    {
+      "args": {"direction": "more", "steps": 2},
+      "prompts": [
+        "much more space between the buttons",
+        "considerably more room between the icons"
+      ]
+    },
+    {
+      "args": {"direction": "more", "steps": 3},
+      "prompts": [
+        "spread the buttons out a lot",
+        "as much space between the buttons as possible",
+        "a lot more spacing please"
+      ]
+    },
+    {
+      "args": {"direction": "less"},
+      "prompts": [
+        "the buttons are too far apart",
+        "there's too much empty space",
+        "less space between the buttons",
+        "the icons are too spread out",
+        "reduce the spacing",
+        "too much space between things",
+        "bring the buttons closer together",
+        "the gaps are too big now",
+        "everything is too spaced out, I have to scroll a lot",
+        "less padding please",
+        "the buttons are miles apart",
+        "make the spacing smaller",
+        "less space please, it's too spread out",
+        "the icons are too far from each other"
+      ]
+    },
+    {"args": {"direction": "less", "steps": 2}, "prompts": ["much less space between the buttons"]},
+    {"args": {"direction": "less", "steps": 3}, "prompts": ["as little space between the buttons as possible"]}
+  ]
+}

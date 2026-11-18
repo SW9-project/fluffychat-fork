@@ -3,7 +3,7 @@
 
 /// Kept in sync with assets/models/model.json by the model configuration test.
 abstract final class AssistantModelConfig {
-  static const id = 'functiongemma-270M-sw9-v2';
+  static const id = 'functiongemma-270M-sw9-tools1';
   static const fileName = '$id.litertlm';
   static const assetPath = 'assets/models/$fileName';
   static const sha256 =

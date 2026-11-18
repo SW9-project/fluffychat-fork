@@ -9,9 +9,9 @@ import 'heuristic.dart';
 
 export '../suggestions/suggestion.dart';
 
-/// Disabled for now (Phase 3b): signals are not collected, so nothing calls
-/// this. The heuristics are offered to the on-device model instead (see
-/// `HeuristicFunctions`).
+/// Disabled: signals are not collected, so nothing calls
+/// this. The on-device model is fine-tuned on its own functions instead
+/// (`assets/personalization_tools.json`).
 ///
 /// Evaluates heuristics against the rolling signal window. Rules only, no
 /// model.
@@ -38,8 +38,10 @@ class HeuristicsEngine {
   ) {
     final category = heuristic.category;
     final from = settings[category];
-    final to = category.normalize(from + heuristic.steps * category.step);
+    final to = category.normalize(
+      from + heuristic.steps * category.suggestionStep,
+    );
     if (to == from) return null;
-    return Suggestion.fromHeuristic(heuristic, from: from, to: to);
+    return Suggestion.fromHeuristic(heuristic, settings: settings, to: to);
   }
 }

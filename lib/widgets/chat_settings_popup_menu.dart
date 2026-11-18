@@ -6,6 +6,8 @@
 import 'dart:async';
 
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/appearance_l10n.dart';
 import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
@@ -56,7 +58,14 @@ class ChatSettingsPopupMenuState extends State<ChatSettingsPopupMenu> {
           useRootNavigator: true,
           tooltip: SimplifiedInterfaceScope.enabledOf(context)
               ? SimplifiedInterfaceL10n.of(context).more
-              : null,
+              : AppearanceL10n.of(context).labelMenu,
+          // The simplified interface has its own labeled child.
+          icon: SimplifiedInterfaceScope.enabledOf(context)
+              ? null
+              : LabeledIcon(
+                  icon: Icon(Icons.adaptive.more),
+                  label: AppearanceL10n.of(context).labelMenu,
+                ),
           child: SimplifiedInterfaceScope.enabledOf(context)
               ? Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),

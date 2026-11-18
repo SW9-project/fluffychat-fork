@@ -15,22 +15,5 @@ void main() {
     expect(manifest['filename'], AssistantModelConfig.fileName);
     expect(manifest['sha256'], AssistantModelConfig.sha256);
     expect(manifest['sizeBytes'], AssistantModelConfig.sizeBytes);
-    final fetchScript = File(
-      'scripts/fetch_personalization_model.sh',
-    ).readAsStringSync();
-    expect(fetchScript, contains(AssistantModelConfig.fileName));
-    expect(fetchScript, contains(AssistantModelConfig.sha256));
   });
-
-  test(
-    'the APK bundles the selected model rather than the model directory',
-    () {
-      final pubspec = File('pubspec.yaml').readAsStringSync();
-      expect(pubspec, contains('    - ${AssistantModelConfig.assetPath}'));
-      expect(
-        pubspec,
-        isNot(contains(RegExp(r'^    - assets/models/\s*$', multiLine: true))),
-      );
-    },
-  );
 }

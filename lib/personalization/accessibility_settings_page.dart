@@ -6,11 +6,12 @@ import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
+import 'package:fluffychat/widgets/matrix.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'accessibility_scope.dart';
 import 'accessibility_settings.dart';
-import 'meaning/meaning_settings.dart';
+import 'appearance_l10n.dart';
 import 'personalization_l10n.dart';
 import 'study/study_screen.dart';
 
@@ -24,6 +25,7 @@ class AccessibilitySettingsPage extends StatelessWidget {
     final l10n = PersonalizationL10n.of(context);
     final settings = AccessibilityScope.of(context);
     final controller = AccessibilityScope.controllerOf(context);
+    final words = AppearanceL10n.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -54,29 +56,34 @@ class AccessibilitySettingsPage extends StatelessWidget {
             ),
             const _Preview(),
             const Divider(),
-            for (final category in ScaleCategory.values) ...[
-              ListTile(
-                title: Text(l10n.categoryTitles[category]!),
-                subtitle: Text(l10n.categoryDescriptions[category]!),
-                trailing: Text(
-                  '× ${settings[category].toStringAsFixed(1)}',
-                  style: theme.textTheme.titleMedium,
-                ),
+            for (final category in ScaleCategory.inGroup(ScaleGroup.general))
+              _ScaleSlider(category: category),
+            _Group(
+              title: words.textGroup,
+              children: [
+                for (final category in ScaleCategory.inGroup(ScaleGroup.text))
+                  _ScaleSlider(category: category),
+              ],
+            ),
+            _Group(
+              title: words.buttonsGroup,
+              children: [
+                for (final category in ScaleCategory.inGroup(
+                  ScaleGroup.buttons,
+                ))
+                  _ScaleSlider(category: category),
+              ],
+            ),
+            const _ChatTextSection(),
+            const Divider(),
+            for (final toggle in AccessibilityToggle.values)
+              SwitchListTile.adaptive(
+                key: Key('accessibility_toggle_${toggle.id}'),
+                title: Text(words.toggleTitles[toggle]!),
+                subtitle: Text(words.toggleDescriptions[toggle]!),
+                value: settings.isOn(toggle),
+                onChanged: (on) => controller.setToggle(toggle, on),
               ),
-              Slider.adaptive(
-                key: Key('accessibility_slider_${category.id}'),
-                min: category.min,
-                max: category.max,
-                divisions: category.divisions,
-                value: settings[category],
-                label: '× ${settings[category].toStringAsFixed(1)}',
-                semanticFormatterCallback: (value) =>
-                    '× ${value.toStringAsFixed(1)}',
-                onChangeStart: (_) => controller.beginEdit(),
-                onChanged: (value) => controller.preview(category, value),
-                onChangeEnd: (_) => controller.endEdit(),
-              ),
-            ],
             Padding(
               padding: const EdgeInsets.all(16),
               child: Wrap(
@@ -101,8 +108,6 @@ class AccessibilitySettingsPage extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(),
-            const _MeaningSection(),
           ],
         ),
       ),
@@ -110,57 +115,125 @@ class AccessibilitySettingsPage extends StatelessWidget {
   }
 }
 
-/// Message meaning (Phase 4): whether to add meaning to my messages, and how
-/// to show the meaning of messages I receive.
-class _MeaningSection extends StatelessWidget {
-  const _MeaningSection();
+/// One size with its slider. A drag is one undoable change.
+///
+/// A size on top of another, such as the titles on top of the text size,
+/// shows its whole size, so it moves with the size below it, within its own
+/// range. Dragging it changes only this size, and a button puts it back on the
+/// size below.
+class _ScaleSlider extends StatelessWidget {
+  final ScaleCategory category;
+
+  const _ScaleSlider({required this.category});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = PersonalizationL10n.of(context);
-    final settings = MeaningSettings.instance;
-    return ValueListenableBuilder<MeaningPreferences>(
-      valueListenable: settings,
-      builder: (context, prefs, _) => Column(
-        crossAxisAlignment: .stretch,
-        children: [
+    final words = AppearanceL10n.of(context);
+    final settings = AccessibilityScope.of(context);
+    final controller = AccessibilityScope.controllerOf(context);
+    final digits = category.step < 0.1 ? 2 : 1;
+    String label(double value) => '× ${value.toStringAsFixed(digits)}';
+    final parent = category.parent;
+    final value = settings.effective(category);
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        ListTile(
+          title: Text(l10n.categoryTitles[category]!),
+          subtitle: Text(l10n.categoryDescriptions[category]!),
+          trailing: Row(
+            mainAxisSize: .min,
+            children: [
+              Text(label(value), style: theme.textTheme.titleMedium),
+              if (parent != null && settings[category] != 1.0)
+                IconButton(
+                  key: Key('accessibility_match_${category.id}'),
+                  tooltip: words.matchParent(l10n.categoryTitles[parent]!),
+                  icon: const Icon(Icons.link),
+                  onPressed: () => controller.apply(category, 1.0),
+                ),
+            ],
+          ),
+        ),
+        Slider.adaptive(
+          key: Key('accessibility_slider_${category.id}'),
+          min: category.min,
+          max: category.max,
+          divisions: category.divisions,
+          value: value,
+          label: label(value),
+          semanticFormatterCallback: label,
+          onChangeStart: (_) => controller.beginEdit(),
+          onChanged: (value) => controller.preview(category, value),
+          onChangeEnd: (_) => controller.endEdit(),
+        ),
+      ],
+    );
+  }
+}
+
+/// Settings most people never need, folded away until opened.
+class _Group extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _Group({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) => ExpansionTile(
+    title: Text(title),
+    childrenPadding: EdgeInsets.zero,
+    children: children,
+  );
+}
+
+/// Chats with their own text size, which the assistant sets. Each can be
+/// changed here or put back to normal.
+class _ChatTextSection extends StatelessWidget {
+  const _ChatTextSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final words = AppearanceL10n.of(context);
+    final settings = AccessibilityScope.of(context);
+    final controller = AccessibilityScope.controllerOf(context);
+    final client = Matrix.of(context).client;
+    final chats = settings.chatTextScales;
+    const range = AccessibilitySettings.chatTextRange;
+    // A chat's slider shows the whole message size, on top of the text in
+    // messages.
+    final below = settings.effective(ScaleCategory.messageText);
+    return _Group(
+      title: words.chatTextTitle,
+      children: [
+        ListTile(subtitle: Text(words.chatTextDescription)),
+        for (final roomId in chats.keys) ...[
           ListTile(
             title: Text(
-              l10n.meaningTitle,
-              style: TextStyle(
-                color: theme.colorScheme.secondary,
-                fontWeight: FontWeight.bold,
-              ),
+              client.getRoomById(roomId)?.getLocalizedDisplayname() ?? roomId,
+            ),
+            trailing: TextButton(
+              onPressed: () =>
+                  controller.applySettings(settings.withChatText(roomId, 1.0)),
+              child: Text(words.chatTextNormal),
             ),
           ),
-          SwitchListTile.adaptive(
-            key: const Key('meaning_annotate'),
-            title: Text(l10n.meaningAnnotate),
-            subtitle: Text(l10n.meaningAnnotateDescription),
-            value: prefs.annotateOutgoing,
-            onChanged: (v) =>
-                settings.update(prefs.copyWith(annotateOutgoing: v)),
+          Slider.adaptive(
+            min: range.min,
+            max: range.max,
+            divisions: range.divisions,
+            value: settings.messageScale(roomId),
+            label: '× ${settings.messageScale(roomId).toStringAsFixed(1)}',
+            semanticFormatterCallback: (v) => '× ${v.toStringAsFixed(1)}',
+            onChangeStart: (_) => controller.beginEdit(),
+            onChanged: (value) =>
+                controller.previewChatText(roomId, value / below),
+            onChangeEnd: (_) => controller.endEdit(),
           ),
-          SwitchListTile.adaptive(
-            title: Text(l10n.meaningShowIntent),
-            value: prefs.showIntent,
-            onChanged: (v) => settings.update(prefs.copyWith(showIntent: v)),
-          ),
-          SwitchListTile.adaptive(
-            title: Text(l10n.meaningShowUrgency),
-            value: prefs.showUrgency,
-            onChanged: (v) => settings.update(prefs.copyWith(showUrgency: v)),
-          ),
-          SwitchListTile.adaptive(
-            title: Text(l10n.meaningHighlightTimes),
-            value: prefs.highlightTimes,
-            onChanged: (v) =>
-                settings.update(prefs.copyWith(highlightTimes: v)),
-          ),
-          const SizedBox(height: 16),
         ],
-      ),
+      ],
     );
   }
 }
@@ -284,7 +357,11 @@ class _PreviewBubble extends StatelessWidget {
     ),
     child: Text(
       text,
-      style: TextStyle(color: textColor, fontSize: AppConfig.messageFontSize),
+      style: TextStyle(
+        color: textColor,
+        fontSize: AppConfig.messageFontSize,
+        height: AccessibilityScope.of(context).lineHeight,
+      ),
     ),
   );
 }

@@ -5,6 +5,7 @@
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,7 +47,7 @@ void main() {
     expect(scaler.scale(10), 30);
   });
 
-  testWidgets('input text scale replaces the text scale for the input', (
+  testWidgets('input text scale multiplies only the input text', (
     tester,
   ) async {
     late TextScaler appScaler;
@@ -63,14 +64,15 @@ void main() {
       ),
     );
     await controller.apply(ScaleCategory.text, 1.5);
+    await controller.apply(ScaleCategory.inputText, 1.2);
     await tester.pump();
     expect(appScaler.scale(10), 15);
-    expect(inputScaler.scale(10), 15);
+    expect(inputScaler.scale(10), closeTo(18, 0.001));
 
+    // The whole input size never goes past its own maximum of 2.0.
     await controller.apply(ScaleCategory.inputText, 2.0);
     await tester.pump();
-    expect(appScaler.scale(10), 15);
-    expect(inputScaler.scale(10), 20);
+    expect(inputScaler.scale(10), closeTo(20, 0.001));
   });
 
   testWidgets('icon buttons follow button and touch target scale', (
@@ -97,11 +99,88 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getSize(find.byIcon(Icons.send)), const Size.square(48));
 
-    await controller.apply(ScaleCategory.touchTarget, 1.5);
+    await controller.apply(ScaleCategory.touchTarget, 2.0);
     await tester.pumpAndSettle();
     final scaledSize = tester.getSize(find.byKey(key));
     expect(scaledSize.width, greaterThan(defaultSize.width));
-    expect(scaledSize.width, greaterThanOrEqualTo(60));
+    expect(scaledSize.width, greaterThanOrEqualTo(80));
+  });
+
+  testWidgets('simple view adds labels and restores the saved preference', (
+    tester,
+  ) async {
+    final simple = SimplifiedInterfaceController(
+      await SharedPreferences.getInstance(),
+    );
+    addTearDown(simple.dispose);
+    await controller.apply(ScaleCategory.text, 1.5);
+    late AccessibilitySettings effective;
+    await tester.pumpWidget(
+      SimplifiedInterfaceScope(
+        controller: simple,
+        child: app(
+          Builder(
+            builder: (context) {
+              effective = AccessibilityScope.of(context);
+              return const LabeledIcon(icon: Icon(Icons.send), label: 'Send');
+            },
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Send'), findsNothing);
+    await simple.setEnabled(true);
+    await tester.pump();
+    expect(find.text('Send'), findsOneWidget);
+    expect(effective.buttonLabels, isTrue);
+    expect(effective.textScale, 1.5);
+    expect(controller.settings.buttonLabels, isFalse);
+    await simple.setEnabled(false);
+    await tester.pump();
+    expect(find.text('Send'), findsNothing);
+    await controller.setToggle(AccessibilityToggle.buttonLabels, true);
+    await simple.setEnabled(true);
+    await tester.pump();
+    await simple.setEnabled(false);
+    await tester.pump();
+    expect(find.text('Send'), findsOneWidget);
+    expect(controller.settings.buttonLabels, isTrue);
+  });
+
+  testWidgets('simple view preview uses its own label state', (tester) async {
+    final simple = SimplifiedInterfaceController(
+      await SharedPreferences.getInstance(),
+    );
+    await simple.setEnabled(true);
+    final preview = SimplifiedInterfaceController.preview(
+      simple,
+      enabled: false,
+      preferences: simple.preferences,
+    );
+    addTearDown(simple.dispose);
+    addTearDown(preview.dispose);
+    await tester.pumpWidget(
+      SimplifiedInterfaceScope(
+        controller: simple,
+        child: app(
+          Column(
+            children: [
+              const LabeledIcon(icon: Icon(Icons.send), label: 'Live'),
+              SimplifiedInterfaceScope(
+                controller: preview,
+                child: const LabeledIcon(
+                  icon: Icon(Icons.send),
+                  label: 'Preview',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Live'), findsOneWidget);
+    expect(find.text('Preview'), findsNothing);
+    expect(controller.settings.buttonLabels, isFalse);
   });
 
   testWidgets('without a scope the defaults are used', (tester) async {

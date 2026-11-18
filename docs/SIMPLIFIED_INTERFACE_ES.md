@@ -87,3 +87,13 @@ de confirmar, ademas de los flujos existentes del interruptor y Assistant.
 APK de desarrollo compilado e instalado en FluffyChat_Light. Comprobadas ambas
 imagenes con las conversaciones reales, accesos directos y navegacion inferior.
 Se mantuvo la sesion y no se aplicaron elecciones de prueba.
+
+## Button labels con Simple view
+
+Integrados los cambios de main (b67c086fa). Simple view activa los labels
+existentes en toda la interfaz, tanto desde Assistant como desde el interruptor.
+Es un ajuste efectivo, no se sobrescribe la preferencia personal de labels:
+al salir de Simple view se recupera esa preferencia. Los demas ajustes se
+conservan. La preview consulta su propio estado de Simple view.
+Validacion: 64 pruebas aprobadas, incluidos Assistant, preview y restauracion
+de labels y tamanos personalizados.

@@ -1,12 +1,15 @@
 // SPDX-FileCopyrightText: 2026 SW9-project contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
+import 'package:fluffychat/personalization/model/personalization_tools.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
-import 'package:fluffychat/personalization/model/simple_view_function.dart';
 import 'package:fluffychat/personalization/quick_access_conversations.dart';
 import 'package:fluffychat/personalization/signals/interaction_signal.dart';
 import 'package:fluffychat/personalization/simple_view_conversations.dart';
@@ -87,31 +90,6 @@ void main() {
       'broken',
     );
     expect(controller.quickAccessFor('a'), isEmpty);
-  });
-  test('model contract rejects extra arguments and coercion', () {
-    expect(
-      SimpleViewFunction.validate(
-        const ProposedCall('change_interface', {'view': 'simple'}),
-      ),
-      true,
-    );
-    expect(
-      SimpleViewFunction.validate(
-        const ProposedCall('change_interface', {'view': 'full'}),
-      ),
-      false,
-    );
-    for (final args in <Map<String, Object?>>[
-      {},
-      {'view': true},
-      {'view': 'simple', 'extra': 1},
-      {'view': 'unknown'},
-    ]) {
-      expect(
-        SimpleViewFunction.validate(ProposedCall('change_interface', args)),
-        null,
-      );
-    }
   });
   testWidgets('switch fits a narrow screen at double text scale', (
     tester,
@@ -199,7 +177,6 @@ void main() {
       expect(controller.enabled, true);
       expect(controller.preferences.quickAccess, SimpleQuickAccess.frequent);
       expect(controller.preferences.cleanHome, false);
-      expect(controller.preferences.quietChat, true);
       expect(controller.skipPreview, true);
       await tap(tester, 'simplified_interface_switch');
       expect(controller.enabled, false);
@@ -271,6 +248,20 @@ void main() {
     expect(controller.enabled, true);
     await tap(tester, 'simple_setup_cancel');
     expect(controller.enabled, true);
+  });
+
+  testWidgets('Change is hidden in full view and the preview is step 3 of 3', (
+    tester,
+  ) async {
+    await pumpHome(tester);
+    expect(find.byKey(const Key('simple_personalize')), findsNothing);
+    await tap(tester, 'simplified_interface_switch');
+    await tap(tester, 'simple_setup_next');
+    await tap(tester, 'simple_setup_next');
+    expect(find.text('Step 3 of 3'), findsOneWidget);
+    expect(find.text('Try simple view?'), findsOneWidget);
+    await tap(tester, 'simple_setup_apply');
+    expect(find.byKey(const Key('simple_personalize')), findsOneWidget);
   });
 
   test(
@@ -377,7 +368,6 @@ void main() {
     await tap(tester, 'simple_setup_apply');
     expect(controller.quickAccessFor('account-a'), ['Beth']);
     expect(controller.quickAccessFor('account-b'), isEmpty);
-    expect(controller.preferences.quietChat, true);
     final restored = SimplifiedInterfaceController(store);
     expect(restored.quickAccessFor('account-a'), ['Beth']);
     restored.dispose();
@@ -416,16 +406,6 @@ void main() {
       sizes.dispose();
     },
   );
-
-  test('old profiles also receive the automatic calmer chat', () async {
-    await store.setString(
-      SimplifiedInterfaceController.preferencesKey,
-      '{"quickAccess":"none","cleanHome":true,"quietChat":false}',
-    );
-    final restored = SimplifiedInterfaceController(store);
-    expect(restored.preferences.quietChat, true);
-    restored.dispose();
-  });
 
   testWidgets('picker limits selection and cancel keeps original shortcuts', (
     tester,
@@ -510,11 +490,23 @@ void main() {
               manager: manager,
               accessibility: accessibility,
               onOpenAccessibilitySettings: () {},
+              tools: Future.value(
+                PersonalizationTools.fromJson(
+                  jsonDecode(
+                        File(PersonalizationTools.asset).readAsStringSync(),
+                      )
+                      as Map<String, Object?>,
+                ),
+              ),
+              themeMode: () => ThemeMode.system,
+              chats: () => const [],
             ),
           ),
         ),
       ),
     );
+    // The functions load after the first frame.
+    await tester.pump();
     return manager;
   }
 
@@ -549,7 +541,7 @@ void main() {
       await pumpAssistant(tester, model);
       await tap(tester, 'assist_simple_view');
       expect(controller.enabled, false);
-      expect(model.prompts, isEmpty);
+      expect(model.requests, isEmpty);
       await tap(tester, 'assist_simple_apply');
       expect(controller.enabled, true);
       await tap(tester, 'assist_simple_undo');
@@ -583,8 +575,7 @@ void main() {
     (tester) async {
       final model = FakeModel(
         ModelState.ready,
-        answer: (_) =>
-            const ProposedCall('change_interface', {'view': 'simple'}),
+        answer: (_) => const ProposedCall('set_simple_mode', {'enabled': true}),
       );
       await pumpAssistant(tester, model);
       await tester.enterText(
@@ -592,7 +583,7 @@ void main() {
         'Simplify the screen',
       );
       await tap(tester, 'assist_send');
-      expect(model.offered.single, contains('change_interface'));
+      expect(model.offered.single, contains('set_simple_mode'));
       expect(controller.enabled, false);
       await tap(tester, 'assist_simple_apply');
       expect(controller.enabled, true);

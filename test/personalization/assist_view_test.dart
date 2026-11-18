@@ -3,12 +3,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
-import 'package:fluffychat/personalization/model/settings_functions.dart';
+import 'package:fluffychat/personalization/model/personalization_tools.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/signals/interaction_signal.dart';
 import 'package:fluffychat/personalization/study/study_log.dart';
@@ -27,21 +28,30 @@ class MemoryStorage implements StudyLogStorage {
 
   @override
   Future<List<String>> readLines() async => [...lines];
+
+  @override
+  Future<void> clear() async => lines.clear();
 }
 
 class FakeModel implements SettingsIntentModel {
   final ValueNotifier<ModelStatus> _status;
-  ProposedCall? Function(String text) answer;
+
+  /// The answer to the last turn of each request.
+  ProposedCall? Function(ModelTurn last) answer;
   int prepareCalls = 0;
-  final List<String> prompts = [];
+  final List<List<ModelTurn>> requests = [];
   final List<List<String>> offered = [];
 
   @override
   ModelTiming? lastTiming;
 
-  FakeModel(ModelState state, {ProposedCall? Function(String)? answer})
+  FakeModel(ModelState state, {ProposedCall? Function(ModelTurn)? answer})
     : _status = ValueNotifier(ModelStatus(state)),
       answer = answer ?? ((_) => null);
+
+  /// The same call for every request.
+  FakeModel.calls(ProposedCall call)
+    : this(ModelState.ready, answer: (_) => call);
 
   @override
   ValueListenable<ModelStatus> get status => _status;
@@ -54,12 +64,12 @@ class FakeModel implements SettingsIntentModel {
 
   @override
   Future<ProposedCall?> propose(
-    String text,
+    List<ModelTurn> conversation,
     List<FunctionDeclaration> functions,
   ) async {
-    prompts.add(text);
+    requests.add(conversation);
     offered.add([for (final f in functions) f.name]);
-    return answer(text);
+    return answer(conversation.last);
   }
 
   @override
@@ -68,6 +78,23 @@ class FakeModel implements SettingsIntentModel {
   @override
   void dispose() {}
 }
+
+/// What a turn says, for comparing requests.
+Object _shape(ModelTurn turn) => switch (turn) {
+  UserTurn(:final text) => ['user', text],
+  CallTurn(:final call) => ['call', call.name, call.args],
+  ResponseTurn(:final name, :final response) => ['response', name, response],
+  ReplyTurn(:final text) => ['reply', text],
+};
+
+const _biggerButtons = ProposedCall('change_button_size', {
+  'direction': 'bigger',
+});
+
+final _tools = PersonalizationTools.fromJson(
+  jsonDecode(File(PersonalizationTools.asset).readAsStringSync())
+      as Map<String, Object?>,
+);
 
 final _buttonsHeuristic = Heuristic(
   id: 'near-miss-buttons',
@@ -89,6 +116,8 @@ void main() {
   late AccessibilityController accessibility;
   late SuggestionManager manager;
   late int settingsOpened;
+  late ThemeMode themeMode;
+  late List<AssistChat> chats;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -104,6 +133,13 @@ void main() {
       ),
     );
     settingsOpened = 0;
+    themeMode = ThemeMode.system;
+    chats = const [
+      AssistChat(id: '!maria', name: 'Maria Jensen'),
+      AssistChat(id: '!peter', name: 'Peter', username: 'peter123'),
+      AssistChat(id: '!family', name: 'Family'),
+    ];
+    manager.setThemeMode = (mode) async => themeMode = mode;
   });
 
   tearDown(() {
@@ -111,18 +147,25 @@ void main() {
     StudyLog.instance = null;
   });
 
-  Future<void> pump(WidgetTester tester, FakeModel? model) => tester.pumpWidget(
-    MaterialApp(
-      home: Scaffold(
-        body: AssistView(
-          model: model,
-          manager: manager,
-          accessibility: accessibility,
-          onOpenAccessibilitySettings: () => settingsOpened++,
+  Future<void> pump(WidgetTester tester, FakeModel? model) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AssistView(
+            model: model,
+            manager: manager,
+            accessibility: accessibility,
+            onOpenAccessibilitySettings: () => settingsOpened++,
+            tools: Future.value(_tools),
+            themeMode: () => themeMode,
+            chats: () => chats,
+          ),
         ),
       ),
-    ),
-  );
+    );
+    // The functions load after the first frame.
+    await tester.pump();
+  }
 
   Future<void> ask(WidgetTester tester, String text) async {
     await tester.enterText(find.byKey(const Key('assist_input')), text);
@@ -130,10 +173,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  FakeModel picksButtons() => FakeModel(
-    ModelState.ready,
-    answer: (_) => const ProposedCall('change_button', {'direction': 'bigger'}),
-  );
+  FakeModel picksButtons() => FakeModel.calls(_biggerButtons);
 
   testWidgets('unavailable: explains and links to manual settings', (
     tester,
@@ -162,14 +202,28 @@ void main() {
     expect(model.prepareCalls, 1);
   });
 
-  testWidgets('the model gets only the prompt and enabled V2 functions', (
+  testWidgets('the model gets the prompt and exactly the trained functions', (
     tester,
   ) async {
     final model = picksButtons();
     await pump(tester, model);
     await ask(tester, 'the buttons are hard to hit');
-    expect(model.prompts, ['the buttons are hard to hit']);
-    expect(model.offered.single, ['change_button']);
+    expect(model.requests.single.map(_shape), [
+      ['user', 'the buttons are hard to hit'],
+    ]);
+    expect(model.offered.single, [
+      'change_text_size',
+      'change_button_size',
+      'change_spacing',
+      'set_simple_mode',
+      'set_button_labels',
+      'set_high_contrast',
+      'change_avatar_size',
+      'set_theme',
+      'reset_settings',
+      'ask_clarification',
+      'no_action',
+    ]);
   });
 
   testWidgets('a proposal shows text and preview but changes nothing', (
@@ -178,7 +232,7 @@ void main() {
     await pump(tester, picksButtons());
     await ask(tester, 'the buttons are hard to hit');
     expect(find.text('the buttons are hard to hit'), findsOneWidget);
-    expect(find.text('Make the buttons bigger?'), findsOneWidget);
+    expect(find.text('Make all buttons bigger?'), findsOneWidget);
     expect(find.byKey(const Key('change_preview')), findsOneWidget);
     expect(find.byKey(const Key('assist_apply')), findsOneWidget);
     expect(find.byKey(const Key('assist_no_thanks')), findsOneWidget);
@@ -192,7 +246,8 @@ void main() {
     await ask(tester, 'the buttons are hard to hit');
     await tester.tap(find.byKey(const Key('assist_apply')));
     await tester.pumpAndSettle();
-    expect(accessibility.settings.buttonScale, 1.1);
+    expect(accessibility.settings.buttonScale, 1.2);
+    expect(accessibility.settings.touchTargetScale, 1.2);
     expect(find.byKey(const Key('assist_undo')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('assist_undo')));
@@ -215,7 +270,7 @@ void main() {
     });
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('assist_undo')), findsNothing);
-    expect(accessibility.settings.buttonScale, 1.1);
+    expect(accessibility.settings.buttonScale, 1.2);
   });
 
   testWidgets('no thanks changes nothing', (tester) async {
@@ -234,6 +289,17 @@ void main() {
     (
       'an old adjust function',
       const ProposedCall('adjust_text_size', {'direction': 'bigger'}),
+    ),
+    (
+      'an unknown button',
+      const ProposedCall('change_button_size', {
+        'direction': 'bigger',
+        'button': 'magnifying',
+      }),
+    ),
+    (
+      'a missing direction',
+      const ProposedCall('change_text_size', {'steps': 2}),
     ),
   ]) {
     testWidgets('$label: no suggestion and a link to settings', (tester) async {
@@ -258,7 +324,12 @@ void main() {
   });
 
   testWidgets('a setting at its limit says so', (tester) async {
+    // All buttons means the icons and the area that reacts to a tap.
     await accessibility.apply(ScaleCategory.button, ScaleCategory.button.max);
+    await accessibility.apply(
+      ScaleCategory.touchTarget,
+      ScaleCategory.touchTarget.max,
+    );
     await pump(tester, picksButtons());
     await ask(tester, 'the buttons are hard to hit');
     expect(find.textContaining('cannot change any further'), findsOneWidget);
@@ -269,7 +340,7 @@ void main() {
     final model = picksButtons();
     await pump(tester, model);
     await tester.pumpAndSettle();
-    expect(model.prompts, isEmpty);
+    expect(model.requests, isEmpty);
     expect(manager.current, isNull);
     expect(find.byKey(const Key('assist_apply')), findsNothing);
   });
@@ -282,6 +353,314 @@ void main() {
     expect(find.byKey(const Key('assist_input')), findsNothing);
     await tester.tap(find.byKey(const Key('assist_open_settings')));
     expect(settingsOpened, 1);
+  });
+
+  group('conversations', () {
+    testWidgets('after apply, the next request carries the applied exchange', (
+      tester,
+    ) async {
+      final model = picksButtons();
+      await pump(tester, model);
+      await ask(tester, 'the buttons are hard to hit');
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      await ask(tester, 'a lot more');
+      expect(model.requests.last.map(_shape), [
+        ['user', 'the buttons are hard to hit'],
+        [
+          'call',
+          'change_button_size',
+          {'direction': 'bigger'},
+        ],
+        [
+          'response',
+          'change_button_size',
+          {'status': 'applied'},
+        ],
+        ['reply', 'Done.'],
+        ['user', 'a lot more'],
+      ]);
+      manager.dismissApplied();
+    });
+
+    testWidgets('after no thanks, the next request carries the decline', (
+      tester,
+    ) async {
+      final model = picksButtons();
+      await pump(tester, model);
+      await ask(tester, 'the buttons are hard to hit');
+      await tester.tap(find.byKey(const Key('assist_no_thanks')));
+      await tester.pumpAndSettle();
+      await ask(tester, "no, I meant they're too close together");
+      expect(model.requests.last.map(_shape), [
+        ['user', 'the buttons are hard to hit'],
+        [
+          'call',
+          'change_button_size',
+          {'direction': 'bigger'},
+        ],
+        [
+          'response',
+          'change_button_size',
+          {'status': 'declined'},
+        ],
+        ['reply', 'Okay, nothing changed.'],
+        ['user', "no, I meant they're too close together"],
+      ]);
+    });
+
+    testWidgets('a request without a change to answer starts fresh', (
+      tester,
+    ) async {
+      final model = FakeModel.calls(const ProposedCall('no_action', {}));
+      await pump(tester, model);
+      await ask(tester, 'what time is it');
+      expect(find.byKey(const Key('assist_no_action')), findsOneWidget);
+      await ask(tester, 'the text is small');
+      expect(model.requests.last.map(_shape), [
+        ['user', 'the text is small'],
+      ]);
+    });
+
+    testWidgets('a tapped option goes back as the answer in the same turn', (
+      tester,
+    ) async {
+      final model = FakeModel(
+        ModelState.ready,
+        answer: (turn) => turn is UserTurn
+            ? const ProposedCall('ask_clarification', {
+                'options': ['change_text_size', 'change_avatar_size'],
+              })
+            : const ProposedCall('change_avatar_size', {'direction': 'bigger'}),
+      );
+      await pump(tester, model);
+      await ask(tester, 'make it bigger');
+      expect(find.byKey(const Key('assist_clarification')), findsOneWidget);
+      expect(find.text('Text size'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const Key('assist_option_change_avatar_size')),
+      );
+      await tester.pumpAndSettle();
+      expect(model.requests.last.map(_shape), [
+        ['user', 'make it bigger'],
+        [
+          'call',
+          'ask_clarification',
+          {
+            'options': ['change_text_size', 'change_avatar_size'],
+          },
+        ],
+        [
+          'response',
+          'ask_clarification',
+          {'answer': 'change_avatar_size'},
+        ],
+      ]);
+      expect(find.text('Make profile pictures bigger?'), findsOneWidget);
+      // The options are answered.
+      await tester.tap(find.byKey(const Key('assist_option_change_text_size')));
+      await tester.pumpAndSettle();
+      expect(model.requests, hasLength(2));
+    });
+
+    testWidgets('typed words answer an open question', (tester) async {
+      final model = FakeModel(
+        ModelState.ready,
+        answer: (turn) => turn is UserTurn
+            ? const ProposedCall('ask_clarification', {
+                'options': ['change_text_size'],
+              })
+            : const ProposedCall('change_text_size', {
+                'direction': 'bigger',
+                'steps': 2,
+              }),
+      );
+      await pump(tester, model);
+      await ask(tester, 'change the text size');
+      // One function: the choices are its details.
+      expect(find.byKey(const Key('assist_option_bigger')), findsOneWidget);
+      await ask(tester, 'much bigger');
+      expect(model.requests.last.last, isA<ResponseTurn>());
+      expect(_shape(model.requests.last.last), [
+        'response',
+        'ask_clarification',
+        {'answer': 'much bigger'},
+      ]);
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(accessibility.settings.textScale, 1.5);
+      manager.dismissApplied();
+    });
+  });
+
+  group('the trained functions', () {
+    Future<void> proposeAndApply(WidgetTester tester, ProposedCall call) async {
+      await pump(tester, FakeModel.calls(call));
+      await ask(tester, 'please');
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      manager.dismissApplied();
+    }
+
+    testWidgets('text size of one kind of text', (tester) async {
+      await proposeAndApply(
+        tester,
+        const ProposedCall('change_text_size', {
+          'direction': 'bigger',
+          'target': 'chat_list',
+          'steps': 3,
+        }),
+      );
+      expect(accessibility.settings.chatListTextScale, 1.5);
+      expect(accessibility.settings.textScale, 1.0);
+    });
+
+    testWidgets('one button', (tester) async {
+      await proposeAndApply(
+        tester,
+        const ProposedCall('change_button_size', {
+          'direction': 'bigger',
+          'button': 'send',
+        }),
+      );
+      expect(accessibility.settings[ScaleCategory.sendButton], 1.2);
+      expect(accessibility.settings.buttonScale, 1.0);
+    });
+
+    testWidgets('spacing', (tester) async {
+      await proposeAndApply(
+        tester,
+        const ProposedCall('change_spacing', {'direction': 'less'}),
+      );
+      expect(accessibility.settings.spacingScale, 0.75);
+    });
+
+    testWidgets('button labels and high contrast', (tester) async {
+      await proposeAndApply(
+        tester,
+        const ProposedCall('set_button_labels', {'enabled': true}),
+      );
+      expect(accessibility.settings.buttonLabels, isTrue);
+      await proposeAndApply(
+        tester,
+        const ProposedCall('set_high_contrast', {'enabled': true}),
+      );
+      expect(accessibility.settings.highContrast, isTrue);
+    });
+
+    testWidgets('theme, and undo puts it back', (tester) async {
+      await pump(
+        tester,
+        FakeModel.calls(const ProposedCall('set_theme', {'mode': 'dark'})),
+      );
+      await ask(tester, 'the screen is too bright');
+      expect(find.text('Switch to a dark screen?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(themeMode, ThemeMode.dark);
+      await tester.tap(find.byKey(const Key('assist_undo')));
+      await tester.pumpAndSettle();
+      expect(themeMode, ThemeMode.system);
+    });
+
+    testWidgets('reset keeps the theme', (tester) async {
+      themeMode = ThemeMode.dark;
+      await accessibility.apply(ScaleCategory.avatar, 1.5);
+      await accessibility.setToggle(AccessibilityToggle.highContrast, true);
+      await proposeAndApply(tester, const ProposedCall('reset_settings', {}));
+      expect(accessibility.settings, AccessibilitySettings.defaults);
+      expect(themeMode, ThemeMode.dark);
+    });
+
+    testWidgets('the simple view is not available and changes nothing', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        FakeModel.calls(
+          const ProposedCall('set_simple_mode', {'enabled': true}),
+        ),
+      );
+      await ask(tester, 'too many buttons');
+      expect(find.byKey(const Key('assist_not_available')), findsOneWidget);
+      expect(manager.current, isNull);
+      expect(accessibility.settings, AccessibilitySettings.defaults);
+    });
+
+    testWidgets('already as asked says so', (tester) async {
+      await pump(
+        tester,
+        FakeModel.calls(const ProposedCall('set_theme', {'mode': 'system'})),
+      );
+      await ask(tester, 'follow my phone');
+      expect(find.byKey(const Key('assist_unchanged')), findsOneWidget);
+      expect(manager.current, isNull);
+    });
+  });
+
+  group('one chat', () {
+    testWidgets('a named chat that matches one chat is proposed at once', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        FakeModel.calls(
+          const ProposedCall('change_text_size', {
+            'direction': 'bigger',
+            'scope': 'one_chat',
+            'chat': 'peter123',
+          }),
+        ),
+      );
+      await ask(tester, 'the text in my chat with peter123 is tiny');
+      expect(
+        find.text('Make the text in the chat with Peter bigger?'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(accessibility.settings.chatTextScale('!peter'), 1.2);
+      expect(accessibility.settings.chatTextScale('!maria'), 1.0);
+      expect(accessibility.settings.textScale, 1.0);
+      manager.dismissApplied();
+    });
+
+    testWidgets('this chat: the app asks which one', (tester) async {
+      final model = FakeModel.calls(
+        const ProposedCall('change_text_size', {
+          'direction': 'smaller',
+          'scope': 'one_chat',
+        }),
+      );
+      await pump(tester, model);
+      await ask(tester, 'smaller text in this chat');
+      expect(find.byKey(const Key('assist_which_chat')), findsOneWidget);
+      expect(find.text('Family'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('assist_chat_!family')));
+      await tester.pumpAndSettle();
+      // Chosen on the phone: the model is not asked again.
+      expect(model.requests, hasLength(1));
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(accessibility.settings.chatTextScale('!family'), 0.8);
+      manager.dismissApplied();
+    });
+
+    testWidgets('a name that matches no chat asks which one', (tester) async {
+      await pump(
+        tester,
+        FakeModel.calls(
+          const ProposedCall('change_text_size', {
+            'direction': 'bigger',
+            'scope': 'one_chat',
+            'chat': 'Dr. Hansen',
+          }),
+        ),
+      );
+      await ask(tester, 'bigger text with Dr. Hansen');
+      expect(find.textContaining('“Dr. Hansen”'), findsOneWidget);
+      expect(manager.current, isNull);
+    });
   });
 
   group('study log', () {
@@ -334,15 +713,18 @@ void main() {
       expect(events()[1], {
         't': isA<String>(),
         'type': 'assist_proposal',
-        'heuristic': 'model-request',
-        'category': 'button_scale',
-        'from': 1.0,
-        'to': 1.1,
+        'participant': '',
+        'function': 'change_button_size',
+        'arguments': {'direction': 'bigger'},
+        'changes': {
+          'button_scale': [1.0, 1.2],
+          'touch_target_scale': [1.0, 1.2],
+        },
         'total_ms': 900,
         'ttft_ms': 410,
         'backend': 'gpu',
       });
-      expect(events()[2], containsPair('to', 1.1));
+      expect(events()[2], containsPair('function', 'change_button_size'));
     });
 
     testWidgets('records no suggestion with its reason', (tester) async {
@@ -351,7 +733,7 @@ void main() {
         tester,
         FakeModel(
           ModelState.ready,
-          answer: (text) => text == 'boom'
+          answer: (turn) => turn is UserTurn && turn.text == 'boom'
               ? throw StateError('boom')
               : const ProposedCall('delete_chat', {}),
         ),

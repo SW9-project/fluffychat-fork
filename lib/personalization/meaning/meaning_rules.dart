@@ -7,9 +7,9 @@ import 'dart:math';
 import 'message_meaning.dart';
 
 /// Proposes a [MessageMeaning] for a message the user is writing, with simple
-/// English and Danish rules. No model reads the message (Phase 3b). The
-/// proposal is only a starting point: the sender sees it and can change or
-/// remove it before sending.
+/// English and Danish rules. No model reads the message. The proposal is only
+/// a starting point: the sender sees it and can change or remove it before
+/// sending.
 abstract final class MeaningRules {
   static MessageMeaning propose(String text, DateTime now) => MessageMeaning(
     intent: intentOf(text),

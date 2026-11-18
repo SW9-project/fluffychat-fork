@@ -10,6 +10,7 @@ import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/utils/adaptive_bottom_sheet.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
+import 'package:fluffychat/widgets/settings_section.dart';
 import 'package:fluffychat/widgets/settings_switch_list_tile.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -24,8 +25,13 @@ class SettingsChatView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final background = theme.cupertinoStyle
+        ? SettingsSection.backgroundColor(theme)
+        : null;
     return Scaffold(
+      backgroundColor: background,
       appBar: AppBar(
+        backgroundColor: background,
         title: Text(L10n.of(context).chat),
         automaticallyImplyLeading: !FluffyThemes.isColumnMode(context),
         centerTitle: FluffyThemes.isColumnMode(context),
@@ -33,7 +39,7 @@ class SettingsChatView extends StatelessWidget {
       body: ListTileTheme(
         iconColor: theme.textTheme.bodyLarge!.color,
         child: MaxWidthBody(
-          child: Column(
+          child: SettingsList(
             children: [
               SettingsSwitchListTile.adaptive(
                 title: L10n.of(context).formattedMessages,
@@ -135,15 +141,7 @@ class SettingsChatView extends StatelessWidget {
                   },
                 ),
               Divider(color: theme.dividerColor),
-              ListTile(
-                title: Text(
-                  L10n.of(context).customEmojisAndStickers,
-                  style: TextStyle(
-                    color: theme.colorScheme.secondary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              SettingsHeader(L10n.of(context).customEmojisAndStickers),
               ListTile(
                 title: Text(L10n.of(context).customEmojisAndStickers),
                 subtitle: Text(L10n.of(context).customEmojisAndStickersBody),

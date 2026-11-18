@@ -32,19 +32,21 @@ class SimplifiedInterfaceSwitch extends StatelessWidget {
           Expanded(
             child: Text(text.simpleView, style: theme.textTheme.bodyMedium),
           ),
-          TextButton(
-            key: const Key('simple_personalize'),
-            style: TextButton.styleFrom(
-              minimumSize: Size(sizes.touchTarget(48), sizes.buttonBox(48)),
+          // Only while on: changing choices must not switch the view as a side effect.
+          if (controller.enabled)
+            TextButton(
+              key: const Key('simple_personalize'),
+              style: TextButton.styleFrom(
+                minimumSize: Size(sizes.touchTarget(48), sizes.buttonBox(48)),
+              ),
+              onPressed: () => requestSimpleViewChange(
+                context,
+                controller,
+                true,
+                personalize: true,
+              ),
+              child: Text(text.edit),
             ),
-            onPressed: () => requestSimpleViewChange(
-              context,
-              controller,
-              true,
-              personalize: true,
-            ),
-            child: Text(text.edit),
-          ),
           Semantics(
             label: text.simpleView,
             child: Switch.adaptive(

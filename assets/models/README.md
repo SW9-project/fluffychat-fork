@@ -1,35 +1,80 @@
-﻿# Modelo SW9 v2
+# On-device model
 
-Modelo activo: `functiongemma-270M-sw9-v2.litertlm` (284121728 bytes).
-SHA-256: `37e92741110b1a7bff2607905a3598186d42de36beabe9091400879ef7d1383b`.
-El archivo fue suministrado por el equipo y se importó desde Descargas el 2026-11-13.
-`model.json` registra su identidad. Los pesos no se guardan en Git.
+This folder holds the model that the personalization feature runs on the device
+(see `docs/ai-personalization-plan.md`, Phase 3). The file is about 284 MB, too
+large for git, so it is not committed.
 
-Importar la copia descargada antes de compilar:
+| File | What it is | Bundled |
+|---|---|---|
+| `functiongemma-270M-sw9-tools1.litertlm` | FunctionGemma fine-tuned on the eleven functions in `assets/personalization_tools.json`, which the app runs | yes |
+| `baseline/functiongemma-270M-it.litertlm` | The base model: kept for comparison, and the converter copies its metadata | no |
+
+## The fine-tuned model
+
+`functiongemma-270M-sw9-tools1.litertlm` is built in this repository from the
+training run in `training/` (see `training/TRAINING.md`, steps 5 to 7):
 
 ```sh
-./scripts/fetch_personalization_model.sh /ruta/functiongemma-270M-sw9-v2.litertlm
+bash scripts/fetch_personalization_model.sh --baseline   # the converter needs it
+training/.convert-venv/bin/python training/convert.py
 ```
 
-En Windows, `scripts/run-android-assistant.ps1` importa por defecto desde
-Descargas si falta la copia de assets. También acepta `-ModelFile RUTA`.
-La importación comprueba el SHA-256. No depende de una URL de descarga del v2.
+`convert.py` writes the file here. It is not attached to any release yet, so a fresh
+clone has to build it, or copy it from someone who has. sha256 of the file built from
+`checkpoint-1561` (epoch 7) on 2026-11-11:
 
-El APK incluye solo este modelo, mediante una entrada explícita en pubspec.yaml.
-Los modelos anteriores y las cachés no se empaquetan con él. El nombre nuevo
-hace que el motor móvil lo prepare como una versión distinta del modelo anterior.
+```
+37e92741110b1a7bff2607905a3598186d42de36beabe9091400879ef7d1383b
+```
 
-En Android, la inferencia nativa requiere Android 11+ y ARM64. Para el emulador
-x86_64 de Windows se utiliza el mismo archivo v2 en el ordenador mediante el
-puente local de desarrollo. El servicio informa del nombre y SHA-256 reales;
-la app comprueba ambos antes de aceptar sus respuestas.
+The model is trained on the exact words of the functions, so changing
+`assets/personalization_tools.json` means training again.
+`test/personalization/personalization_tools_test.dart` holds the app to the file.
 
-Las funciones v2 integradas son `change_text_zoom` y `change_button`, con
-`direction: bigger | smaller`. Se traducen a los ajustes existentes con límites,
-vista previa, Apply y Undo. Otras funciones o argumentos se rechazan.
+The file has a 2048-token context (the base file has 1024): the eleven declarations
+alone are about 1300 tokens.
 
-## Licencia
+A build without the file works normally; the Assist tab then says the assistant
+cannot run on this phone.
 
-La familia FunctionGemma está sujeta a los [Gemma Terms of Use](https://ai.google.dev/gemma/terms)
-y la [Gemma Prohibited Use Policy](https://ai.google.dev/gemma/prohibited_use_policy).
-El archivo v2 es una modificación suministrada por el equipo SW9.
+The model only runs on Android 11 (API 30) or later, in an arm64 app process on an
+arm64 device. The app reports the model as unavailable on x86 devices, including the
+x86_64 emulator: there LiteRT crashes under ARM translation
+(`function_gemma_model.dart`, `isSupported`). The arm64 emulator on an Apple silicon
+Mac runs it.
+
+## Checking it on a device
+
+```sh
+flutter test integration_test/personalization_model_test.dart -d <device>
+```
+
+sends the 158 held-out examples through the app's own path and compares the calls
+with the labels, as `training/evaluate.py` does on the Mac. It also renders each
+prompt with LiteRT-LM and compares it with the prompt the model was trained on.
+Clear the app's data first when the device had another model file: a file that is
+already installed is not installed again, and the plugin restores the model that was
+active last. The test fails rather than reporting numbers for the wrong one.
+
+## The baseline
+
+```sh
+bash scripts/fetch_personalization_model.sh --baseline
+```
+
+downloads the base model into `baseline/`. Flutter does not bundle subfolders of
+`assets/models/`, so it does not reach the APK.
+
+## Licenses
+
+Gemma is provided under and subject to the Gemma Terms of Use found at
+ai.google.dev/gemma/terms. The Gemma Prohibited Use Policy also applies:
+https://ai.google.dev/gemma/prohibited_use_policy. Anyone who receives an APK with
+the model bundled must also receive a copy of these terms and be told the use
+restrictions apply.
+
+The bundled model is a modified version of FunctionGemma. `NOTICE.txt` in this
+folder holds the notice and is bundled with the model.
+
+Source of the baseline file: https://huggingface.co/sasha-denisov/function-gemma-270M-it
+(converted from https://huggingface.co/google/functiongemma-270m-it).

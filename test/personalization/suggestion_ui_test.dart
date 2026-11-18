@@ -147,9 +147,7 @@ void main() {
     testWidgets('shows the premade text and the change', (tester) async {
       await showSuggestion(tester);
       expect(find.text('Make the buttons bigger?'), findsOneWidget);
-      expect(find.text('Button size'), findsOneWidget);
-      expect(find.text('× 1.0'), findsOneWidget);
-      expect(find.text('× 1.1'), findsOneWidget);
+      expect(find.byKey(const Key('change_preview')), findsOneWidget);
       expect(accessibility.settings.buttonScale, 1.0);
     });
 
@@ -157,8 +155,8 @@ void main() {
       await showSuggestion(tester);
       await tester.tap(find.byKey(const Key('suggestion_apply')));
       await tester.pumpAndSettle();
-      expect(accessibility.settings.buttonScale, 1.1);
-      expect(find.text('Button size is now × 1.1'), findsOneWidget);
+      expect(accessibility.settings.buttonScale, 1.2);
+      expect(find.text('Button size is now × 1.2'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('suggestion_undo')));
       await tester.pumpAndSettle();
