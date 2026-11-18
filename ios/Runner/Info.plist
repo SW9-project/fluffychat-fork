@@ -79,7 +79,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Open photos from your gallery and share them with your contacts on FluffyChat.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Share data with your contacts in FluffyChat.</string>
+	<string>Turn what you say into text, such as spoken requests in the Assist tab. Speech recognition happens on your phone, and what you say is not sent anywhere.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

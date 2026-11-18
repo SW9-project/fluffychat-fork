@@ -104,6 +104,35 @@ void main() {
       expect(events[2]['events'], 2);
     });
 
+    test('a prompt records whether it was spoken', () async {
+      expect(const AssistPrompted('typed').data, {
+        'prompt': 'typed',
+        'voice': false,
+      });
+      expect(const AssistPrompted('spoken', voice: true).data, {
+        'prompt': 'spoken',
+        'voice': true,
+      });
+    });
+
+    test('a prompt line from before voice input still loads', () async {
+      const old =
+          '{"t":"2026-10-01T08:00:00.000Z","type":"assist_prompt",'
+          '"prompt":"the text is tiny"}';
+      storage.lines.add(old);
+      await turnOn();
+      log.record(const AssistPrompted('make it bigger', voice: true));
+      final lines = await log.lines();
+      expect(lines.first, old);
+      final events = decoded(lines);
+      // A missing voice field means the prompt was typed.
+      expect([for (final e in events) e['voice'] ?? false], [false, true]);
+      final exported = const LineSplitter().convert(
+        utf8.decode(await log.export({'participant': 'P01'})),
+      );
+      expect(exported.skip(1), lines);
+    });
+
     test('every line has the participant code', () async {
       await settings.update(
         settings.value.copyWith(logging: true, participant: 'P01'),

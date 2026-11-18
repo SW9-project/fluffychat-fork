@@ -118,6 +118,18 @@ void main() {
     expect(storage.lines, hasLength(2));
   });
 
+  testWidgets('shows a prompt line from before voice input', (tester) async {
+    storage.lines.add(
+      '{"t":"2026-10-01T08:00:00.000Z","type":"assist_prompt",'
+      '"prompt":"the text is tiny"}',
+    );
+    startLog();
+    await tester.pumpWidget(app(const StudyScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('1 event recorded'), findsOneWidget);
+    expect(find.textContaining('"the text is tiny"'), findsOneWidget);
+  });
+
   testWidgets('saving exports a header and every event', (tester) async {
     startLog();
     await settings.update(settings.value.copyWith(logging: true));

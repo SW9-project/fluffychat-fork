@@ -16,6 +16,8 @@ import 'package:fluffychat/personalization/personalization_layer.dart';
 import 'package:fluffychat/personalization/study/study_events.dart';
 import 'package:fluffychat/personalization/study/study_log.dart';
 import 'package:fluffychat/personalization/study/study_settings.dart';
+import 'package:fluffychat/personalization/voice/speech_transcriber.dart';
+import 'package:fluffychat/personalization/voice/system_transcriber.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
 import 'package:fluffychat/widgets/matrix.dart';
@@ -38,6 +40,10 @@ class _AssistantPageState extends State<AssistantPage> {
   SettingsIntentModel? _model;
   final Future<PersonalizationTools> _tools = PersonalizationTools.load();
 
+  /// On-device voice input for the prompt, with the same lifetime as
+  /// [_model]. Leaving the tab ends a recording.
+  SpeechTranscriber? _transcriber;
+
   @override
   void initState() {
     super.initState();
@@ -47,11 +53,13 @@ class _AssistantPageState extends State<AssistantPage> {
       _model = EmulatorHostModel.enabled
           ? EmulatorHostModel()
           : FunctionGemmaModel();
+      _transcriber = SystemTranscriber();
     }
   }
 
   @override
   void dispose() {
+    _transcriber?.dispose();
     _model?.dispose();
     super.dispose();
   }
@@ -112,6 +120,7 @@ class _AssistantPageState extends State<AssistantPage> {
               ? const SizedBox.expand()
               : AssistView(
                   model: _model,
+                  transcriber: _transcriber,
                   manager: manager,
                   accessibility: accessibility,
                   onOpenAccessibilitySettings: () =>

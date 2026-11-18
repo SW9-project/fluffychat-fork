@@ -87,6 +87,11 @@ dependencies:
   share_plus: ^13.3.1
   shared_preferences: ^2.5.6
   slugify: ^2.0.0
+  # Patched copy: on-device only must never fall back to the network.
+  # See packages/speech_to_text/PATCHES.md.
+  speech_to_text:
+    path: packages/speech_to_text
+  speech_to_text_platform_interface: ^2.5.0
   sqflite_common_ffi: ^2.4.4
   synchronized: ^3.5.0
   unifiedpush: ^6.2.0

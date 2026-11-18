@@ -40,6 +40,18 @@ path = [
 SPDX-FileCopyrightText = "Pixabay"
 SPDX-License-Identifier = "CC-BY-4.0"
 
+# Patched copy of speech_to_text, see packages/speech_to_text/PATCHES.md
+[[annotations]]
+path = [
+    "packages/speech_to_text/**"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = [
+    "2019 Corner Software Development Corp.",
+    "2026 SW9-project contributors",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+
 [[annotations]]
 path = [
     "assets/sas-emoji.json"

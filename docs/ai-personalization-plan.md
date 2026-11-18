@@ -134,6 +134,12 @@ Design:
 
 **Open:** the two heuristics and their rules are still placeholders until the team adds literature-based ones. With only two heuristics, most prompts correctly get no suggestion.
 
+## Phase 3c: Voice input
+
+**Goal:** the user can speak the Assist prompt instead of typing it. One tap starts recording, a second tap stops it, and the words land in the prompt field for the user to check and send. Recognition runs on the phone only, in English first.
+
+Built on `feat/STT-TTS` with the phone's own recogniser through a patched `speech_to_text` that never falls back to the network (hard constraint 1). `assist_prompt` gets a `voice` flag. Details, decisions, the language pack measurement and the real-device test: [voice-input.md](voice-input.md).
+
 ## Phase 4: Sender-side message metadata
 
 **Removed (Nov 16, 2026):** the message meaning feature (intent, urgency and time chips, their markers and settings) was taken out of the app. The plan below is kept for reference.
@@ -180,7 +186,7 @@ Tasks:
 - The log keeps the words participants type in the Assist tab, so the model can be checked against real requests. Prompts can describe health or disabilities, so the consent must cover them. The log never keeps message text.
 - Hidden study screen: hold the title of the Accessibility page for three seconds. It sets the condition (with a confirmation) and the participant code, turns logging on and off, shows the latest events, and saves the log through the system save dialog. Nothing is uploaded.
 - Format: one JSON object per line in the app's private storage, with UTC timestamps and the participant code on every line. The app only appends; the study screen can **Save and clear** (cleared only after the file is saved, for the next participant) or **Delete log** (for a participant who withdraws), both with a confirmation, and the next log starts with `log_cleared`. An export starts with a header line: participant code, condition, app version and device.
-- Events: `logging_started`, `logging_stopped`, `condition_changed`, `log_exported`, `assist_opened`, `assist_model_state`, `assist_prompt`, `assist_proposal` / `assist_at_limit` / `assist_no_suggestion` (with time to first token, total time and tokens), `suggestion_applied` / `_declined` / `_undone` / `_opted_out` / `_superseded` (a new prompt replaced it) / `_abandoned` (the participant left the tab without answering), `log_cleared`, `settings_changed` (slider, apply, reset or undo, with each value's from and to).
+- Events: `logging_started`, `logging_stopped`, `condition_changed`, `log_exported`, `assist_opened`, `assist_model_state`, `assist_prompt` (with `voice` since Phase 3c; missing means typed), `assist_proposal` / `assist_at_limit` / `assist_no_suggestion` (with time to first token, total time and tokens), `suggestion_applied` / `_declined` / `_undone` / `_opted_out` / `_superseded` (a new prompt replaced it) / `_abandoned` (the participant left the tab without answering), `log_cleared`, `settings_changed` (slider, apply, reset or undo, with each value's from and to).
 - Before each session the researcher taps Set up in the Assist tab, so the model copy (about 40 s on the S22 Ultra) is not part of the session. Every participant who gets the app must also receive the Gemma Terms of Use (see `assets/models/README.md`).
 - Harness: `integration_test/personalization_model_test.dart` reports per phrase the outcome, the time to first token as LiteRT-LM measures it (FunctionGemma's tool call is not streamed), the total time and the token counts, plus a `[phrases-csv]` line for a spreadsheet. The summary gives accuracy per language and the median, p90 and maximum. Loading the model is reported once, apart from the totals.
 
