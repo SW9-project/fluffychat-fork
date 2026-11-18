@@ -6,6 +6,8 @@
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
+import 'package:fluffychat/personalization/assistant_tutorial.dart';
+import 'package:fluffychat/personalization/assistant_tutorial_l10n.dart';
 import 'package:fluffychat/personalization/model/emulator_host_model.dart';
 import 'package:fluffychat/personalization/model/function_gemma_model.dart';
 import 'package:fluffychat/personalization/model/personalization_tools.dart';
@@ -73,35 +75,52 @@ class _AssistantPageState extends State<AssistantPage> {
   Widget build(BuildContext context) {
     final manager = PersonalizationLayer.maybeManagerOf(context);
     final accessibility = AccessibilityScope.maybeControllerOf(context);
-    return MainNavigationBarInsets(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(L10n.of(context).assistant),
-              // Debug builds only: the model runs on the developer's computer.
-              if (EmulatorHostModel.enabled)
-                Text(
-                  'Model on this computer',
-                  style: Theme.of(context).textTheme.labelSmall,
+    return AssistantTutorialGate(
+      onOpenSettings: () => context.go('/rooms/settings/accessibility'),
+      child: MainNavigationBarInsets(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L10n.of(context).assistant),
+                // Debug builds only: the model runs on the developer's computer.
+                if (EmulatorHostModel.enabled)
+                  Text(
+                    'Model on this computer',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+              ],
+            ),
+            automaticallyImplyLeading: false,
+            actions: [
+              IconButton(
+                tooltip: AssistantTutorialL10n.of(context).replay,
+                icon: LabeledIcon(
+                  icon: const Icon(Icons.help_outline),
+                  label: AssistantTutorialL10n.of(context).replay,
                 ),
+                onPressed: () => showAssistantTutorial(
+                  context,
+                  onOpenSettings: () =>
+                      context.go('/rooms/settings/accessibility'),
+                ),
+              ),
             ],
           ),
-          automaticallyImplyLeading: false,
+          body: manager == null || accessibility == null
+              ? const SizedBox.expand()
+              : AssistView(
+                  model: _model,
+                  manager: manager,
+                  accessibility: accessibility,
+                  onOpenAccessibilitySettings: () =>
+                      context.go('/rooms/settings/accessibility'),
+                  tools: _tools,
+                  themeMode: () => ThemeController.of(context).themeMode,
+                  chats: () => _chats(context),
+                ),
         ),
-        body: manager == null || accessibility == null
-            ? const SizedBox.expand()
-            : AssistView(
-                model: _model,
-                manager: manager,
-                accessibility: accessibility,
-                onOpenAccessibilitySettings: () =>
-                    context.go('/rooms/settings/accessibility'),
-                tools: _tools,
-                themeMode: () => ThemeController.of(context).themeMode,
-                chats: () => _chats(context),
-              ),
       ),
     );
   }
