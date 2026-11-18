@@ -1,28 +1,80 @@
 # On-device model
 
-This folder holds the FunctionGemma 270M model that the personalization
-feature runs on the device (see `docs/ai-personalization-plan.md`, Phase 3).
-The model file is about 284 MB, too large for git, so it is not committed.
-Fetch it before building a release or study APK:
+This folder holds the model that the personalization feature runs on the device
+(see `docs/ai-personalization-plan.md`, Phase 3). The file is about 284 MB, too
+large for git, so it is not committed.
+
+| File | What it is | Bundled |
+|---|---|---|
+| `functiongemma-270M-sw9-tools1.litertlm` | FunctionGemma fine-tuned on the eleven functions in `assets/personalization_tools.json`, which the app runs | yes |
+| `baseline/functiongemma-270M-it.litertlm` | The base model: kept for comparison, and the converter copies its metadata | no |
+
+## The fine-tuned model
+
+`functiongemma-270M-sw9-tools1.litertlm` is built in this repository from the
+training run in `training/` (see `training/TRAINING.md`, steps 5 to 7):
 
 ```sh
-./scripts/fetch_personalization_model.sh
+bash scripts/fetch_personalization_model.sh --baseline   # the converter needs it
+training/.convert-venv/bin/python training/convert.py
 ```
 
-A build without the file works normally; the "Tell the app what is hard"
-feature is then hidden.
+`convert.py` writes the file here. It is not attached to any release yet, so a fresh
+clone has to build it, or copy it from someone who has. sha256 of the file built from
+`checkpoint-1561` (epoch 7) on 2026-11-11:
 
-The model only runs on Android 11 (API 30) or later, in an arm64 app process.
-On an x86_64 emulator, build an arm64-only APK
-(`flutter build apk --target-platform android-arm64`): the emulator translates
-it.
+```
+37e92741110b1a7bff2607905a3598186d42de36beabe9091400879ef7d1383b
+```
 
-## License
+The model is trained on the exact words of the functions, so changing
+`assets/personalization_tools.json` means training again.
+`test/personalization/personalization_tools_test.dart` holds the app to the file.
 
-FunctionGemma is provided under and subject to the Gemma Terms of Use,
-https://ai.google.dev/gemma/terms, and the Gemma Prohibited Use Policy,
-https://ai.google.dev/gemma/prohibited_use_policy. Anyone who receives an APK
-with this file bundled must also receive these terms.
+The file has a 2048-token context (the base file has 1024): the eleven declarations
+alone are about 1300 tokens.
 
-Source of the converted file: https://huggingface.co/sasha-denisov/function-gemma-270M-it
+A build without the file works normally; the Assist tab then says the assistant
+cannot run on this phone.
+
+The model only runs on Android 11 (API 30) or later, in an arm64 app process on an
+arm64 device. The app reports the model as unavailable on x86 devices, including the
+x86_64 emulator: there LiteRT crashes under ARM translation
+(`function_gemma_model.dart`, `isSupported`). The arm64 emulator on an Apple silicon
+Mac runs it.
+
+## Checking it on a device
+
+```sh
+flutter test integration_test/personalization_model_test.dart -d <device>
+```
+
+sends the 158 held-out examples through the app's own path and compares the calls
+with the labels, as `training/evaluate.py` does on the Mac. It also renders each
+prompt with LiteRT-LM and compares it with the prompt the model was trained on.
+Clear the app's data first when the device had another model file: a file that is
+already installed is not installed again, and the plugin restores the model that was
+active last. The test fails rather than reporting numbers for the wrong one.
+
+## The baseline
+
+```sh
+bash scripts/fetch_personalization_model.sh --baseline
+```
+
+downloads the base model into `baseline/`. Flutter does not bundle subfolders of
+`assets/models/`, so it does not reach the APK.
+
+## Licenses
+
+Gemma is provided under and subject to the Gemma Terms of Use found at
+ai.google.dev/gemma/terms. The Gemma Prohibited Use Policy also applies:
+https://ai.google.dev/gemma/prohibited_use_policy. Anyone who receives an APK with
+the model bundled must also receive a copy of these terms and be told the use
+restrictions apply.
+
+The bundled model is a modified version of FunctionGemma. `NOTICE.txt` in this
+folder holds the notice and is bundled with the model.
+
+Source of the baseline file: https://huggingface.co/sasha-denisov/function-gemma-270M-it
 (converted from https://huggingface.co/google/functiongemma-270m-it).

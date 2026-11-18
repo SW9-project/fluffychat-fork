@@ -154,7 +154,7 @@ class CallPage extends StatelessWidget {
                 ),
               ),
               body: liveKitRoom == null
-                  ? Center(child: CircularProgressIndicator())
+                  ? Center(child: CircularProgressIndicator.adaptive())
                   : localVideoTrack != null
                   ? Stack(
                       children: [
@@ -472,8 +472,10 @@ class CallPage extends StatelessWidget {
                             icon: viewModel.value.isLoading
                                 ? SizedBox.square(
                                     dimension: 16,
-                                    child: CircularProgressIndicator(
-                                      color: theme.colorScheme.onInverseSurface,
+                                    child: CircularProgressIndicator.adaptive(
+                                      valueColor: AlwaysStoppedAnimation(
+                                        theme.colorScheme.onInverseSurface,
+                                      ),
                                       strokeWidth: 2,
                                     ),
                                   )

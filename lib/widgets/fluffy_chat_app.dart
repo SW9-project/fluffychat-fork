@@ -13,6 +13,7 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/personalization_layer.dart';
+import 'package:fluffychat/personalization/simple_view_conversation_source.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
 import 'package:fluffychat/widgets/layouts/call_overlay.dart';
 import 'package:fluffychat/widgets/theme_builder.dart';
@@ -119,7 +120,9 @@ class FluffyChatApp extends StatelessWidget {
             child: CallOverlay(
               child: AccessibilityTextScale(
                 child: PersonalizationLayer(
-                  child: testWidget ?? child ?? const SizedBox.shrink(),
+                  child: SimpleViewConversationSource(
+                    child: testWidget ?? child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ),

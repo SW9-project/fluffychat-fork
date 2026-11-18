@@ -27,7 +27,6 @@ extension on FluffyChatTester {
     // Logout user 2
     await tapOn(Key('accounts_and_settings_buttons'));
     await tapOn(user2Name);
-    await tapOn(Key('accounts_and_settings_buttons'));
     await tapOn('Settings');
     await scrollUntilVisible('Logout');
     await tapOn('Logout');

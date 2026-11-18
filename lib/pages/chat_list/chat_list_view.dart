@@ -9,6 +9,7 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/pages/chat_list/chat_list.dart';
 import 'package:fluffychat/pages/chat_list/navigation_rail.dart';
 import 'package:fluffychat/pages/chat_list/start_chat_fab.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -75,7 +76,12 @@ class ChatListView extends StatelessWidget {
                   excludeFromSemantics: true,
                   behavior: HitTestBehavior.translucent,
                   child: Scaffold(
-                    backgroundColor: oneColumnSpacesMode
+                    backgroundColor: SimplifiedInterfaceScope.enabledOf(context)
+                        ? Color.alphaBlend(
+                            Theme.of(context).colorScheme.primary.withAlpha(12),
+                            Theme.of(context).colorScheme.surface,
+                          )
+                        : oneColumnSpacesMode
                         ? Theme.of(context).colorScheme.surfaceContainer
                         : null,
                     body: SafeArea(
@@ -94,17 +100,26 @@ class ChatListView extends StatelessWidget {
                                 ),
                               )
                             : null,
-                        color: oneColumnSpacesMode
+                        color: SimplifiedInterfaceScope.enabledOf(context)
+                            ? Color.alphaBlend(
+                                Theme.of(
+                                  context,
+                                ).colorScheme.primary.withAlpha(12),
+                                Theme.of(context).colorScheme.surface,
+                              )
+                            : oneColumnSpacesMode
                             ? Theme.of(context).colorScheme.surface
                             : null,
                         child: ChatListViewBody(controller),
                       ),
                     ),
+                    // iOS has the compose button in the title bar.
                     floatingActionButton:
                         !controller.isSearchMode &&
                             controller.activeSpaceId == null &&
-                            !FluffyThemes.isColumnMode(context)
-                        ? const StartChatFab()
+                            !FluffyThemes.isColumnMode(context) &&
+                            !Theme.of(context).cupertinoStyle
+                        ? const StartChatFab(extended: true)
                         : const SizedBox.shrink(),
                   ),
                 ),

@@ -9,6 +9,7 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat_background.dart';
 import 'package:fluffychat/pages/chat/events/state_message.dart';
+import 'package:fluffychat/utils/account_config.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/file_selector.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -22,7 +23,10 @@ import 'package:matrix/matrix.dart';
 class WallpaperEditor extends StatefulWidget {
   final Room? room;
 
-  const WallpaperEditor({this.room, super.key});
+  /// False when the page shows the [ChatStylePreview] somewhere else.
+  final bool showPreview;
+
+  const WallpaperEditor({this.room, this.showPreview = true, super.key});
 
   @override
   State<WallpaperEditor> createState() => _WallpaperEditorState();
@@ -126,7 +130,11 @@ class _WallpaperEditorState extends State<WallpaperEditor> {
           mainAxisSize: .min,
           crossAxisAlignment: .stretch,
           children: [
-            ChatStylePreview(wallpaper: wallpaper ?? defaultWallpaper),
+            if (widget.showPreview)
+              ChatStylePreview(
+                wallpaper: wallpaper ?? defaultWallpaper,
+                room: room,
+              ),
             if (room == null)
               ListTile(
                 title: Text(L10n.of(context).wallpaper),
@@ -293,12 +301,20 @@ class _WallpaperOption extends StatelessWidget {
 class ChatStylePreview extends StatelessWidget {
   final ChatWallpaper wallpaper;
 
-  const ChatStylePreview({required this.wallpaper, super.key});
+  /// Shows the bubble colors of this chat instead of the general ones.
+  final Room? room;
+
+  const ChatStylePreview({required this.wallpaper, this.room, super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final client = Matrix.of(context).client;
+    final room = this.room;
+    final config = client.applicationAccountConfig;
+    final theme = Theme.of(context).withBubbleColors(
+      room == null ? config.bubbleColor : room.bubbleColor,
+      room == null ? config.otherBubbleColor : room.otherBubbleColor,
+    );
     final bubbleShadows = theme.brightness == Brightness.dark
         ? null
         : const [

@@ -13,6 +13,8 @@ import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_list/chat_list_view.dart';
+import 'package:fluffychat/personalization/simple_view_conversation_source.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/localized_exception_extension.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
@@ -147,6 +149,13 @@ class ChatListController extends State<ChatList>
       return;
     }
 
+    if (room.membership == Membership.join) {
+      unawaited(
+        SimplifiedInterfaceScope.maybeOf(
+          context,
+        )?.recordConversationOpened(simpleViewAccount(room.client), room.id),
+      );
+    }
     context.go('/rooms/${room.id}');
   }
 
@@ -516,14 +525,7 @@ class ChatListController extends State<ChatList>
       Offset.zero & overlay.size,
     );
 
-    final spacesWithPowerLevels = room.client.rooms
-        .where(
-          (space) =>
-              space.isSpace &&
-              space.canChangeStateEvent(EventTypes.SpaceChild) &&
-              !space.spaceChildren.any((c) => c.roomId == room.id),
-        )
-        .toList();
+    final spacesWithPowerLevels = _spacesToAddTo(room);
 
     var action = await showMenu<ChatContextAction>(
       context: posContext,
@@ -586,24 +588,23 @@ class ChatListController extends State<ChatList>
               ],
             ),
           ),
-          if (!room.isLowPriority)
-            PopupMenuItem(
-              value: ChatContextAction.favorite,
-              child: Row(
-                mainAxisSize: .min,
-                children: [
-                  Icon(
-                    room.isFavourite ? Icons.push_pin : Icons.push_pin_outlined,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    room.isFavourite
-                        ? L10n.of(context).unpin
-                        : L10n.of(context).pin,
-                  ),
-                ],
-              ),
+          PopupMenuItem(
+            value: ChatContextAction.favorite,
+            child: Row(
+              mainAxisSize: .min,
+              children: [
+                Icon(
+                  room.isFavourite ? Icons.push_pin : Icons.push_pin_outlined,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  room.isFavourite
+                      ? L10n.of(context).unpin
+                      : L10n.of(context).pin,
+                ),
+              ],
             ),
+          ),
         ],
         PopupMenuItem(
           value: ChatContextAction.leave,
@@ -666,26 +667,6 @@ class ChatListController extends State<ChatList>
         context: posContext,
         position: position,
         items: [
-          if (!room.isFavourite)
-            PopupMenuItem(
-              value: ChatContextAction.lowPriority,
-              child: Row(
-                mainAxisSize: .min,
-                children: [
-                  Icon(
-                    room.isLowPriority
-                        ? Icons.low_priority
-                        : Icons.low_priority_outlined,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    room.isLowPriority
-                        ? L10n.of(context).unsetLowPriority
-                        : L10n.of(context).setLowPriority,
-                  ),
-                ],
-              ),
-            ),
           if (activeTag == null)
             PopupMenuItem(
               value: ChatContextAction.addTag,
@@ -728,7 +709,25 @@ class ChatListController extends State<ChatList>
 
     if (action == null) return;
     if (!mounted) return;
+    await runChatContextAction(room, action, space);
+  }
 
+  List<Room> _spacesToAddTo(Room room) => room.client.rooms
+      .where(
+        (space) =>
+            space.isSpace &&
+            space.canChangeStateEvent(EventTypes.SpaceChild) &&
+            !space.spaceChildren.any((c) => c.roomId == room.id),
+      )
+      .toList();
+
+  /// Runs an action of the long press menu or of a swipe action.
+  Future<void> runChatContextAction(
+    Room room,
+    ChatContextAction action, [
+    Room? space,
+  ]) async {
+    final spacesWithPowerLevels = _spacesToAddTo(room);
     switch (action) {
       case ChatContextAction.goToSpace:
         setActiveSpace(space!.id);
@@ -798,12 +797,6 @@ class ChatListController extends State<ChatList>
           context: context,
           future: () => space.setSpaceChild(room.id),
         );
-      case ChatContextAction.lowPriority:
-        await showFutureLoadingDialog(
-          context: context,
-          future: () => room.setLowPriority(!room.isLowPriority),
-        );
-        return;
       case ChatContextAction.addTag:
         final existingTags = List.of(roomTags.keys);
         existingTags.removeWhere(room.tags.containsKey);
@@ -847,7 +840,38 @@ class ChatListController extends State<ChatList>
         );
         return;
       case ChatContextAction.showMore:
-        throw ('Should not be handled!');
+        // The "More" swipe action of iOS: the actions without a swipe action.
+        final more = await showModalActionPopup<ChatContextAction>(
+          context: context,
+          title: room.getLocalizedDisplayname(MatrixLocals(L10n.of(context))),
+          cancelLabel: L10n.of(context).cancel,
+          actions: [
+            if (space != null)
+              AdaptiveModalAction(
+                value: ChatContextAction.goToSpace,
+                label: L10n.of(
+                  context,
+                ).goToSpace(space.getLocalizedDisplayname()),
+              ),
+            if (activeTag == null)
+              AdaptiveModalAction(
+                value: ChatContextAction.addTag,
+                label: L10n.of(context).addTag,
+              )
+            else
+              AdaptiveModalAction(
+                value: ChatContextAction.removeTag,
+                label: L10n.of(context).removeTag,
+              ),
+            if (spacesWithPowerLevels.isNotEmpty)
+              AdaptiveModalAction(
+                value: ChatContextAction.addToSpace,
+                label: L10n.of(context).addToSpace,
+              ),
+          ],
+        );
+        if (more == null || !mounted) return;
+        await runChatContextAction(room, more, space);
     }
   }
 
@@ -1070,7 +1094,6 @@ enum EditBundleAction { addToBundle, removeFromBundle }
 enum ChatContextAction {
   goToSpace,
   favorite,
-  lowPriority,
   addTag,
   removeTag,
   markUnread,

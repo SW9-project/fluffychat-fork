@@ -53,13 +53,13 @@ class NewPrivateChatView extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: L10n.of(context).searchForUsers,
                   filled: true,
-                  fillColor: theme.colorScheme.secondaryContainer,
+                  fillColor: theme.colorScheme.surfaceContainerHigh,
                   border: OutlineInputBorder(
                     borderSide: BorderSide.none,
                     borderRadius: BorderRadius.circular(99),
                   ),
                   hintStyle: TextStyle(
-                    color: theme.colorScheme.onPrimaryContainer,
+                    color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.normal,
                   ),
                   prefixIcon: searchResponse == null

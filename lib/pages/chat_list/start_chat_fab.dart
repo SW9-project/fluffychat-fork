@@ -4,19 +4,41 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/utils/platform_infos.dart';
+import 'package:fluffychat/widgets/liquid_glass.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 class StartChatFab extends StatelessWidget {
-  const StartChatFab({super.key});
+  /// With its label, like the Material 3 button below a list.
+  final bool extended;
+
+  const StartChatFab({this.extended = false, super.key});
 
   @override
   Widget build(BuildContext context) {
+    void onPressed() => context.go('/rooms/newprivatechat');
+    if (extended) {
+      return FloatingActionButton.extended(
+        heroTag: 'start_chat_fab',
+        onPressed: onPressed,
+        icon: const Icon(Icons.edit_outlined),
+        label: Text(L10n.of(context).newChat),
+      );
+    }
+    if (PlatformInfos.supportsLiquidGlass) {
+      return NativeGlassButton(
+        symbol: 'square.and.pencil',
+        label: L10n.of(context).newChat,
+        size: 56,
+        onPressed: onPressed,
+      );
+    }
     return FloatingActionButton(
       heroTag: 'start_chat_fab',
       tooltip: L10n.of(context).newChat,
-      onPressed: () => context.go('/rooms/newprivatechat'),
-      child: const Icon(Icons.edit),
+      onPressed: onPressed,
+      child: const Icon(Icons.edit_outlined),
     );
   }
 }

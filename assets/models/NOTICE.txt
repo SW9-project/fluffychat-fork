@@ -1,0 +1,9 @@
+Gemma is provided under and subject to the Gemma Terms of Use found at ai.google.dev/gemma/terms
+
+Use is also subject to the Gemma Prohibited Use Policy:
+https://ai.google.dev/gemma/prohibited_use_policy
+
+functiongemma-270M-sw9-tools1.litertlm is a modified version of FunctionGemma 270M
+(google/functiongemma-270m-it): the SW9 project fine-tuned it on the functions in
+assets/personalization_tools.json, with English examples the project wrote itself
+(training/source), and converted it to LiteRT-LM (training/convert.py).

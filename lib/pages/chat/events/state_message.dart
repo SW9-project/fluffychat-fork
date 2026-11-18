@@ -89,7 +89,7 @@ class StateMessage extends StatelessWidget {
                                         child: Icon(
                                           Icons.info_outlined,
                                           size: 14,
-                                          color: Colors.white,
+                                          color: theme.onServiceMessageColor,
                                         ),
                                       ),
                                     ),
@@ -98,9 +98,10 @@ class StateMessage extends StatelessWidget {
                               if (onExpand != null) ...[
                                 const TextSpan(text: '\n'),
                                 TextSpan(
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     decoration: TextDecoration.underline,
-                                    decorationColor: Colors.white,
+                                    decorationColor:
+                                        theme.onServiceMessageColor,
                                   ),
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = onExpand,
@@ -113,7 +114,7 @@ class StateMessage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white,
+                            color: theme.onServiceMessageColor,
                             decoration: event.redacted
                                 ? TextDecoration.lineThrough
                                 : null,

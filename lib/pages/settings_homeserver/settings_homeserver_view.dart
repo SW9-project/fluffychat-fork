@@ -10,6 +10,7 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/utils/localized_exception_extension.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
+import 'package:fluffychat/widgets/settings_section.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -29,8 +30,13 @@ class SettingsHomeserverView extends StatelessWidget {
 
     final client = Matrix.of(context).client;
 
+    final background = theme.cupertinoStyle
+        ? SettingsSection.backgroundColor(theme)
+        : null;
     return Scaffold(
+      backgroundColor: background,
       appBar: AppBar(
+        backgroundColor: background,
         automaticallyImplyLeading: !FluffyThemes.isColumnMode(context),
         centerTitle: FluffyThemes.isColumnMode(context),
         title: Text(
@@ -42,18 +48,9 @@ class SettingsHomeserverView extends StatelessWidget {
       body: MaxWidthBody(
         withScrolling: true,
         child: SelectionArea(
-          child: Column(
-            mainAxisSize: .min,
+          child: SettingsList(
             children: [
-              ListTile(
-                title: Text(
-                  L10n.of(context).serverInformation,
-                  style: TextStyle(
-                    color: theme.colorScheme.secondary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              SettingsHeader(L10n.of(context).serverInformation),
               FutureBuilder(
                 future: client.getWellknownSupport(),
                 builder: (context, snapshot) {
@@ -181,6 +178,8 @@ class SettingsHomeserverView extends StatelessWidget {
                 },
               ),
               Divider(color: theme.dividerColor),
+              // Outside of the builder, so iOS can put it above the group.
+              SettingsHeader(L10n.of(context).clientWellKnownInformation),
               FutureBuilder(
                 future: client.getWellknown(),
                 builder: (context, snapshot) {
@@ -212,15 +211,6 @@ class SettingsHomeserverView extends StatelessWidget {
                   return Column(
                     mainAxisSize: .min,
                     children: [
-                      ListTile(
-                        title: Text(
-                          L10n.of(context).clientWellKnownInformation,
-                          style: TextStyle(
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
                       ListTile(
                         title: Text(L10n.of(context).baseUrl),
                         subtitle: Linkify(

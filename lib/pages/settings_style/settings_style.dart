@@ -7,8 +7,10 @@ import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_wallpaper/chat_picker_dialog.dart';
+import 'package:fluffychat/utils/account_config.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
+import 'package:fluffychat/widgets/matrix.dart';
 import 'package:fluffychat/widgets/theme_builder.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -44,6 +46,22 @@ class SettingsStyleController extends State<SettingsStyle> {
     context: context,
     future: () => room.setCustomWallpaper(null),
   );
+
+  void setBubbleColors(Color? own, Color? other) {
+    final client = Matrix.of(context).client;
+    final config = client.applicationAccountConfig;
+    // Not updateApplicationAccountConfig: it can not reset a value to null.
+    showFutureLoadingDialog(
+      context: context,
+      future: () => client.setApplicationAccountConfig(
+        ApplicationAccountConfig(
+          wallpaper: config.wallpaper,
+          bubbleColor: own,
+          otherBubbleColor: other,
+        ),
+      ),
+    );
+  }
 
   ThemeMode get currentTheme => ThemeController.of(context).themeMode;
   Color? get currentColor {

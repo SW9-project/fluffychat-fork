@@ -1,0 +1,7 @@
+{
+  "id": "functiongemma-270M-sw9-tools1",
+  "filename": "functiongemma-270M-sw9-tools1.litertlm",
+  "sha256": "37e92741110b1a7bff2607905a3598186d42de36beabe9091400879ef7d1383b",
+  "sizeBytes": 284121728,
+  "source": "training/ checkpoint-1561 (epoch 7), built 2026-11-11; the team's v2 file has the same bytes"
+}

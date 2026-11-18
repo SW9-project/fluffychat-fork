@@ -947,9 +947,11 @@ extension on ScaffoldMessengerState {
           Expanded(child: Text(title, overflow: .ellipsis, maxLines: 1)),
           SizedBox.square(
             dimension: 16,
-            child: CircularProgressIndicator(
+            child: CircularProgressIndicator.adaptive(
               strokeWidth: 2,
-              color: Theme.of(context).colorScheme.onInverseSurface,
+              valueColor: AlwaysStoppedAnimation(
+                Theme.of(context).colorScheme.onInverseSurface,
+              ),
             ),
           ),
         ],

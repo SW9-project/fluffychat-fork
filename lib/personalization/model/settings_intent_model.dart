@@ -4,10 +4,10 @@
 
 import 'package:flutter/foundation.dart';
 
-import 'settings_functions.dart';
+import 'personalization_tools.dart';
 
 /// A function call the model proposed. Not yet validated: see
-/// `SettingsCallValidator`.
+/// `ToolCallInterpreter`.
 class ProposedCall {
   final String name;
   final Map<String, Object?> args;
@@ -16,6 +16,42 @@ class ProposedCall {
 
   @override
   String toString() => 'ProposedCall($name, $args)';
+}
+
+/// One step of a conversation with the model, in the shapes it was trained
+/// on (see `training/README.md`, Conversations).
+sealed class ModelTurn {
+  const ModelTurn();
+}
+
+/// What the user typed.
+class UserTurn extends ModelTurn {
+  final String text;
+
+  const UserTurn(this.text);
+}
+
+/// A call the model made.
+class CallTurn extends ModelTurn {
+  final ProposedCall call;
+
+  const CallTurn(this.call);
+}
+
+/// The app's answer to a call: the user's choice for `ask_clarification`, or
+/// whether a change was applied or declined.
+class ResponseTurn extends ModelTurn {
+  final String name;
+  final Map<String, Object?> response;
+
+  const ResponseTurn(this.name, this.response);
+}
+
+/// The fixed reply after an answered change, such as `Done.`.
+class ReplyTurn extends ModelTurn {
+  final String text;
+
+  const ReplyTurn(this.text);
 }
 
 enum ModelState {
@@ -100,11 +136,13 @@ abstract class SettingsIntentModel {
   /// Prepares the model for first use. Safe to call again.
   Future<void> prepare();
 
-  /// The model's proposed call for [text], choosing only among [functions],
-  /// or null when it made none. Only the user's own text is sent, never
-  /// messages or other chat data.
+  /// The model's next call in [conversation], choosing only among
+  /// [functions], or null when it made none. The last turn is the user's
+  /// text or the answer to the model's last call; the turns before it are the
+  /// earlier exchange. Only what the user typed and chose in the Assist tab is
+  /// sent, never messages or other chat data.
   Future<ProposedCall?> propose(
-    String text,
+    List<ModelTurn> conversation,
     List<FunctionDeclaration> functions,
   );
 

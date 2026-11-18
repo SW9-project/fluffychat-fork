@@ -8,6 +8,7 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/code_highlight_theme.dart';
 import 'package:fluffychat/utils/event_checkbox_extension.dart';
 import 'package:fluffychat/widgets/avatar.dart';
@@ -314,7 +315,13 @@ class HtmlMessage extends StatelessWidget {
                     ),
                   ..._renderWithLineBreaks(node.nodes, context, depth: depth),
                 ],
-                style: TextStyle(fontSize: fontSize, color: textColor),
+                style: TextStyle(
+                  fontSize: fontSize,
+                  color: textColor,
+                  height: SimplifiedInterfaceScope.enabledOf(context)
+                      ? 1.5
+                      : null,
+                ),
               ),
             ),
           ),
@@ -514,7 +521,13 @@ class HtmlMessage extends StatelessWidget {
                       ),
                   ],
                 ),
-                style: TextStyle(fontSize: fontSize, color: textColor),
+                style: TextStyle(
+                  fontSize: fontSize,
+                  color: textColor,
+                  height: SimplifiedInterfaceScope.enabledOf(context)
+                      ? 1.5
+                      : null,
+                ),
               ),
             ),
           ),
@@ -552,7 +565,11 @@ class HtmlMessage extends StatelessWidget {
       default:
         return TextSpan(
           style: switch (node.localName) {
-            'body' => TextStyle(fontSize: fontSize, color: textColor),
+            'body' => TextStyle(
+              fontSize: fontSize,
+              color: textColor,
+              height: SimplifiedInterfaceScope.enabledOf(context) ? 1.5 : null,
+            ),
             'a' => linkStyle,
             'strong' => const TextStyle(fontWeight: FontWeight.bold),
             'em' || 'i' => const TextStyle(fontStyle: FontStyle.italic),
@@ -590,7 +607,11 @@ class HtmlMessage extends StatelessWidget {
     final configuredMaxLines = AppSettings.messagePreviewMaxLines.value;
     final maxLines = configuredMaxLines <= 0 ? null : configuredMaxLines;
     final span = _renderHtml(element, context);
-    final style = TextStyle(fontSize: fontSize, color: textColor);
+    final style = TextStyle(
+      fontSize: fontSize,
+      color: textColor,
+      height: SimplifiedInterfaceScope.enabledOf(context) ? 1.5 : null,
+    );
 
     if (maxLines == null) {
       return Text.rich(

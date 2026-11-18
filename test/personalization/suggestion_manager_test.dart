@@ -84,7 +84,7 @@ void main() {
   test('apply changes the setting and undo reverts it', () async {
     pinch();
     await manager.apply();
-    expect(accessibility.settings.textScale, 1.1);
+    expect(accessibility.settings.textScale, 1.2);
     expect(manager.current, isNull);
     expect(manager.applied?.suggestion.id, 'text-zoom');
 
@@ -98,7 +98,7 @@ void main() {
     await manager.apply();
     await accessibility.apply(ScaleCategory.avatar, 1.5);
     await manager.undoApplied();
-    expect(accessibility.settings.textScale, 1.1);
+    expect(accessibility.settings.textScale, 1.2);
     expect(accessibility.settings.avatarScale, 1.5);
   });
 
@@ -126,8 +126,8 @@ void main() {
     expect(manager.current, isNull);
     pinch();
     expect(manager.current?.id, 'text-zoom');
-    expect(manager.current?.from, 1.1);
-    expect(manager.current?.to, 1.2);
+    expect(manager.current?.change.from[ScaleCategory.text], 1.2);
+    expect(manager.current?.change.to[ScaleCategory.text], 1.4);
   });
 
   test('undo starts a cooldown like not now', () async {

@@ -10,6 +10,7 @@ import 'dart:ui';
 import 'package:collection/collection.dart';
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/client_manager.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/notification_background_handler.dart';
@@ -144,11 +145,14 @@ Future<void> startGui(List<Client> clients, SharedPreferences store) async {
   await firstClient?.accountDataLoading;
 
   runApp(
-    AccessibilityScope(
-      child: FluffyChatApp(
-        clients: clients,
-        appLockSettings: (pincode: pin, useBiometrics: useBiometrics),
-        store: store,
+    SimplifiedInterfaceScope(
+      store: store,
+      child: AccessibilityScope(
+        child: FluffyChatApp(
+          clients: clients,
+          appLockSettings: (pincode: pin, useBiometrics: useBiometrics),
+          store: store,
+        ),
       ),
     ),
   );

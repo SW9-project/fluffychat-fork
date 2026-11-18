@@ -1,0 +1,125 @@
+{
+  "function": "ask_clarification",
+  "groups": [
+    {
+      "args": {"options": ["change_text_size", "change_button_size", "change_avatar_size"]},
+      "prompts": [
+        "make it bigger",
+        "bigger",
+        "smaller",
+        "make it smaller",
+        "too small",
+        "it's too big",
+        "can you make things larger",
+        "increase the size",
+        "everything is too small",
+        "the size is wrong",
+        "change the size",
+        "biger pls",
+        "make stuff bigger",
+        "too tiny",
+        "it's all too large",
+        "enlarge it"
+      ]
+    },
+    {
+      "args": {"options": ["change_text_size"]},
+      "prompts": [
+        "change the text size",
+        "the text size",
+        "adjust the font",
+        "font size",
+        "can I change how big the letters are",
+        "different text size please",
+        "the letters",
+        "I want to change the size of the words"
+      ]
+    },
+    {
+      "args": {"options": ["change_button_size"]},
+      "prompts": [
+        "change the button size",
+        "button size",
+        "resize the buttons",
+        "can I change how big the buttons are",
+        "make that button bigger"
+      ]
+    },
+    {
+      "args": {"options": ["change_button_size", "change_spacing", "set_button_labels"]},
+      "prompts": [
+        "the buttons",
+        "fix the buttons",
+        "something is wrong with the buttons",
+        "I have trouble with the buttons",
+        "the buttons are annoying",
+        "help with the buttons",
+        "the buttons are bad"
+      ]
+    },
+    {
+      "args": {"options": ["change_text_size", "set_high_contrast"]},
+      "prompts": [
+        "change the text",
+        "the text is weird",
+        "I don't like the text",
+        "the writing looks bad",
+        "the letters are strange",
+        "I can't read anything"
+      ]
+    },
+    {
+      "args": {"options": ["change_text_size", "set_high_contrast", "set_theme"]},
+      "prompts": [
+        "I can't see well",
+        "it's hard to see",
+        "my eyesight is bad",
+        "help me see better"
+      ]
+    },
+    {
+      "args": {"options": ["set_high_contrast", "set_theme"]},
+      "prompts": [
+        "change the colors",
+        "the colors are bad",
+        "different colors please",
+        "I don't like the colors",
+        "make it darker",
+        "make it lighter",
+        "my eyes hurt when I use the app"
+      ]
+    },
+    {
+      "args": {"options": ["set_simple_mode", "set_button_labels"]},
+      "prompts": [
+        "I don't understand the app",
+        "I don't know how to use this",
+        "this app is hard to understand",
+        "I'm lost",
+        "how does this app work"
+      ]
+    },
+    {
+      "args": {"options": ["change_button_size", "change_spacing"]},
+      "prompts": [
+        "I keep making mistakes when I tap",
+        "tapping is hard",
+        "I press things by accident",
+        "my taps don't work right"
+      ]
+    },
+    {
+      "args": {"options": ["change_text_size", "change_button_size", "set_simple_mode"]},
+      "prompts": [
+        "the app is hard to use",
+        "make the app easier",
+        "help me use the app",
+        "make it easier for me",
+        "fix the app for me",
+        "the app looks wrong",
+        "make the app better for an old person",
+        "adjust the screen for me"
+      ]
+    }
+  ]
+}

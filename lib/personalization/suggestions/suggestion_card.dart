@@ -6,13 +6,14 @@ import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../accessibility_settings.dart';
+import '../appearance_l10n.dart';
+import '../assist/change_preview.dart';
 import '../heuristics/heuristics_engine.dart';
 import '../personalization_l10n.dart';
 import '../signals/tracked_target.dart';
 import 'suggestion_manager.dart';
 
-/// Disabled for now (Phase 3b): proposals are shown in the Assist tab, and
+/// Disabled: proposals are shown in the Assist tab, and
 /// nothing inserts this card. Its apply and undo logic lives in
 /// [SuggestionManager], which the Assist tab uses.
 ///
@@ -162,67 +163,15 @@ class _SuggestionContent extends StatelessWidget {
   }
 }
 
-/// Shows the size before and after the change side by side.
+/// Shows the change before and after.
 class _ChangePreview extends StatelessWidget {
   final Suggestion suggestion;
 
   const _ChangePreview({required this.suggestion});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = PersonalizationL10n.of(context);
-    Widget sample(double value) => switch (suggestion.category) {
-      ScaleCategory.text || ScaleCategory.inputText => Text(
-        'Aa',
-        textScaler: TextScaler.noScaling,
-        style: TextStyle(fontSize: AppConfig.messageFontSize * value),
-      ),
-      ScaleCategory.button => Icon(Icons.send, size: 24 * value),
-      ScaleCategory.avatar => CircleAvatar(
-        radius: 18 * value,
-        backgroundColor: theme.colorScheme.primaryContainer,
-      ),
-      ScaleCategory.touchTarget => Container(
-        width: 40 * value,
-        height: 40 * value,
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.colorScheme.primary),
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    };
-    String label(double value) => '× ${value.toStringAsFixed(1)}';
-
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            l10n.categoryTitles[suggestion.category]!,
-            style: theme.textTheme.titleSmall,
-          ),
-        ),
-        Column(
-          mainAxisSize: .min,
-          children: [sample(suggestion.from), Text(label(suggestion.from))],
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Icon(Icons.arrow_forward, color: theme.colorScheme.primary),
-        ),
-        Column(
-          mainAxisSize: .min,
-          children: [
-            sample(suggestion.to),
-            Text(
-              label(suggestion.to),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) =>
+      ChangePreview(change: suggestion.change);
 }
 
 class _AppliedContent extends StatelessWidget {
@@ -245,12 +194,13 @@ class _AppliedContent extends StatelessWidget {
           const Icon(Icons.check_circle_outline),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              l10n.changedTo(
-                l10n.categoryTitles[suggestion.category]!,
-                suggestion.to.toStringAsFixed(1),
+            child: Text(switch (suggestion.change.onlyCategory) {
+              final category? => l10n.changedTo(
+                l10n.categoryTitles[category]!,
+                suggestion.change.to.effective(category).toStringAsFixed(1),
               ),
-            ),
+              null => AppearanceL10n.of(context).applied,
+            }),
           ),
           TextButton.icon(
             key: const Key('suggestion_undo'),

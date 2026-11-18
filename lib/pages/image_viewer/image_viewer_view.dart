@@ -6,6 +6,7 @@
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/image_viewer/pointers_listener.dart';
 import 'package:fluffychat/pages/image_viewer/video_player.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/hover_builder.dart';
 import 'package:fluffychat/widgets/mxc_image.dart';
@@ -34,7 +35,10 @@ class ImageViewerView extends StatelessWidget {
           elevation: 0,
           leading: IconButton(
             style: iconButtonStyle,
-            icon: const Icon(Icons.close),
+            icon: LabeledIcon(
+              icon: const Icon(Icons.close),
+              label: L10n.of(context).close,
+            ),
             onPressed: Navigator.of(context).pop,
             color: Colors.white,
             tooltip: L10n.of(context).close,
@@ -43,7 +47,10 @@ class ImageViewerView extends StatelessWidget {
           actions: [
             IconButton(
               style: iconButtonStyle,
-              icon: const Icon(Icons.reply_outlined),
+              icon: LabeledIcon(
+                icon: const Icon(Icons.reply_outlined),
+                label: L10n.of(context).forward,
+              ),
               onPressed: controller.forwardAction,
               color: Colors.white,
               tooltip: L10n.of(context).share,
@@ -51,7 +58,10 @@ class ImageViewerView extends StatelessWidget {
             const SizedBox(width: 8),
             IconButton(
               style: iconButtonStyle,
-              icon: const Icon(Icons.download_outlined),
+              icon: LabeledIcon(
+                icon: const Icon(Icons.download_outlined),
+                label: L10n.of(context).download,
+              ),
               onPressed: () => controller.saveFileAction(context),
               color: Colors.white,
               tooltip: L10n.of(context).downloadFile,
@@ -67,7 +77,10 @@ class ImageViewerView extends StatelessWidget {
                     onPressed: () => controller.shareFileAction(context),
                     tooltip: L10n.of(context).share,
                     color: Colors.white,
-                    icon: Icon(Icons.adaptive.share_outlined),
+                    icon: LabeledIcon(
+                      icon: Icon(Icons.adaptive.share_outlined),
+                      label: L10n.of(context).share,
+                    ),
                   ),
                 ),
               ),
