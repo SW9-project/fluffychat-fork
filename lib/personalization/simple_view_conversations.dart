@@ -4,12 +4,18 @@
 import 'package:flutter/widgets.dart';
 
 import 'quick_access_conversations.dart';
+import 'simple_view_preview_scene.dart';
 
 /// A local snapshot shared by onboarding from Chats and Assistant.
 class SimpleViewConversations {
   final String account;
   final List<QuickAccessConversation> conversations;
-  const SimpleViewConversations(this.account, this.conversations);
+  final SimpleViewPreviewScene Function(BuildContext)? createPreview;
+  const SimpleViewConversations(
+    this.account,
+    this.conversations, {
+    this.createPreview,
+  });
 
   static SimpleViewConversations? fromContext(BuildContext context) => context
       .getInheritedWidgetOfExactType<SimpleViewConversationsScope>()

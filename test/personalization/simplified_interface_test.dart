@@ -212,28 +212,6 @@ void main() {
     },
   );
 
-  testWidgets('preview scrolls when dragging inside the example card', (
-    tester,
-  ) async {
-    await controller.applyPreferences(
-      const SimpleViewPreferences(),
-      enabled: false,
-      skipPreview: false,
-    );
-    tester.view.physicalSize = const Size(320, 800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await pumpHome(tester, textScale: 1.8);
-    await tap(tester, 'simplified_interface_switch');
-    final preview = find.byType(SimplifiedInterfacePreview).last;
-    final before = tester.getTopLeft(preview).dy;
-    await tester.dragFrom(const Offset(160, 550), const Offset(0, -250));
-    await tester.pumpAndSettle();
-    expect(tester.getTopLeft(preview).dy, lessThan(before));
-    await tap(tester, 'simple_setup_cancel');
-  });
-
   testWidgets('cancel discards onboarding choices and preview preference', (
     tester,
   ) async {
@@ -392,10 +370,10 @@ void main() {
     await tap(tester, 'setup_choose_names');
     await tap(tester, 'quick_access_pick_Beth');
     await tap(tester, 'quick_access_save');
+    expect(find.text('Beth'), findsOneWidget);
     await tap(tester, 'simple_setup_next');
     await tap(tester, 'simple_setup_next');
     expect(find.byKey(const Key('setup_familiar_chat')), findsNothing);
-    expect(find.text('Beth'), findsOneWidget);
     await tap(tester, 'simple_setup_apply');
     expect(controller.quickAccessFor('account-a'), ['Beth']);
     expect(controller.quickAccessFor('account-b'), isEmpty);

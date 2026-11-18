@@ -61,17 +61,56 @@ extension LocalizedActiveFilter on ActiveFilter {
   }
 }
 
+/// Read-only visual state copied when a home-screen preview is opened.
+class ChatListPreviewState {
+  final ActiveFilter filter;
+  final String? tag;
+  final double scrollOffset;
+  final String query;
+  final bool searchMode;
+  final String? searchServer;
+  final Map<String, int> roomTags;
+  final QueryPublicRoomsResponse? roomSearchResult;
+  final SearchUserDirectoryResponse? userSearchResult;
+  final bool searching;
+  final String? activeChat;
+
+  ChatListPreviewState(ChatListController state)
+    : filter = state.activeFilter,
+      tag = state.activeTag,
+      scrollOffset = state.scrollController.hasClients
+          ? state.scrollController.offset
+          : 0,
+      query = state.searchController.text,
+      searchMode = state.isSearchMode,
+      searchServer = state.searchServer,
+      roomTags = Map.of(state.roomTags),
+      roomSearchResult = state.roomSearchResult,
+      userSearchResult = state.userSearchResult,
+      searching = state.isSearching,
+      activeChat = state.activeChat;
+}
+
 class ChatList extends StatefulWidget {
   final String? activeChat;
   final String? activeSpace;
   final bool displayNavigationRail;
+  final bool previewOnly;
+  final ChatListPreviewState? previewState;
 
   const ChatList({
     super.key,
     required this.activeChat,
     this.activeSpace,
     this.displayNavigationRail = false,
-  });
+  }) : previewOnly = false,
+       previewState = null;
+
+  const ChatList.preview({super.key, this.previewState})
+    : previewOnly = true,
+      activeChat = null,
+      activeSpace = null,
+      displayNavigationRail = false;
 
   @override
   ChatListController createState() => ChatListController();
@@ -321,7 +360,9 @@ class ChatListController extends State<ChatList>
 
   BoxConstraints? snappingSheetContainerSize;
 
-  final ScrollController scrollController = ScrollController();
+  late final ScrollController scrollController = ScrollController(
+    initialScrollOffset: widget.previewState?.scrollOffset ?? 0,
+  );
 
   final StreamController<Client> _clientStream = StreamController.broadcast();
 
@@ -339,7 +380,8 @@ class ChatListController extends State<ChatList>
   List<Room> get spaces =>
       Matrix.of(context).client.rooms.where((r) => r.isSpace).toList();
 
-  String? get activeChat => widget.activeChat;
+  String? get activeChat =>
+      widget.previewState?.activeChat ?? widget.activeChat;
 
   void _processIncomingSharedMedia(List<SharedMediaFile> files) {
     files.removeWhere(
@@ -412,6 +454,35 @@ class ChatListController extends State<ChatList>
 
   @override
   void initState() {
+    if (widget.previewOnly) {
+      super.initState();
+      // Only cached display data. No calls, push setup, intents, sync waits,
+      // update dialogs, crash reports, or preference writes in a preview.
+      _updateRoomTags();
+      final snapshot = widget.previewState;
+      activeTag = snapshot?.tag;
+      activeFilter =
+          snapshot?.filter ??
+          (roomTags.containsKey(AppSettings.chatFilter.value)
+              ? ActiveFilter.tag
+              : ActiveFilter.values.singleWhereOrNull(
+                      (filter) => AppSettings.chatFilter.value == filter.name,
+                    ) ??
+                    ActiveFilter.allChats);
+      if (snapshot == null && activeFilter == ActiveFilter.tag) {
+        activeTag = AppSettings.chatFilter.value;
+      }
+      if (snapshot != null) {
+        roomTags = Map.of(snapshot.roomTags);
+        searchController.text = snapshot.query;
+        isSearchMode = snapshot.searchMode;
+        searchServer = snapshot.searchServer;
+        roomSearchResult = snapshot.roomSearchResult;
+        userSearchResult = snapshot.userSearchResult;
+        isSearching = snapshot.searching;
+      }
+      return;
+    }
     _initReceiveSharingIntent();
 
     _waitForFirstSync();

@@ -1,9 +1,16 @@
 // SPDX-FileCopyrightText: 2026 SW9-project contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:async';
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'accessibility_scope.dart';
+import 'simple_view_conversations.dart';
+import 'simple_view_preview_scene.dart';
 import 'simple_view_setup.dart';
 import 'simplified_interface.dart';
 import 'simplified_interface_l10n.dart';
@@ -53,158 +60,165 @@ class SimplifiedInterfaceSwitch extends StatelessWidget {
   }
 }
 
-/// Safe example only: it has no rooms, message content, or send actions.
-class SimplifiedInterfacePreview extends StatelessWidget {
+/// A passive, full-screen rendering of the actual Chats page. It uses the
+/// original viewport and theme, then scales the whole screen as one image.
+class SimplifiedInterfacePreview extends StatefulWidget {
   final bool enabled;
   final SimpleViewPreferences? preferences;
-  final List<String> conversationNames;
+  final List<String>? selectedIds;
+  final SimpleViewPreviewScene? scene;
+
   const SimplifiedInterfacePreview({
     required this.enabled,
     this.preferences,
-    this.conversationNames = const [],
+    this.selectedIds,
+    this.scene,
     super.key,
   });
 
   @override
+  State<SimplifiedInterfacePreview> createState() =>
+      _SimplifiedInterfacePreviewState();
+}
+
+class _SimplifiedInterfacePreviewState
+    extends State<SimplifiedInterfacePreview> {
+  SimplifiedInterfaceController? _preview;
+  final _boundary = GlobalKey();
+  Timer? _captureTimer;
+  ui.Image? _image;
+  bool _scheduled = false;
+  int _generation = 0;
+
+  void _scheduleImage(double pixelRatio) {
+    if (_scheduled) return;
+    _scheduled = true;
+    final generation = _generation;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || generation != _generation) return;
+      // Let cached avatars/profile futures paint before freezing this frame.
+      _captureTimer = Timer(const Duration(milliseconds: 300), () async {
+        final boundary = _boundary.currentContext?.findRenderObject();
+        if (boundary is! RenderRepaintBoundary) return;
+        ui.Image image;
+        try {
+          image = await boundary.toImage(pixelRatio: pixelRatio);
+        } catch (_) {
+          // Keep the real passive renderer if capture is unsupported.
+          return;
+        }
+        if (!mounted || generation != _generation) {
+          image.dispose();
+          return;
+        }
+        setState(() => _image = image);
+      });
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant SimplifiedInterfacePreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled == widget.enabled &&
+        identical(oldWidget.preferences, widget.preferences) &&
+        identical(oldWidget.scene, widget.scene) &&
+        listEquals(oldWidget.selectedIds, widget.selectedIds)) {
+      return;
+    }
+    _generation++;
+    _captureTimer?.cancel();
+    _image?.dispose();
+    _image = null;
+    _scheduled = false;
+    _preview?.dispose();
+    _preview = null;
+  }
+
+  @override
+  void dispose() {
+    _captureTimer?.cancel();
+    _image?.dispose();
+    _preview?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final text = SimplifiedInterfaceL10n.of(context);
-    final theme = Theme.of(context);
-    final setup = SimpleSetupL10n.of(context);
-    final profile =
-        preferences ??
-        SimplifiedInterfaceScope.maybeOf(context)?.preferences ??
-        const SimpleViewPreferences();
-    return IgnorePointer(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: enabled
-              ? theme.colorScheme.primary.withAlpha(12)
-              : theme.colorScheme.surface,
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(16),
+    final scene =
+        widget.scene ??
+        SimpleViewConversations.fromContext(
+          context,
+        )?.createPreview?.call(context);
+    if (scene == null) {
+      return Text(
+        Localizations.localeOf(context).languageCode == 'es'
+            ? 'Vista previa no disponible.'
+            : 'Preview unavailable.',
+      );
+    }
+    final viewport = scene.mediaQuery.size;
+    if (_image case final image?) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: AspectRatio(
+          aspectRatio: viewport.width / viewport.height,
+          child: RawImage(
+            image: image,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(text.sample, style: theme.textTheme.labelMedium),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: enabled
-                    ? theme.colorScheme.primary.withAlpha(18)
-                    : theme.colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    enabled ? Icons.home_rounded : Icons.chat_bubble_outline,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      enabled ? setup.title : text.fullView,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (enabled && profile.quickAccess != SimpleQuickAccess.none) ...[
-              Text(
-                profile.quickAccess == SimpleQuickAccess.frequent
-                    ? setup.frequent
-                    : text.quickAccess,
-                style: theme.textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final name in conversationNames) Chip(label: Text(name)),
-                  if (conversationNames.isEmpty)
-                    const CircleAvatar(child: Icon(Icons.person)),
-                ],
-              ),
-            ] else if (!enabled)
-              const Wrap(
-                spacing: 8,
-                children: [
-                  Icon(Icons.filter_list),
-                  Icon(Icons.group),
-                  Icon(Icons.notifications_none),
-                  Icon(Icons.more_horiz),
-                ],
-              ),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_outline),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(text.samplePerson),
-                          if (!enabled || !profile.cleanHome)
-                            Text('...', style: theme.textTheme.bodySmall),
-                        ],
+      );
+    }
+    _scheduleImage(scene.mediaQuery.devicePixelRatio.clamp(1, 3));
+    _preview ??= SimplifiedInterfaceController.preview(
+      scene.controller,
+      enabled: widget.enabled,
+      preferences: widget.preferences ?? scene.controller.preferences,
+      account: scene.account,
+      selectedIds: widget.selectedIds,
+    );
+    Widget screen = MediaQuery(
+      data: scene.mediaQuery,
+      child: Theme(
+        data: scene.theme,
+        child: SimplifiedInterfaceScope(
+          key: ObjectKey(_preview),
+          controller: _preview,
+          child: Builder(builder: scene.screen),
+        ),
+      ),
+    );
+    if (scene.accessibility case final accessibility?) {
+      screen = AccessibilityScope(controller: accessibility, child: screen);
+    }
+    return Semantics(
+      image: true,
+      child: ExcludeSemantics(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: AspectRatio(
+            aspectRatio: viewport.width / viewport.height,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              alignment: Alignment.topLeft,
+              child: SizedBox.fromSize(
+                size: viewport,
+                child: AbsorbPointer(
+                  child: FocusScope(
+                    canRequestFocus: false,
+                    child: HeroMode(
+                      enabled: false,
+                      child: TickerMode(
+                        enabled: false,
+                        child: RepaintBoundary(key: _boundary, child: screen),
                       ),
                     ),
-                    if (enabled && profile.cleanHome)
-                      const Icon(Icons.chevron_right),
-                  ],
+                  ),
                 ),
               ),
             ),
-            if (enabled) ...[
-              const SizedBox(height: 8),
-              Text(profile.cleanHome ? setup.cleanHome : setup.detailedHome),
-              Text(setup.quietChat),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    setup.tr('Hello!', '¡Hola!'),
-                    style: const TextStyle(height: 1.5),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withAlpha(18),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    setup.tr('See you soon.', 'Hasta pronto.'),
-                    style: const TextStyle(height: 1.5),
-                  ),
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

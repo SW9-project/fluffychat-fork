@@ -62,3 +62,28 @@ tres nombres visibles bajo la opcion automatica, dos pasos y vista previa
 con el ejemplo de chat espaciado. Se conservaron las preferencias existentes.
 Prueba adicional aprobada: desplazar la vista previa arrastrando dentro de
 la tarjeta de ejemplo. No se guardaron elecciones de prueba.
+
+## Preview real (2026-11-18)
+
+Rama independiente: `simple_interface_preview`, desde `simple_interface`.
+Solo cambia la preview; se mantienen el cuestionario, las opciones y Apply/Undo.
+
+Current view y After applying muestran imagenes de la pagina real de Chats,
+renderizada con los mismos componentes de la aplicacion. Se conservan el tema,
+la escala de texto y controles, los nombres, avatares, mensajes sin leer y,
+al abrir desde Chats, el filtro, la busqueda y la posicion de la lista.
+La propuesta usa las preferencias y conversaciones elegidas en el cuestionario.
+No se mezclan tarjetas ficticias, mensajes inventados ni explicaciones dentro
+de la imagen. Las capturas permanecen en memoria y no se guardan ni se envian.
+
+El render de preview tiene controladores separados y no ejecuta el inicio de
+llamadas, notificaciones, intents o informes de la pagina de Chats. Las imagenes
+no admiten pulsaciones y el controlador de preferencias de preview no guarda.
+
+Validacion: 41 pruebas aprobadas, incluidas dos comparaciones pixel a pixel del
+renderizador antes/despues, conservacion de escala y ausencia de cambios antes
+de confirmar, ademas de los flujos existentes del interruptor y Assistant.
+
+APK de desarrollo compilado e instalado en FluffyChat_Light. Comprobadas ambas
+imagenes con las conversaciones reales, accesos directos y navegacion inferior.
+Se mantuvo la sesion y no se aplicaron elecciones de prueba.

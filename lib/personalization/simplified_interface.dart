@@ -70,6 +70,7 @@ class SimplifiedInterfaceController extends ChangeNotifier {
   static const usageKey = 'personalization.simplified_interface.opens';
 
   final SharedPreferences _store;
+  final bool _previewOnly;
   late bool _enabled = _store.getBool(enabledKey) ?? false;
   late final Map<String, List<String>> _quickAccess = _readQuickAccess();
   int _revision = 0;
@@ -81,7 +82,37 @@ class SimplifiedInterfaceController extends ChangeNotifier {
   late bool _skipPreview = _store.getBool(skipPreviewKey) ?? false;
   late final Map<String, Map<String, int>> _opens = _readOpens();
 
-  SimplifiedInterfaceController(this._store);
+  SimplifiedInterfaceController(this._store) : _previewOnly = false;
+
+  /// A detached view of settings. Rendering a preview must never save them.
+  SimplifiedInterfaceController.preview(
+    SimplifiedInterfaceController original, {
+    required bool enabled,
+    required SimpleViewPreferences preferences,
+    String? account,
+    List<String>? selectedIds,
+  }) : _store = original._store,
+       _previewOnly = true {
+    _enabled = enabled;
+    _preferences = preferences;
+    _configured = original.configured;
+    _skipPreview = original.skipPreview;
+    _quickAccess
+      ..clear()
+      ..addAll({
+        for (final entry in original._quickAccess.entries)
+          entry.key: [...entry.value],
+      });
+    _opens
+      ..clear()
+      ..addAll({
+        for (final entry in original._opens.entries)
+          entry.key: {...entry.value},
+      });
+    if (account != null && selectedIds != null) {
+      _quickAccess[account] = _cleanIds(selectedIds);
+    }
+  }
 
   bool get enabled => _enabled;
   SimpleViewPreferences get preferences => _preferences;
@@ -196,6 +227,7 @@ class SimplifiedInterfaceController extends ChangeNotifier {
       .toList(growable: false);
 
   Future<void> _save(Future<bool> Function() write) {
+    if (_previewOnly) throw StateError('Preview settings cannot be saved');
     // Serialize snapshots so rapid taps cannot persist an older state last.
     _writes = _writes.catchError((Object _) {}).then((_) async {
       if (!await write()) throw StateError('Unable to save simple view');

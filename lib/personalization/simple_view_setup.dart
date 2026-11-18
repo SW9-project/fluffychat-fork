@@ -7,6 +7,7 @@ import 'accessibility_scope.dart';
 import 'quick_access_conversations.dart';
 import 'simple_view_conversations.dart';
 import 'simple_view_dialog.dart';
+import 'simple_view_preview_scene.dart';
 import 'simplified_interface.dart';
 import 'simplified_interface_l10n.dart';
 import 'simplified_interface_widgets.dart';
@@ -107,6 +108,7 @@ Future<int?> requestSimpleViewChange(
       target: target,
       questions: needsQuestions,
       source: source,
+      scene: source?.createPreview?.call(context),
     ),
   );
   if (result == null || !context.mounted || controller.revision != revision) {
@@ -143,11 +145,13 @@ class _SimpleSetupDialog extends StatefulWidget {
   final bool target;
   final bool questions;
   final SimpleViewConversations? source;
+  final SimpleViewPreviewScene? scene;
   const _SimpleSetupDialog({
     required this.controller,
     required this.target,
     required this.questions,
     this.source,
+    this.scene,
   });
   @override
   State<_SimpleSetupDialog> createState() => _SimpleSetupDialogState();
@@ -382,6 +386,10 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                     SimplifiedInterfacePreview(
                       enabled: widget.controller.enabled,
                       preferences: widget.controller.preferences,
+                      scene: widget.scene,
+                      selectedIds: widget.controller.quickAccessFor(
+                        widget.source?.account ?? '',
+                      ),
                     ),
                   ],
                 ),
@@ -394,10 +402,10 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                 SimplifiedInterfacePreview(
                   enabled: widget.target,
                   preferences: _draft,
-                  conversationNames: _names,
+                  scene: widget.scene,
+                  selectedIds: _selected,
                 ),
                 const SizedBox(height: 16),
-                Text(text.saved),
                 CheckboxListTile(
                   key: const Key('simple_skip_preview'),
                   contentPadding: EdgeInsets.zero,
