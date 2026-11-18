@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/utils/platform_infos.dart';
+import 'package:fluffychat/widgets/liquid_glass.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -22,6 +24,14 @@ class StartChatFab extends StatelessWidget {
         onPressed: onPressed,
         icon: const Icon(Icons.edit_outlined),
         label: Text(L10n.of(context).newChat),
+      );
+    }
+    if (PlatformInfos.supportsLiquidGlass) {
+      return NativeGlassButton(
+        symbol: 'square.and.pencil',
+        label: L10n.of(context).newChat,
+        size: 56,
+        onPressed: onPressed,
       );
     }
     return FloatingActionButton(

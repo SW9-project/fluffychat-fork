@@ -97,14 +97,14 @@ class SimplifiedInterfaceL10n {
   String get afterApplying =>
       _text('After applying', 'Después de aplicar', 'Efter ændringen');
   String get skip => _text(
-    'Skip preview next time',
-    'No mostrar la vista previa la próxima vez',
-    'Spring forhåndsvisningen over næste gang',
+    'Next time, switch without this preview',
+    'La próxima vez, cambiar sin esta vista previa',
+    'Næste gang: skift uden denne forhåndsvisning',
   );
   String get skipHelp => _text(
-    'You can change this later.',
-    'Puedes cambiarlo luego.',
-    'Du kan ændre det senere.',
+    'To see it again, tap Change while simple view is on.',
+    'Para volver a verla, pulsa Cambiar con la vista sencilla activada.',
+    'Tryk på Rediger, mens enkel visning er slået til, for at se den igen.',
   );
   String get contactsQuestion => _text(
     'Conversations at the top',
@@ -174,5 +174,5 @@ class SimplifiedInterfaceL10n {
     'Dine tekst- og knapstørrelser forbliver de samme.',
   );
   String step(int number) =>
-      _text('Step $number of 2', 'Paso $number de 2', 'Trin $number af 2');
+      _text('Step $number of 3', 'Paso $number de 3', 'Trin $number af 3');
 }

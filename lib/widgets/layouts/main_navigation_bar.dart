@@ -585,12 +585,13 @@ class _FloatingTabBarItemState extends State<_FloatingTabBarItem> {
                   cupertino
                       ? widget.tab.icon
                       : widget.tab.materialIcon(widget.selected),
-                  // Only this button's own size: the bar has a fixed height.
+                  // The whole size the slider shows, which is capped so the
+                  // icon fits in the bar's fixed height.
                   size:
                       24 *
                       AccessibilityScope.of(
                         context,
-                      ).onTop(ScaleCategory.navigationButton),
+                      ).effective(ScaleCategory.navigationButton),
                   color: color,
                 ),
               ),

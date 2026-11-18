@@ -525,14 +525,7 @@ class ChatListController extends State<ChatList>
       Offset.zero & overlay.size,
     );
 
-    final spacesWithPowerLevels = room.client.rooms
-        .where(
-          (space) =>
-              space.isSpace &&
-              space.canChangeStateEvent(EventTypes.SpaceChild) &&
-              !space.spaceChildren.any((c) => c.roomId == room.id),
-        )
-        .toList();
+    final spacesWithPowerLevels = _spacesToAddTo(room);
 
     var action = await showMenu<ChatContextAction>(
       context: posContext,
@@ -716,7 +709,25 @@ class ChatListController extends State<ChatList>
 
     if (action == null) return;
     if (!mounted) return;
+    await runChatContextAction(room, action, space);
+  }
 
+  List<Room> _spacesToAddTo(Room room) => room.client.rooms
+      .where(
+        (space) =>
+            space.isSpace &&
+            space.canChangeStateEvent(EventTypes.SpaceChild) &&
+            !space.spaceChildren.any((c) => c.roomId == room.id),
+      )
+      .toList();
+
+  /// Runs an action of the long press menu or of a swipe action.
+  Future<void> runChatContextAction(
+    Room room,
+    ChatContextAction action, [
+    Room? space,
+  ]) async {
+    final spacesWithPowerLevels = _spacesToAddTo(room);
     switch (action) {
       case ChatContextAction.goToSpace:
         setActiveSpace(space!.id);
@@ -829,7 +840,38 @@ class ChatListController extends State<ChatList>
         );
         return;
       case ChatContextAction.showMore:
-        throw ('Should not be handled!');
+        // The "More" swipe action of iOS: the actions without a swipe action.
+        final more = await showModalActionPopup<ChatContextAction>(
+          context: context,
+          title: room.getLocalizedDisplayname(MatrixLocals(L10n.of(context))),
+          cancelLabel: L10n.of(context).cancel,
+          actions: [
+            if (space != null)
+              AdaptiveModalAction(
+                value: ChatContextAction.goToSpace,
+                label: L10n.of(
+                  context,
+                ).goToSpace(space.getLocalizedDisplayname()),
+              ),
+            if (activeTag == null)
+              AdaptiveModalAction(
+                value: ChatContextAction.addTag,
+                label: L10n.of(context).addTag,
+              )
+            else
+              AdaptiveModalAction(
+                value: ChatContextAction.removeTag,
+                label: L10n.of(context).removeTag,
+              ),
+            if (spacesWithPowerLevels.isNotEmpty)
+              AdaptiveModalAction(
+                value: ChatContextAction.addToSpace,
+                label: L10n.of(context).addToSpace,
+              ),
+          ],
+        );
+        if (more == null || !mounted) return;
+        await runChatContextAction(room, more, space);
     }
   }
 

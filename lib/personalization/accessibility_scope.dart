@@ -184,6 +184,48 @@ class AccessibilityIconButtons extends StatelessWidget {
   }
 }
 
+/// The icon of an icon button with [label] under it while button labels are
+/// on, so the label is part of the button's tap target and takes its color.
+class LabeledIcon extends StatelessWidget {
+  final Widget icon;
+  final String label;
+
+  const LabeledIcon({required this.icon, required this.label, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = AccessibilityScope.of(context);
+    if (!settings.buttonLabels) return icon;
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        icon,
+        // The button already has the label as its tooltip and semantics.
+        ExcludeSemantics(
+          // A long label shrinks instead of widening a row of buttons past
+          // a narrow screen.
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 72 * settings.touchTargetScale,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: IconTheme.of(context).color,
+                  height: 1.0,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Shows [label] under [child], a button, while button labels are on.
 class AccessibilityButtonLabel extends StatelessWidget {
   final String label;
@@ -199,6 +241,35 @@ class AccessibilityButtonLabel extends StatelessWidget {
     super.key,
   });
 
+  /// The height a label adds under its button at [context], 0 while button
+  /// labels are off. Rows and bars holding labeled buttons add it to their
+  /// height so the label never overflows them.
+  static double heightOf(BuildContext context) {
+    if (!AccessibilityScope.of(context).buttonLabels) return 0;
+    final fontSize = Theme.of(context).textTheme.labelSmall?.fontSize ?? 11;
+    // The label's line height is 1.0, so it is as high as its scaled font.
+    return MediaQuery.textScalerOf(context).scale(fontSize).ceilToDouble();
+  }
+
+  /// The width [label] needs at [context] plus a little air on each side,
+  /// 0 while button labels are off. Rows give each labeled button at least
+  /// this width so its label is not cut off.
+  static double widthOf(BuildContext context, String label) {
+    if (!AccessibilityScope.of(context).buttonLabels) return 0;
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(height: 1.0),
+      ),
+      textScaler: MediaQuery.textScalerOf(context),
+      textDirection: Directionality.of(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width.ceilToDouble() + 8;
+    painter.dispose();
+    return width;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!AccessibilityScope.of(context).buttonLabels) return child;
@@ -208,14 +279,17 @@ class AccessibilityButtonLabel extends StatelessWidget {
       children: [
         child,
         // The button already has the label as its tooltip and semantics.
+        // Shrinks with its button on a narrow row instead of being cut off.
         ExcludeSemantics(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color ?? theme.colorScheme.onSurfaceVariant,
-              height: 1.0,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: color ?? theme.colorScheme.onSurfaceVariant,
+                height: 1.0,
+              ),
             ),
           ),
         ),

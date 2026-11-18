@@ -7,7 +7,6 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
 import 'package:fluffychat/widgets/matrix.dart';
-import 'package:fluffychat/widgets/theme_builder.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'accessibility_scope.dart';
@@ -85,7 +84,6 @@ class AccessibilitySettingsPage extends StatelessWidget {
                 value: settings.isOn(toggle),
                 onChanged: (on) => controller.setToggle(toggle, on),
               ),
-            const _ThemeSection(),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Wrap(
@@ -236,47 +234,6 @@ class _ChatTextSection extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// FluffyChat's own light or dark setting, here too because the assistant
-/// can change it.
-class _ThemeSection extends StatefulWidget {
-  const _ThemeSection();
-
-  @override
-  State<_ThemeSection> createState() => _ThemeSectionState();
-}
-
-class _ThemeSectionState extends State<_ThemeSection> {
-  @override
-  Widget build(BuildContext context) {
-    final words = AppearanceL10n.of(context);
-    final controller = ThemeController.of(context);
-    // Rebuilds when the theme changes, also from the assistant.
-    Theme.of(context);
-    return ListTile(
-      title: Text(words.themeTitle),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: SegmentedButton<ThemeMode>(
-          key: const Key('accessibility_theme'),
-          segments: [
-            for (final mode in const [
-              ThemeMode.system,
-              ThemeMode.light,
-              ThemeMode.dark,
-            ])
-              ButtonSegment(value: mode, label: Text(words.themeModes[mode]!)),
-          ],
-          selected: {controller.themeMode},
-          onSelectionChanged: (modes) async {
-            await controller.setThemeMode(modes.single);
-            if (mounted) setState(() {});
-          },
-        ),
-      ),
     );
   }
 }

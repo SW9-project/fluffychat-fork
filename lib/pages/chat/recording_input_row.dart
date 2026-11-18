@@ -6,6 +6,7 @@
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat_input_row.dart';
 import 'package:fluffychat/pages/chat/recording_view_model.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:material_ui/material_ui.dart';
 
 class RecordingInputRow extends StatelessWidget {
@@ -24,7 +25,8 @@ class RecordingInputRow extends StatelessWidget {
     final time =
         '${state.duration.inMinutes.toString().padLeft(2, '0')}:${(state.duration.inSeconds % 60).toString().padLeft(2, '0')}';
     return SizedBox(
-      height: ChatInputRow.height,
+      // Room for the labels under the buttons.
+      height: ChatInputRow.height + AccessibilityButtonLabel.heightOf(context),
       child: Row(
         crossAxisAlignment: .center,
         mainAxisAlignment: .spaceBetween,
@@ -32,10 +34,13 @@ class RecordingInputRow extends StatelessWidget {
           const SizedBox(width: 8),
           Container(
             alignment: .center,
-            width: 48,
+            constraints: const BoxConstraints(minWidth: 48),
             child: IconButton(
               tooltip: L10n.of(context).cancel,
-              icon: const Icon(Icons.delete_outlined),
+              icon: LabeledIcon(
+                icon: const Icon(Icons.delete_outlined),
+                label: L10n.of(context).cancel,
+              ),
               color: theme.colorScheme.error,
               onPressed: state.cancel,
             ),
@@ -43,20 +48,26 @@ class RecordingInputRow extends StatelessWidget {
           if (state.isPaused)
             Container(
               alignment: .center,
-              width: 48,
+              constraints: const BoxConstraints(minWidth: 48),
               child: IconButton(
                 tooltip: L10n.of(context).resume,
-                icon: const Icon(Icons.play_circle_outline_outlined),
+                icon: LabeledIcon(
+                  icon: const Icon(Icons.play_circle_outline_outlined),
+                  label: L10n.of(context).resume,
+                ),
                 onPressed: state.resume,
               ),
             )
           else
             Container(
               alignment: .center,
-              width: 48,
+              constraints: const BoxConstraints(minWidth: 48),
               child: IconButton(
                 tooltip: L10n.of(context).pause,
-                icon: const Icon(Icons.pause_circle_outline_outlined),
+                icon: LabeledIcon(
+                  icon: const Icon(Icons.pause_circle_outline_outlined),
+                  label: L10n.of(context).pause,
+                ),
                 onPressed: state.pause,
               ),
             ),
@@ -95,7 +106,10 @@ class RecordingInputRow extends StatelessWidget {
               foregroundColor: theme.colorScheme.onPrimary,
             ),
             tooltip: L10n.of(context).sendAudio,
-            icon: const Icon(Icons.send_outlined),
+            icon: LabeledIcon(
+              icon: const Icon(Icons.send_outlined),
+              label: L10n.of(context).send,
+            ),
             onPressed: () => state.stopAndSend(onSend),
           ),
           const SizedBox(width: 4),

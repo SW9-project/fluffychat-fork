@@ -11,9 +11,12 @@ import 'package:fluffychat/pages/chat_list/chat_list.dart';
 import 'package:fluffychat/pages/chat_list/client_chooser_button.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
+import 'package:fluffychat/personalization/appearance_l10n.dart';
 import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
+import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/sync_status_localization.dart';
+import 'package:fluffychat/widgets/liquid_glass.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -35,13 +38,11 @@ class ChatListHeader extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
     final client = Matrix.of(context).client;
     final isColumnMode = FluffyThemes.isColumnMode(context);
-    final cupertino = theme.cupertinoStyle;
+    if (theme.cupertinoStyle) return _CupertinoSearchBar(controller);
 
     return SliverAppBar(
-      // On iOS the large title above it is the primary bar.
-      primary: !cupertino,
       floating: true,
-      toolbarHeight: cupertino ? 52 : 72,
+      toolbarHeight: 72,
       pinned: isColumnMode,
       scrolledUnderElevation: 0,
       shape: isColumnMode
@@ -67,17 +68,12 @@ class ChatListHeader extends StatelessWidget implements PreferredSizeWidget {
             textInputAction: TextInputAction.search,
             onChanged: (text) =>
                 controller.onSearchEnter(text, globalSearch: globalSearch),
-            style: cupertino ? const TextStyle(fontSize: 17) : null,
             decoration: InputDecoration(
               filled: true,
-              // The search field of iOS, the search bar of Material 3.
-              fillColor: cupertino
-                  ? theme.colorScheme.surfaceContainer
-                  : theme.colorScheme.surfaceContainerHigh,
-              isDense: cupertino,
+              fillColor: theme.colorScheme.surfaceContainerHigh,
               border: OutlineInputBorder(
                 borderSide: BorderSide.none,
-                borderRadius: BorderRadius.circular(cupertino ? 12 : 99),
+                borderRadius: BorderRadius.circular(99),
               ),
               hintText: hide
                   ? (SimplifiedInterfaceScope.enabledOf(context)
@@ -116,9 +112,10 @@ class ChatListHeader extends StatelessWidget implements PreferredSizeWidget {
                             child: IconButton(
                               tooltip: L10n.of(context).displayNavigationRail,
                               onPressed: controller.openNavrail,
-                              icon: Icon(
-                                Icons.menu,
-                                color: theme.colorScheme.onSurfaceVariant,
+                              color: theme.colorScheme.onSurfaceVariant,
+                              icon: LabeledIcon(
+                                icon: const Icon(Icons.menu),
+                                label: AppearanceL10n.of(context).labelMenu,
                               ),
                             ),
                           )
@@ -173,32 +170,214 @@ class ChatListHeader extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(56);
 }
 
-/// The large title of iOS above the search field. While scrolling it
-/// collapses into a small title, like in Messages.
-class ChatListLargeTitle extends StatelessWidget {
-  const ChatListLargeTitle({super.key});
+/// The search field of iOS with the Cancel button of UISearchController.
+class _CupertinoSearchBar extends StatelessWidget {
+  final ChatListController controller;
+
+  const _CupertinoSearchBar(this.controller);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return CupertinoSliverNavigationBar(
-      largeTitle: Text(L10n.of(context).chats),
+    final client = Matrix.of(context).client;
+    final isColumnMode = FluffyThemes.isColumnMode(context);
+    return SliverAppBar(
+      // The large title above it is the primary bar.
+      primary: false,
+      floating: true,
+      pinned: isColumnMode,
+      toolbarHeight: 60,
+      titleSpacing: 16,
+      scrolledUnderElevation: 0,
+      backgroundColor: isColumnMode
+          ? theme.colorScheme.surface.withAlpha(240)
+          : Colors.transparent,
       automaticallyImplyLeading: false,
-      transitionBetweenRoutes: false,
-      border: null,
-      // Blurs the chats scrolled under it.
-      backgroundColor: theme.colorScheme.surface.withAlpha(240),
-      // In columns the navigation rail has the button to start a chat.
-      trailing: FluffyThemes.isColumnMode(context)
-          ? null
-          : AccessibilityIconButtons(
-              child: IconButton(
-                tooltip: L10n.of(context).newChat,
-                color: theme.colorScheme.primary,
-                icon: const Icon(CupertinoIcons.square_pencil),
-                onPressed: () => context.go('/rooms/newprivatechat'),
-              ),
+      title: StreamBuilder(
+        stream: client.onSyncStatus.stream,
+        builder: (context, _) {
+          final status =
+              client.onSyncStatus.value ??
+              const SyncStatusUpdate(SyncStatus.waitingForResponse);
+          final synced =
+              client.onSync.value != null &&
+              status.status != SyncStatus.error &&
+              client.prevBatch != null;
+          return ListenableBuilder(
+            listenable: controller.searchFocusNode,
+            builder: (context, _) => Row(
+              children: [
+                Expanded(
+                  child: CupertinoSearchTextField(
+                    controller: controller.searchController,
+                    focusNode: controller.searchFocusNode,
+                    onChanged: controller.onSearchEnter,
+                    onTap: controller.isSearchMode
+                        ? null
+                        : controller.startSearch,
+                    // The 44 pt capsule of the search field since iOS 26.
+                    borderRadius: const BorderRadius.all(Radius.circular(22)),
+                    padding: const EdgeInsetsDirectional.fromSTEB(8, 12, 8, 12),
+                    prefixInsets: const EdgeInsetsDirectional.fromSTEB(
+                      14,
+                      0,
+                      0,
+                      2,
+                    ),
+                    suffixInsets: const EdgeInsetsDirectional.fromSTEB(
+                      0,
+                      0,
+                      12,
+                      2,
+                    ),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    placeholder: synced
+                        ? (SimplifiedInterfaceScope.enabledOf(context)
+                              ? SimplifiedInterfaceL10n.of(context).search
+                              : L10n.of(context).searchChatsRooms)
+                        : status.calcLocalizedString(context),
+                    prefixIcon: !synced || controller.isSearching
+                        ? const CupertinoActivityIndicator(radius: 8)
+                        : const Icon(CupertinoIcons.search),
+                  ),
+                ),
+                AnimatedSize(
+                  duration: FluffyThemes.animationDuration,
+                  curve: FluffyThemes.animationCurve,
+                  child:
+                      controller.isSearchMode ||
+                          controller.searchFocusNode.hasFocus
+                      ? _CancelSearchButton(controller.cancelSearch)
+                      : Padding(
+                          padding: const EdgeInsetsDirectional.only(start: 8),
+                          child: ClientChooserButton(controller),
+                        ),
+                ),
+              ],
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Since iOS 26 an xmark on a glass circle, before the Cancel text button.
+class _CancelSearchButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _CancelSearchButton(this.onPressed);
+
+  @override
+  Widget build(BuildContext context) {
+    final cancel = L10n.of(context).cancel;
+    if (!PlatformInfos.supportsLiquidGlass) {
+      return CupertinoButton(
+        padding: const EdgeInsetsDirectional.only(start: 12),
+        minimumSize: Size.zero,
+        onPressed: onPressed,
+        child: Text(cancel),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 8),
+      child: Semantics(
+        button: true,
+        label: cancel,
+        excludeSemantics: true,
+        child: LiquidGlass(
+          borderRadius: const BorderRadius.all(Radius.circular(22)),
+          child: CupertinoButton(
+            padding: EdgeInsets.zero,
+            minimumSize: const Size.square(44),
+            onPressed: onPressed,
+            child: Icon(
+              CupertinoIcons.xmark,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The large title of iOS in one row with the button to start a chat.
+class ChatListLargeTitle extends StatelessWidget {
+  final ChatListController controller;
+
+  const ChatListLargeTitle(this.controller, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isColumnMode = FluffyThemes.isColumnMode(context);
+    return SliverAppBar(
+      pinned: true,
+      // Room for the labels under its buttons.
+      toolbarHeight: 52 + AccessibilityButtonLabel.heightOf(context),
+      titleSpacing: 16,
+      centerTitle: false,
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      backgroundColor: theme.colorScheme.surface.withAlpha(240),
+      title: Text(
+        L10n.of(context).chats,
+        style: const TextStyle(
+          fontSize: 34,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.4,
+        ),
+      ),
+      // In columns the navigation rail has these buttons.
+      actions: isColumnMode
+          ? null
+          : [
+              if (controller.spaces.isNotEmpty ||
+                  AppSettings.displayNavigationRail.value)
+                AccessibilityIconButtons(
+                  button: AccessibleButton.menu,
+                  child: IconButton(
+                    tooltip: L10n.of(context).displayNavigationRail,
+                    color: theme.colorScheme.primary,
+                    icon: LabeledIcon(
+                      icon: const Icon(CupertinoIcons.sidebar_left),
+                      label: AppearanceL10n.of(context).labelMenu,
+                    ),
+                    onPressed: controller.openNavrail,
+                  ),
+                ),
+              AccessibilityIconButtons(
+                child: PlatformInfos.supportsLiquidGlass
+                    // Centered: the app bar stretches its actions to its height.
+                    ? Center(
+                        child: AccessibilityButtonLabel(
+                          label: L10n.of(context).newChat,
+                          color: theme.colorScheme.primary,
+                          child: NativeGlassButton(
+                            symbol: 'square.and.pencil',
+                            label: L10n.of(context).newChat,
+                            size:
+                                40 *
+                                AccessibilityScope.of(context).touchTargetScale,
+                            onPressed: () =>
+                                context.go('/rooms/newprivatechat'),
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        tooltip: L10n.of(context).newChat,
+                        color: theme.colorScheme.primary,
+                        icon: LabeledIcon(
+                          icon: const Icon(CupertinoIcons.square_pencil),
+                          label: L10n.of(context).newChat,
+                        ),
+                        onPressed: () => context.go('/rooms/newprivatechat'),
+                      ),
+              ),
+              const SizedBox(width: 8),
+            ],
     );
   }
 }

@@ -272,6 +272,20 @@ void main() {
     expect(controller.enabled, true);
   });
 
+  testWidgets('Change is hidden in full view and the preview is step 3 of 3', (
+    tester,
+  ) async {
+    await pumpHome(tester);
+    expect(find.byKey(const Key('simple_personalize')), findsNothing);
+    await tap(tester, 'simplified_interface_switch');
+    await tap(tester, 'simple_setup_next');
+    await tap(tester, 'simple_setup_next');
+    expect(find.text('Step 3 of 3'), findsOneWidget);
+    expect(find.text('Try simple view?'), findsOneWidget);
+    await tap(tester, 'simple_setup_apply');
+    expect(find.byKey(const Key('simple_personalize')), findsOneWidget);
+  });
+
   test(
     'frequent shortcuts count opted-in openings per account and survive restart',
     () async {

@@ -438,6 +438,9 @@ class ChatController extends State<ChatPageWithRoom>
 
     _loadDraft();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // SizeChangedLayoutNotifier skips the first layout, so the timeline
+      // would keep its default bottom padding under a taller input bar.
+      updateInputBarHeight();
       _shareItems();
       _checkMatrixRtcCallSupport();
       if (widget.action == 'call') {

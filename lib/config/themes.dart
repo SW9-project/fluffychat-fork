@@ -61,6 +61,14 @@ abstract class FluffyThemes {
     var colorScheme = cupertino
         ? _cupertinoColorScheme(seedColor, brightness)
         : ColorScheme.fromSeed(brightness: brightness, seedColor: seedColor);
+    // The theme color tints accents only; the light background stays white.
+    if (isLight) {
+      colorScheme = colorScheme.copyWith(
+        surface: Colors.white,
+        surfaceContainerLowest: Colors.white,
+        surfaceBright: Colors.white,
+      );
+    }
     final isColumnMode = FluffyThemes.isColumnMode(context);
     final a11y = AccessibilityScope.of(context);
     // High contrast: secondary text and outlines as strong as the main text,
@@ -117,6 +125,18 @@ abstract class FluffyThemes {
           Size.square(a11y.icon() + 16),
         ),
       ),
+      // Material 3 Expressive menus: a rounded tonal card with inset items.
+      popupMenuTheme: cupertino
+          ? null
+          : PopupMenuThemeData(
+              color: colorScheme.surfaceContainerLow,
+              surfaceTintColor: Colors.transparent,
+              elevation: 3,
+              menuPadding: const EdgeInsets.all(4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           iconColor: colorScheme.onSurface,
@@ -141,10 +161,28 @@ abstract class FluffyThemes {
           borderRadius: BorderRadius.circular(AppConfig.borderRadius),
         ),
       ),
+      // Back and close buttons carry their label under the icon.
+      actionIconTheme: a11y.buttonLabels
+          ? ActionIconThemeData(
+              backButtonIconBuilder: (context) => LabeledIcon(
+                icon: Icon(
+                  cupertino && !kIsWeb
+                      ? Icons.arrow_back_ios_new_rounded
+                      : Icons.arrow_back,
+                ),
+                label: MaterialLocalizations.of(context).backButtonTooltip,
+              ),
+              closeButtonIconBuilder: (context) => LabeledIcon(
+                icon: const Icon(Icons.close),
+                label: MaterialLocalizations.of(context).closeButtonTooltip,
+              ),
+            )
+          : null,
       appBarTheme: AppBarTheme(
-        toolbarHeight: a11y.buttonBox(
-          isColumnMode ? 72 : (cupertino ? 52 : 64),
-        ),
+        // Room for the labels under the buttons of the bar.
+        toolbarHeight:
+            a11y.buttonBox(isColumnMode ? 72 : (cupertino ? 52 : 64)) +
+            AccessibilityButtonLabel.heightOf(context),
         centerTitle: cupertino,
         leadingWidth: a11y.buttonBox(56, AccessibleButton.back),
         // The leading icon is the back button on most pages.
@@ -203,7 +241,7 @@ abstract class FluffyThemes {
       appBarTheme: theme.appBarTheme.copyWith(
         titleTextStyle: theme.textTheme.titleLarge?.copyWith(
           color: colorScheme.onSurface,
-          fontSize: (cupertino ? 17 : 22) * a11y.titleTextScale,
+          fontSize: a11y.appBarTitle(cupertino ? 17 : 22),
           fontWeight: cupertino ? FontWeight.w600 : FontWeight.w500,
         ),
       ),

@@ -147,10 +147,13 @@ class SettingsStyleView extends StatelessWidget {
                 );
               },
             ),
+            StreamBuilder(
+              stream: client.onChatWallpaperChanged,
+              builder: (context, _) =>
+                  ChatStylePreview(wallpaper: client.defaultChatWallpaper),
+            ),
             Divider(color: theme.dividerColor),
             SettingsHeader(L10n.of(context).messagesStyle),
-            const WallpaperEditor(),
-            Divider(color: theme.dividerColor),
             StreamBuilder(
               stream: client.onSync.stream.where(
                 (syncUpdate) =>
@@ -191,6 +194,7 @@ class SettingsStyleView extends StatelessWidget {
                 );
               },
             ),
+            const WallpaperEditor(showPreview: false),
             Divider(color: theme.dividerColor),
             SettingsHeader(L10n.of(context).chatWallpapers),
             StreamBuilder(

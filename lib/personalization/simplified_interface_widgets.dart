@@ -4,6 +4,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'accessibility_scope.dart';
+import 'quick_access_conversations.dart';
 import 'simple_view_setup.dart';
 import 'simplified_interface.dart';
 import 'simplified_interface_l10n.dart';
@@ -25,19 +26,21 @@ class SimplifiedInterfaceSwitch extends StatelessWidget {
           Expanded(
             child: Text(text.simpleView, style: theme.textTheme.bodyMedium),
           ),
-          TextButton(
-            key: const Key('simple_personalize'),
-            style: TextButton.styleFrom(
-              minimumSize: Size(sizes.touchTarget(48), sizes.buttonBox(48)),
+          // Only while on: changing choices must not switch the view as a side effect.
+          if (controller.enabled)
+            TextButton(
+              key: const Key('simple_personalize'),
+              style: TextButton.styleFrom(
+                minimumSize: Size(sizes.touchTarget(48), sizes.buttonBox(48)),
+              ),
+              onPressed: () => requestSimpleViewChange(
+                context,
+                controller,
+                true,
+                personalize: true,
+              ),
+              child: Text(text.edit),
             ),
-            onPressed: () => requestSimpleViewChange(
-              context,
-              controller,
-              true,
-              personalize: true,
-            ),
-            child: Text(text.edit),
-          ),
           Semantics(
             label: text.simpleView,
             child: Switch.adaptive(
@@ -139,29 +142,31 @@ class SimplifiedInterfacePreview extends StatelessWidget {
                 ],
               ),
             const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_outline),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(text.samplePerson),
-                          if (!enabled || !profile.cleanHome)
-                            Text('...', style: theme.textTheme.bodySmall),
-                        ],
-                      ),
-                    ),
-                    if (enabled && profile.cleanHome)
-                      const Icon(Icons.chevron_right),
-                  ],
+            // The clean list reuses the real home tile so the preview matches it.
+            if (enabled && profile.cleanHome)
+              SimpleConversationTile(
+                conversation: QuickAccessConversation(
+                  id: 'preview',
+                  name: text.samplePerson,
+                  unread: 2,
+                  onOpen: () {},
+                ),
+              )
+            else
+              Card(
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.person_outline),
+                  ),
+                  title: Text(text.samplePerson),
+                  subtitle: Text(
+                    text.sampleBye,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Text('12:30', style: theme.textTheme.bodySmall),
                 ),
               ),
-            ),
             if (enabled) ...[
               const SizedBox(height: 8),
               Text(profile.cleanHome ? text.cleanHome : text.detailedHome),

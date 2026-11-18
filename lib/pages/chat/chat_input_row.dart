@@ -65,8 +65,13 @@ class ChatInputRow extends StatelessWidget {
     final height = a11y.buttonBox(ChatInputRow.height);
     final buttonWidth = a11y.buttonBox(48);
     // Each button has its own size on top of the button size, and the row is
-    // as high as its biggest button.
+    // as high as its biggest button plus the label under it.
     double box(AccessibleButton button) => a11y.buttonBox(48, button);
+    final labelHeight = AccessibilityButtonLabel.heightOf(context);
+    final labels = AppearanceL10n.of(context);
+    // A labeled button is at least as wide as its label, so it is not cut off.
+    double slot(AccessibleButton button, String label) =>
+        max(box(button), AccessibilityButtonLabel.widthOf(context, label));
     final rowHeight = [
       height,
       for (final b in const [
@@ -75,12 +80,11 @@ class ChatInputRow extends StatelessWidget {
         AccessibleButton.send,
         AccessibleButton.microphone,
       ])
-        box(b),
+        box(b) + labelHeight,
     ].reduce(max);
     // Space between the buttons, by the spacing setting: none at normal,
     // up to 8 at twice the spacing. Less spacing comes from the density.
     final gap = SizedBox(width: max(0, a11y.spacing(8) - 8));
-    final labels = AppearanceL10n.of(context);
     final cupertino = theme.cupertinoStyle;
     // Since iOS 26 the field and the add button float on Liquid Glass.
     final glass = PlatformInfos.supportsLiquidGlass;
@@ -125,351 +129,417 @@ class ChatInputRow extends StatelessWidget {
         !controller.sendController.text.isNotEmpty &&
         controller.editEvent == null;
 
-    return RecordingViewModel(
-      builder: (context, recordingViewModel) {
-        if (recordingViewModel.isRecording) {
-          return RecordingInputRow(
-            state: recordingViewModel,
-            onSend: controller.onVoiceMessageSend,
-          );
-        }
-        final emojiButton = Container(
-          height: rowHeight,
-          width: box(AccessibleButton.emoji),
-          alignment: Alignment.center,
-          child: TrackedTarget(
-            id: 'emoji_button',
-            kind: TargetKind.button,
-            child: _Button(
-              button: AccessibleButton.emoji,
-              label: labels.labelEmoji,
-              child: IconButton(
-                tooltip: L10n.of(context).emojis,
-                color: theme.colorScheme.onSurfaceVariant,
-                icon: Icon(switch ((controller.showEmojiPicker, cupertino)) {
-                  (true, true) => CupertinoIcons.keyboard,
-                  (true, false) => Icons.keyboard,
-                  (false, true) => CupertinoIcons.smiley,
-                  (false, false) => Icons.emoji_emotions_outlined,
-                }, key: ValueKey(controller.showEmojiPicker)),
-                onPressed: controller.emojiPickerAction,
-              ),
-            ),
-          ),
-        );
-        final attachButton = AnimatedContainer(
-          duration: FluffyThemes.animationDuration,
-          curve: FluffyThemes.animationCurve,
-          width: textMessageOnly ? 0 : box(AccessibleButton.attach),
-          height: rowHeight,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(),
-          clipBehavior: Clip.hardEdge,
-          child: TrackedTarget(
-            id: 'attach_button',
-            kind: TargetKind.button,
-            child: _Button(
-              button: AccessibleButton.attach,
-              label: labels.labelAttach,
-              // iOS shows an action sheet, other platforms a menu.
-              child: PlatformInfos.isIOS
-                  ? glassCircle(
-                      IconButton(
-                        icon: const Icon(CupertinoIcons.add),
-                        color: theme.colorScheme.onSurfaceVariant,
-                        style: glass
-                            ? null
-                            : IconButton.styleFrom(
-                                backgroundColor:
-                                    theme.colorScheme.surfaceContainerHigh,
-                              ),
-                        onPressed: () async {
-                          final action = await showModalActionPopup(
-                            context: context,
-                            cancelLabel: L10n.of(context).cancel,
-                            actions: [
-                              for (final a in addActions.nonNulls)
-                                AdaptiveModalAction(label: a.$3, value: a.$1),
-                            ],
-                          );
-                          if (action != null) {
-                            controller.onAddPopupMenuButtonSelected(action);
-                          }
-                        },
-                      ),
-                    )
-                  : PopupMenuButton<AddPopupMenuActions>(
-                      useRootNavigator: true,
-                      icon: Icon(cupertino ? CupertinoIcons.add : Icons.add),
-                      iconColor: theme.colorScheme.onSurfaceVariant,
-                      style: IconButton.styleFrom(
-                        backgroundColor: theme.colorScheme.surfaceContainerHigh,
-                      ),
-                      onSelected: controller.onAddPopupMenuButtonSelected,
-                      itemBuilder: (BuildContext context) => [
-                        for (final a in addActions)
-                          a == null
-                              ? const PopupMenuDivider()
-                              : PopupMenuItem(
-                                  value: a.$1,
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor:
-                                          theme.colorScheme.onPrimaryContainer,
-                                      foregroundColor:
-                                          theme.colorScheme.primaryContainer,
-                                      child: Icon(a.$2),
-                                    ),
-                                    title: Text(a.$3),
-                                    contentPadding: const EdgeInsets.all(0),
-                                  ),
-                                ),
-                      ],
-                    ),
-            ),
-          ),
-        );
-        final sendButton = Container(
-          height: rowHeight,
-          width: max(
+    final hasAccountPicker =
+        Matrix.of(context).isMultiAccount &&
+        Matrix.of(context).hasComplexBundles &&
+        Matrix.of(context).currentBundle!.length > 1;
+
+    return LayoutBuilder(
+      builder: (context, constraints) => RecordingViewModel(
+        builder: (context, recordingViewModel) {
+          if (recordingViewModel.isRecording) {
+            return RecordingInputRow(
+              state: recordingViewModel,
+              onSend: controller.onVoiceMessageSend,
+            );
+          }
+          // On a narrow screen big buttons would leave no room for the field,
+          // so they shrink until the field keeps at least this width.
+          const minFieldWidth = 120.0;
+          final gapWidth = gap.width!;
+          final sendWidth = max(
             height,
-            box(
-              isRecordButton
-                  ? AccessibleButton.microphone
-                  : AccessibleButton.send,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: TrackedTarget(
-            id: 'send_button',
-            kind: TargetKind.button,
-            child: isRecordButton
-                ? HoverBuilder(
-                    builder: (context, hovered) => _Button(
-                      button: AccessibleButton.microphone,
-                      label: labels.labelMicrophone,
-                      child: IconButton(
-                        tooltip: L10n.of(context).voiceMessage,
-                        onPressed: hovered
-                            ? () => recordingViewModel.startRecording(
-                                controller.room,
-                              )
-                            : () => ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  margin: EdgeInsets.only(
-                                    bottom: height + 16,
-                                    left: 16,
-                                    right: 16,
-                                    top: 16,
-                                  ),
-                                  showCloseIcon: true,
-                                  content: Text(
-                                    L10n.of(
-                                      context,
-                                    ).longPressToRecordVoiceMessage,
-                                  ),
-                                ),
-                              ),
-                        onLongPress: () =>
-                            recordingViewModel.startRecording(controller.room),
-                        color: cupertino
-                            ? theme.colorScheme.onSurfaceVariant
-                            : theme.colorScheme.onPrimaryContainer,
-                        style: cupertino
-                            ? null
-                            : IconButton.styleFrom(
-                                backgroundColor:
-                                    theme.colorScheme.primaryContainer,
-                              ),
-                        icon: Icon(
-                          cupertino
-                              ? CupertinoIcons.mic
-                              : hovered
-                              ? Icons.mic
-                              : Icons.mic_none_outlined,
-                        ),
-                      ),
-                    ),
-                  )
-                : _Button(
-                    button: AccessibleButton.send,
-                    label: labels.labelSend,
-                    color: theme.colorScheme.primary,
-                    child: IconButton(
-                      key: Key('send_button'),
-                      tooltip: L10n.of(context).send,
-                      onPressed: controller.send,
-                      color: theme.colorScheme.onPrimary,
-                      style: IconButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                      ),
-                      icon: Icon(
-                        cupertino ? CupertinoIcons.arrow_up : Icons.send,
-                      ),
-                    ),
-                  ),
-          ),
-        );
-        // iOS keeps the send button inside of the field, like Messages.
-        final fieldRadius = BorderRadius.circular(rowHeight / 2);
-        final fieldRow = Container(
-          constraints: BoxConstraints(minHeight: rowHeight),
-          decoration: BoxDecoration(
-            color: cupertino ? null : theme.colorScheme.surfaceContainerHigh,
-            border: cupertino && !glass
-                ? Border.all(color: theme.colorScheme.outlineVariant)
-                : null,
-            borderRadius: fieldRadius,
-          ),
-          child: Row(
-            crossAxisAlignment: .end,
-            children: [
-              emojiButton,
-              gap,
-              if (Matrix.of(context).isMultiAccount &&
-                  Matrix.of(context).hasComplexBundles &&
-                  Matrix.of(context).currentBundle!.length > 1)
-                Container(
-                  height: height,
-                  width: buttonWidth,
-                  alignment: Alignment.center,
-                  child: _ChatAccountPicker(controller),
-                ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0),
-                  child: InputBar(
-                    room: controller.room,
-                    minLines: 1,
-                    maxLines: 8,
-                    autofocus: !PlatformInfos.isMobile,
-                    keyboardType: TextInputType.multiline,
-                    textInputAction:
-                        AppSettings.sendOnEnter.value == true &&
-                            PlatformInfos.isMobile
-                        ? TextInputAction.send
-                        : null,
-                    onSubmitted: controller.onInputBarSubmitted,
-                    onSubmitImage: controller.sendImageFromClipBoard,
-                    focusNode: controller.inputFocus,
-                    controller: controller.sendController,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.only(
-                        left: 6.0,
-                        right: 6.0,
-                        bottom: 6.0,
-                        top: 3.0,
-                      ),
-                      counter: const SizedBox.shrink(),
-                      hintText: controller.room.encrypted
-                          ? L10n.of(context).encryptedMessage
-                          : L10n.of(context).unencryptedMessage,
-                      hintMaxLines: 1,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      filled: false,
-                    ),
-                    onChanged: controller.onInputBarChanged,
-                    suggestionEmojis:
-                        getDefaultEmojiLocale(
-                          AppSettings.emojiSuggestionLocale.value.isNotEmpty
-                              ? Locale(AppSettings.emojiSuggestionLocale.value)
-                              : Localizations.localeOf(context),
-                        ).fold(
-                          [],
-                          (emojis, category) => emojis..addAll(category.emoji),
-                        ),
-                  ),
+            isRecordButton
+                ? slot(AccessibleButton.microphone, labels.labelMicrophone)
+                : slot(AccessibleButton.send, labels.labelSend),
+          );
+          final emojiWidth = slot(AccessibleButton.emoji, labels.labelEmoji);
+          final attachWidth = slot(AccessibleButton.attach, labels.labelAttach);
+          final buttonsWidth =
+              (textMessageOnly ? 0 : attachWidth + gapWidth) +
+              emojiWidth +
+              gapWidth +
+              (hasAccountPicker ? buttonWidth : 0) +
+              sendWidth +
+              (cupertino ? 0 : gapWidth);
+          final fit = constraints.hasBoundedWidth
+              ? ((constraints.maxWidth - minFieldWidth) / buttonsWidth).clamp(
+                  0.0,
+                  1.0,
+                )
+              : 1.0;
+          final emojiButton = Container(
+            height: rowHeight,
+            width: emojiWidth * fit,
+            alignment: Alignment.center,
+            child: TrackedTarget(
+              id: 'emoji_button',
+              kind: TargetKind.button,
+              child: _Button(
+                button: AccessibleButton.emoji,
+                label: labels.labelEmoji,
+                child: IconButton(
+                  tooltip: L10n.of(context).emojis,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  icon: Icon(switch ((controller.showEmojiPicker, cupertino)) {
+                    (true, true) => CupertinoIcons.keyboard,
+                    (true, false) => Icons.keyboard,
+                    (false, true) => CupertinoIcons.smiley,
+                    (false, false) => Icons.emoji_emotions_outlined,
+                  }, key: ValueKey(controller.showEmojiPicker)),
+                  onPressed: controller.emojiPickerAction,
                 ),
               ),
-              if (cupertino) sendButton,
-            ],
-          ),
-        );
-        final field = Expanded(
-          child: glass
-              ? LiquidGlass(borderRadius: fieldRadius, child: fieldRow)
-              : fieldRow,
-        );
-        return Row(
-          crossAxisAlignment: .end,
-          mainAxisAlignment: .spaceBetween,
-          children: controller.selectMode
-              ? <Widget>[
-                  if (controller.selectedEvents.every(
-                    (event) => event.status == EventStatus.error,
-                  ))
-                    SizedBox(
-                      height: height,
-                      child: TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.error,
+            ),
+          );
+          final attachButton = AnimatedContainer(
+            duration: FluffyThemes.animationDuration,
+            curve: FluffyThemes.animationCurve,
+            width: textMessageOnly ? 0 : attachWidth * fit,
+            height: rowHeight,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(),
+            clipBehavior: Clip.hardEdge,
+            child: TrackedTarget(
+              id: 'attach_button',
+              kind: TargetKind.button,
+              child: _Button(
+                button: AccessibleButton.attach,
+                label: labels.labelAttach,
+                // iOS shows an action sheet, other platforms a menu.
+                child: PlatformInfos.isIOS
+                    ? glassCircle(
+                        IconButton(
+                          icon: const Icon(CupertinoIcons.add),
+                          color: theme.colorScheme.onSurfaceVariant,
+                          style: glass
+                              ? null
+                              : IconButton.styleFrom(
+                                  backgroundColor:
+                                      theme.colorScheme.surfaceContainerHigh,
+                                ),
+                          onPressed: () async {
+                            final action = await showModalActionPopup(
+                              context: context,
+                              cancelLabel: L10n.of(context).cancel,
+                              actions: [
+                                for (final a in addActions.nonNulls)
+                                  AdaptiveModalAction(label: a.$3, value: a.$1),
+                              ],
+                            );
+                            if (action != null) {
+                              controller.onAddPopupMenuButtonSelected(action);
+                            }
+                          },
                         ),
-                        onPressed: controller.deleteErrorEventsAction,
-                        child: Row(
-                          children: <Widget>[
-                            const Icon(Icons.delete_forever_outlined),
-                            Text(L10n.of(context).delete),
-                          ],
+                      )
+                    : PopupMenuButton<AddPopupMenuActions>(
+                        useRootNavigator: true,
+                        icon: Icon(cupertino ? CupertinoIcons.add : Icons.add),
+                        iconColor: theme.colorScheme.onSurfaceVariant,
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              theme.colorScheme.surfaceContainerHigh,
+                        ),
+                        onSelected: controller.onAddPopupMenuButtonSelected,
+                        itemBuilder: (BuildContext context) => [
+                          for (final a in addActions)
+                            a == null
+                                ? const PopupMenuDivider()
+                                : PopupMenuItem(
+                                    value: a.$1,
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor: theme
+                                            .colorScheme
+                                            .onPrimaryContainer,
+                                        foregroundColor:
+                                            theme.colorScheme.primaryContainer,
+                                        child: Icon(a.$2),
+                                      ),
+                                      title: Text(a.$3),
+                                      contentPadding: const EdgeInsets.all(0),
+                                    ),
+                                  ),
+                        ],
+                      ),
+              ),
+            ),
+          );
+          final sendButton = Container(
+            height: rowHeight,
+            width: sendWidth * fit,
+            alignment: Alignment.center,
+            child: TrackedTarget(
+              id: 'send_button',
+              kind: TargetKind.button,
+              child: isRecordButton
+                  ? HoverBuilder(
+                      builder: (context, hovered) => _Button(
+                        button: AccessibleButton.microphone,
+                        label: labels.labelMicrophone,
+                        child: IconButton(
+                          tooltip: L10n.of(context).voiceMessage,
+                          onPressed: hovered
+                              ? () => recordingViewModel.startRecording(
+                                  controller.room,
+                                )
+                              : () =>
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        margin: EdgeInsets.only(
+                                          bottom: height + 16,
+                                          left: 16,
+                                          right: 16,
+                                          top: 16,
+                                        ),
+                                        showCloseIcon: true,
+                                        content: Text(
+                                          L10n.of(
+                                            context,
+                                          ).longPressToRecordVoiceMessage,
+                                        ),
+                                      ),
+                                    ),
+                          onLongPress: () => recordingViewModel.startRecording(
+                            controller.room,
+                          ),
+                          color: cupertino
+                              ? theme.colorScheme.onSurfaceVariant
+                              : theme.colorScheme.onPrimaryContainer,
+                          style: cupertino
+                              ? null
+                              : IconButton.styleFrom(
+                                  backgroundColor:
+                                      theme.colorScheme.primaryContainer,
+                                ),
+                          icon: Icon(
+                            cupertino
+                                ? CupertinoIcons.mic
+                                : hovered
+                                ? Icons.mic
+                                : Icons.mic_none_outlined,
+                          ),
                         ),
                       ),
                     )
-                  else
-                    SizedBox(
-                      height: height,
-                      child: TextButton(
-                        style: selectedTextButtonStyle,
-                        onPressed: controller.forwardEventsAction,
-                        child: Row(
-                          children: <Widget>[
-                            const Icon(Icons.keyboard_arrow_left_outlined),
-                            Text(L10n.of(context).forward),
-                          ],
+                  : _Button(
+                      button: AccessibleButton.send,
+                      label: labels.labelSend,
+                      color: theme.colorScheme.primary,
+                      child: IconButton(
+                        key: Key('send_button'),
+                        tooltip: L10n.of(context).send,
+                        onPressed: controller.send,
+                        color: theme.colorScheme.onPrimary,
+                        style: IconButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                        ),
+                        icon: Icon(
+                          cupertino ? CupertinoIcons.arrow_up : Icons.send,
                         ),
                       ),
                     ),
-                  controller.selectedEvents.length == 1
-                      ? controller.selectedEvents.first
-                                .getDisplayEvent(controller.timeline!)
-                                .status
-                                .isSent
-                            ? SizedBox(
-                                height: height,
-                                child: TextButton(
-                                  style: selectedTextButtonStyle,
-                                  onPressed: controller.replyAction,
-                                  child: Row(
-                                    children: <Widget>[
-                                      Text(L10n.of(context).reply),
-                                      const Icon(Icons.keyboard_arrow_right),
-                                    ],
-                                  ),
+            ),
+          );
+          // iOS keeps the send button inside of the field, like Messages.
+          final fieldRadius = BorderRadius.circular(rowHeight / 2);
+          final fieldRow = Container(
+            constraints: BoxConstraints(minHeight: rowHeight),
+            decoration: BoxDecoration(
+              color: cupertino ? null : theme.colorScheme.surfaceContainerHigh,
+              border: cupertino && !glass
+                  ? Border.all(color: theme.colorScheme.outlineVariant)
+                  : null,
+              borderRadius: fieldRadius,
+            ),
+            child: Row(
+              crossAxisAlignment: .end,
+              children: [
+                emojiButton,
+                gap,
+                if (hasAccountPicker)
+                  Container(
+                    height: height,
+                    width: buttonWidth * fit,
+                    alignment: Alignment.center,
+                    child: _ChatAccountPicker(controller),
+                  ),
+                Expanded(
+                  child: Container(
+                    // Keeps a one-line text in the middle of the field, which
+                    // is taller than the text when buttons carry labels.
+                    constraints: BoxConstraints(minHeight: rowHeight),
+                    alignment: AlignmentDirectional.centerStart,
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: InputBar(
+                      room: controller.room,
+                      minLines: 1,
+                      maxLines: 8,
+                      autofocus: !PlatformInfos.isMobile,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction:
+                          AppSettings.sendOnEnter.value == true &&
+                              PlatformInfos.isMobile
+                          ? TextInputAction.send
+                          : null,
+                      onSubmitted: controller.onInputBarSubmitted,
+                      onSubmitImage: controller.sendImageFromClipBoard,
+                      focusNode: controller.inputFocus,
+                      controller: controller.sendController,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.only(
+                          left: 6.0,
+                          right: 6.0,
+                          bottom: 6.0,
+                          top: 3.0,
+                        ),
+                        counter: const SizedBox.shrink(),
+                        hintText: controller.room.encrypted
+                            ? L10n.of(context).encryptedMessage
+                            : L10n.of(context).unencryptedMessage,
+                        hintMaxLines: 1,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        filled: false,
+                      ),
+                      onChanged: controller.onInputBarChanged,
+                      suggestionEmojis:
+                          getDefaultEmojiLocale(
+                            AppSettings.emojiSuggestionLocale.value.isNotEmpty
+                                ? Locale(
+                                    AppSettings.emojiSuggestionLocale.value,
+                                  )
+                                : Localizations.localeOf(context),
+                          ).fold(
+                            [],
+                            (emojis, category) =>
+                                emojis..addAll(category.emoji),
+                          ),
+                    ),
+                  ),
+                ),
+                if (cupertino) sendButton,
+              ],
+            ),
+          );
+          final field = Expanded(
+            child: glass
+                ? LiquidGlass(borderRadius: fieldRadius, child: fieldRow)
+                : fieldRow,
+          );
+          return Row(
+            crossAxisAlignment: .end,
+            mainAxisAlignment: .spaceBetween,
+            children: controller.selectMode
+                // Each button shrinks to its share of a narrow row.
+                ? <Widget>[
+                    if (controller.selectedEvents.every(
+                      (event) => event.status == EventStatus.error,
+                    ))
+                      SizedBox(
+                        height: height,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: theme.colorScheme.error,
+                          ),
+                          onPressed: controller.deleteErrorEventsAction,
+                          child: Row(
+                            mainAxisSize: .min,
+                            children: <Widget>[
+                              const Icon(Icons.delete_forever_outlined),
+                              Flexible(
+                                child: Text(
+                                  L10n.of(context).delete,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              )
-                            : SizedBox(
-                                height: height,
-                                child: TextButton(
-                                  style: selectedTextButtonStyle,
-                                  onPressed: controller.sendAgainAction,
-                                  child: Row(
-                                    children: <Widget>[
-                                      Text(L10n.of(context).tryToSendAgain),
-                                      const SizedBox(width: 4),
-                                      const Icon(Icons.send_outlined, size: 16),
-                                    ],
-                                  ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        height: height,
+                        child: TextButton(
+                          style: selectedTextButtonStyle,
+                          onPressed: controller.forwardEventsAction,
+                          child: Row(
+                            mainAxisSize: .min,
+                            children: <Widget>[
+                              const Icon(Icons.keyboard_arrow_left_outlined),
+                              Flexible(
+                                child: Text(
+                                  L10n.of(context).forward,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              )
-                      : const SizedBox.shrink(),
-                ]
-              : <Widget>[
-                  attachButton,
-                  if (!textMessageOnly) gap,
-                  field,
-                  if (!cupertino) ...[gap, sendButton],
-                ],
-        );
-      },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    controller.selectedEvents.length == 1
+                        ? controller.selectedEvents.first
+                                  .getDisplayEvent(controller.timeline!)
+                                  .status
+                                  .isSent
+                              ? SizedBox(
+                                  height: height,
+                                  child: TextButton(
+                                    style: selectedTextButtonStyle,
+                                    onPressed: controller.replyAction,
+                                    child: Row(
+                                      mainAxisSize: .min,
+                                      children: <Widget>[
+                                        Flexible(
+                                          child: Text(
+                                            L10n.of(context).reply,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const Icon(Icons.keyboard_arrow_right),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : SizedBox(
+                                  height: height,
+                                  child: TextButton(
+                                    style: selectedTextButtonStyle,
+                                    onPressed: controller.sendAgainAction,
+                                    child: Row(
+                                      mainAxisSize: .min,
+                                      children: <Widget>[
+                                        Flexible(
+                                          child: Text(
+                                            L10n.of(context).tryToSendAgain,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Icon(
+                                          Icons.send_outlined,
+                                          size: 16,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                        : const SizedBox.shrink(),
+                  ].map((button) => Flexible(child: button)).toList()
+                : <Widget>[
+                    attachButton,
+                    if (!textMessageOnly) gap,
+                    field,
+                    if (!cupertino) ...[gap, sendButton],
+                  ],
+          );
+        },
+      ),
     );
   }
 }
@@ -552,6 +622,11 @@ class _Button extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AccessibilityIconButtons(
     button: button,
-    child: AccessibilityButtonLabel(label: label, color: color, child: child),
+    child: AccessibilityButtonLabel(
+      label: label,
+      color: color,
+      // Shrinks the button when the row is too narrow for its full size.
+      child: FittedBox(fit: BoxFit.scaleDown, child: child),
+    ),
   );
 }

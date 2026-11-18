@@ -399,7 +399,7 @@ class _Scene extends StatelessWidget {
             ])
               Icon(
                 icon,
-                size: s.icon(24, AccessibleButton.navigation) / s.buttonScale,
+                size: 24 * s.effective(ScaleCategory.navigationButton),
                 color: muted,
               ),
           ],

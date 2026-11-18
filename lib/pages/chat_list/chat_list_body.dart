@@ -9,16 +9,20 @@ import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_list/chat_list.dart';
 import 'package:fluffychat/pages/chat_list/chat_list_item.dart';
 import 'package:fluffychat/pages/chat_list/dummy_chat_list_item.dart';
+import 'package:fluffychat/pages/chat_list/glass_filter_bar.dart';
 import 'package:fluffychat/pages/chat_list/search_title.dart';
 import 'package:fluffychat/pages/chat_list/space_view.dart';
+import 'package:fluffychat/pages/chat_list/swipe_actions.dart';
 import 'package:fluffychat/personalization/quick_access_conversations.dart';
 import 'package:fluffychat/personalization/simple_view_conversation_source.dart';
 import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
 import 'package:fluffychat/personalization/simplified_interface_widgets.dart';
+import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/stream_extension.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/public_room_dialog.dart';
 import 'package:fluffychat/widgets/avatar.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
@@ -75,6 +79,10 @@ class ChatListViewBody extends StatelessWidget {
           .where((s) => s.hasRoomUpdate)
           .rateLimit(const Duration(seconds: 1)),
       builder: (context, _) {
+        // A filter (unread, groups…) is empty although the account has chats.
+        final filterEmpty =
+            client.rooms.isNotEmpty &&
+            controller.activeFilter != ActiveFilter.allChats;
         final rooms = controller.filteredRooms
             .where(
               (room) =>
@@ -111,7 +119,7 @@ class ChatListViewBody extends StatelessWidget {
         return CustomScrollView(
           controller: controller.scrollController,
           slivers: [
-            if (theme.cupertinoStyle) const ChatListLargeTitle(),
+            if (theme.cupertinoStyle) ChatListLargeTitle(controller),
             ChatListHeader(controller: controller),
             const SliverToBoxAdapter(child: SimplifiedInterfaceSwitch()),
             if (showQuick)
@@ -165,6 +173,19 @@ class ChatListViewBody extends StatelessWidget {
                   SearchTitle(
                     title: L10n.of(context).publicRooms,
                     icon: const Icon(Icons.explore_outlined),
+                    // On iOS the search field has no room for the server.
+                    trailing: theme.cupertinoStyle
+                        ? CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            onPressed: controller.setServer,
+                            child: Text(
+                              controller.searchServer ??
+                                  client.homeserver!.host,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          )
+                        : null,
                   ),
                   PublicRoomsHorizontalList(publicRooms: publicRooms),
                   SearchTitle(
@@ -211,33 +232,40 @@ class ChatListViewBody extends StatelessWidget {
                 if (client.rooms.isNotEmpty && !controller.isSearchMode)
                   SizedBox(
                     height: 48,
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                      shrinkWrap: true,
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        ...ActiveFilter.values
-                            .where((filter) => filter != ActiveFilter.tag)
-                            .map(
-                              (filter) => _FolderTab(
-                                selected: filter == controller.activeFilter,
-                                onTap: () =>
-                                    controller.setActiveFilter(filter, null),
-                                label: filter.toLocalizedString(context),
+                    child: PlatformInfos.supportsLiquidGlass
+                        ? _NativeFolderTabs(controller)
+                        : ListView(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                            ),
+                            shrinkWrap: true,
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              ...ActiveFilter.values
+                                  .where((filter) => filter != ActiveFilter.tag)
+                                  .map(
+                                    (filter) => _FolderTab(
+                                      selected:
+                                          filter == controller.activeFilter,
+                                      onTap: () => controller.setActiveFilter(
+                                        filter,
+                                        null,
+                                      ),
+                                      label: filter.toLocalizedString(context),
+                                    ),
+                                  ),
+                              ...controller.roomTags.entries.map(
+                                (entry) => _FolderTab(
+                                  selected: entry.key == controller.activeTag,
+                                  onTap: () => controller.setActiveFilter(
+                                    ActiveFilter.tag,
+                                    entry.key,
+                                  ),
+                                  label: entry.key.replaceFirst('u.', ''),
+                                ),
                               ),
-                            ),
-                        ...controller.roomTags.entries.map(
-                          (entry) => _FolderTab(
-                            selected: entry.key == controller.activeTag,
-                            onTap: () => controller.setActiveFilter(
-                              ActiveFilter.tag,
-                              entry.key,
-                            ),
-                            label: entry.key.replaceFirst('u.', ''),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
                   ),
                 if (controller.isSearchMode)
                   SearchTitle(
@@ -250,7 +278,7 @@ class ChatListViewBody extends StatelessWidget {
                   Column(
                     mainAxisAlignment: .center,
                     children: [
-                      if (!simple)
+                      if (!simple && !filterEmpty)
                         Stack(
                           alignment: Alignment.center,
                           children: [
@@ -268,19 +296,22 @@ class ChatListViewBody extends StatelessWidget {
                             ),
                           ],
                         ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          client.rooms.isEmpty
-                              ? L10n.of(context).noChatsFoundHere
-                              : L10n.of(context).noMoreChatsFound,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: theme.colorScheme.secondary,
+                      if (filterEmpty)
+                        _FilterEmptyState(controller)
+                      else
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            client.rooms.isEmpty
+                                ? L10n.of(context).noChatsFoundHere
+                                : L10n.of(context).noMoreChatsFound,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: theme.colorScheme.secondary,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ],
@@ -322,15 +353,34 @@ class ChatListViewBody extends StatelessWidget {
                         ),
                       );
                     }
-                    return ChatListItem(
+                    // On mobile the actions of the long press menu are swipe
+                    // actions.
+                    final swipe = {
+                      TargetPlatform.iOS,
+                      TargetPlatform.android,
+                    }.contains(theme.platform);
+                    final item = ChatListItem(
                       room,
                       space: space,
                       key: Key('chat_list_item_${room.id}'),
                       filter: filter,
                       onTap: () => controller.onChatTap(room),
-                      onLongPress: (context) =>
-                          controller.chatContextAction(room, context, space),
+                      onLongPress: swipe
+                          ? null
+                          : (context) => controller.chatContextAction(
+                              room,
+                              context,
+                              space,
+                            ),
                       activeChat: controller.activeChat == room.id,
+                    );
+                    if (!swipe) return item;
+                    return _ChatSwipeActions(
+                      key: ValueKey(room.id),
+                      controller: controller,
+                      room: room,
+                      space: space,
+                      child: item,
                     );
                   },
                 ),
@@ -339,6 +389,93 @@ class ChatListViewBody extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// The swipe actions of a chat on mobile, like in Messages and Mail.
+class _ChatSwipeActions extends StatelessWidget {
+  final ChatListController controller;
+  final Room room;
+  final Room? space;
+  final Widget child;
+
+  const _ChatSwipeActions({
+    required this.controller,
+    required this.room,
+    required this.space,
+    required this.child,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
+    void run(ChatContextAction action) =>
+        controller.runChatContextAction(room, action, space);
+    final joined = room.membership == Membership.join;
+    final invited = room.membership == Membership.invite;
+    final muted = room.pushRuleState != PushRuleState.notify;
+    final ios = Theme.of(context).platform == TargetPlatform.iOS;
+    return SwipeActions(
+      leading: [
+        if (joined) ...[
+          SwipeAction(
+            label: room.markedUnread ? l10n.markAsRead : l10n.unread,
+            icon: room.markedUnread
+                ? (ios ? CupertinoIcons.chat_bubble_fill : Icons.mark_chat_read)
+                : (ios
+                      ? CupertinoIcons.chat_bubble_text_fill
+                      : Icons.mark_chat_unread),
+            color: ios ? CupertinoColors.systemBlue : Colors.blue,
+            onPressed: () => run(ChatContextAction.markUnread),
+          ),
+          SwipeAction(
+            label: room.isFavourite ? l10n.unpin : l10n.pin,
+            icon: room.isFavourite
+                ? (ios
+                      ? CupertinoIcons.pin_slash_fill
+                      : Icons.push_pin_outlined)
+                : (ios ? CupertinoIcons.pin_fill : Icons.push_pin),
+            color: ios ? CupertinoColors.systemOrange : Colors.orange,
+            onPressed: () => run(ChatContextAction.favorite),
+          ),
+        ],
+      ],
+      trailing: [
+        if (joined) ...[
+          SwipeAction(
+            label: l10n.more,
+            icon: ios ? CupertinoIcons.ellipsis_circle_fill : Icons.more_horiz,
+            color: ios ? CupertinoColors.systemGrey : Colors.grey,
+            onPressed: () => run(ChatContextAction.showMore),
+          ),
+          SwipeAction(
+            label: muted ? l10n.unmuteChat : l10n.muteChat,
+            icon: muted
+                ? (ios ? CupertinoIcons.bell_fill : Icons.notifications)
+                : (ios
+                      ? CupertinoIcons.bell_slash_fill
+                      : Icons.notifications_off),
+            color: ios ? CupertinoColors.systemIndigo : Colors.indigo,
+            onPressed: () => run(ChatContextAction.mute),
+          ),
+        ],
+        if (invited)
+          SwipeAction(
+            label: l10n.block,
+            icon: ios ? CupertinoIcons.hand_raised_fill : Icons.block,
+            color: ios ? CupertinoColors.systemGrey : Colors.grey,
+            onPressed: () => run(ChatContextAction.block),
+          ),
+        SwipeAction(
+          label: invited ? l10n.delete : l10n.leave,
+          icon: ios ? CupertinoIcons.trash_fill : Icons.delete,
+          color: ios ? CupertinoColors.systemRed : Colors.red,
+          onPressed: () => run(ChatContextAction.leave),
+        ),
+      ],
+      child: child,
     );
   }
 }
@@ -422,6 +559,40 @@ class _SearchItem extends StatelessWidget {
 
 /// Folder tab in the style of Telegram: Just a label with an indicator
 /// line below when selected.
+/// The same filters as the [_FolderTab]s, drawn by UIKit since iOS 26.
+class _NativeFolderTabs extends StatelessWidget {
+  final ChatListController controller;
+
+  const _NativeFolderTabs(this.controller);
+
+  @override
+  Widget build(BuildContext context) {
+    final filters = ActiveFilter.values
+        .where((filter) => filter != ActiveFilter.tag)
+        .toList();
+    final tags = controller.roomTags.keys.toList();
+    final tagIndex = tags.indexOf(controller.activeTag ?? '');
+    final selectedIndex = controller.activeFilter != ActiveFilter.tag
+        ? filters.indexOf(controller.activeFilter)
+        : tagIndex < 0
+        ? null
+        : filters.length + tagIndex;
+    return GlassFilterBar(
+      labels: [
+        for (final filter in filters) filter.toLocalizedString(context),
+        for (final tag in tags) tag.replaceFirst('u.', ''),
+      ],
+      selectedIndex: selectedIndex,
+      onSelected: (index) => index < filters.length
+          ? controller.setActiveFilter(filters[index], null)
+          : controller.setActiveFilter(
+              ActiveFilter.tag,
+              tags[index - filters.length],
+            ),
+    );
+  }
+}
+
 class _FolderTab extends StatelessWidget {
   final String label;
   final bool selected;
@@ -468,6 +639,84 @@ class _FolderTab extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shown when the selected filter has no chats but the account has some.
+class _FilterEmptyState extends StatelessWidget {
+  final ChatListController controller;
+
+  const _FilterEmptyState(this.controller);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = L10n.of(context);
+    final (icon, title, body) = switch (controller.activeFilter) {
+      ActiveFilter.unread => (
+        Icons.mark_chat_read_outlined,
+        l10n.emptyUnreadTitle,
+        l10n.emptyUnreadBody,
+      ),
+      ActiveFilter.groups => (
+        Icons.groups_outlined,
+        l10n.emptyGroupsTitle,
+        l10n.emptyGroupsBody,
+      ),
+      ActiveFilter.messages => (
+        Icons.chat_bubble_outline,
+        l10n.emptyDirectChatsTitle,
+        l10n.emptyDirectChatsBody,
+      ),
+      _ => (
+        Icons.filter_list_off_outlined,
+        l10n.emptyFilterTitle,
+        l10n.emptyFilterBody,
+      ),
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 48, 32, 32),
+      child: Column(
+        mainAxisSize: .min,
+        spacing: 12,
+        children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: theme.colorScheme.primaryContainer,
+            child: Icon(
+              icon,
+              size: 40,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleLarge,
+          ),
+          Text(
+            body,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 4),
+          if (controller.activeFilter == ActiveFilter.groups)
+            FilledButton.tonalIcon(
+              onPressed: () => context.go('/rooms/newgroup'),
+              icon: const Icon(Icons.group_add_outlined),
+              label: Text(l10n.createGroup),
+            ),
+          TextButton(
+            onPressed: () =>
+                controller.setActiveFilter(ActiveFilter.allChats, null),
+            child: Text(l10n.showAllChats),
+          ),
+        ],
       ),
     );
   }

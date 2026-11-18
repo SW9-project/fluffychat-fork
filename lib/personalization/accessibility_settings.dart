@@ -43,7 +43,8 @@ enum ScaleCategory {
   titleText(
     'title_text_scale',
     min: 0.8,
-    max: 2.0,
+    // Bigger titles no longer fit in the top bar.
+    max: 1.5,
     step: 0.1,
     group: ScaleGroup.text,
   ),
@@ -111,7 +112,8 @@ enum ScaleCategory {
   navigationButton(
     'navigation_button_scale',
     min: 0.8,
-    max: 2.0,
+    // Bigger icons no longer fit in the fixed height of the bar.
+    max: 1.4,
     step: 0.1,
     group: ScaleGroup.buttons,
   ),
@@ -355,6 +357,14 @@ class AccessibilitySettings {
   /// that button's own scale applies on top.
   double icon([double base = 24.0, AccessibleButton? button]) =>
       base * buttonScale * (button == null ? 1.0 : onTop(button.category));
+
+  /// Font size of a title in an AppBar whose size is [base] at scale 1.
+  /// AppBar caps its title's text scaling at 1.34, so the font size makes up
+  /// the rest, and the title is as big as [ScaleCategory.titleText] says.
+  // shortcut: ignores the system text size in that cap, compute it in if
+  // titles with a large system size look too small.
+  double appBarTitle(double base) =>
+      base * effective(ScaleCategory.titleText) / min(textScale, 1.34);
 
   double avatar(double base) => base * avatarScale;
 

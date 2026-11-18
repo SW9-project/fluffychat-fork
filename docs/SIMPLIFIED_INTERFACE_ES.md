@@ -4,8 +4,10 @@
 
 - Primera activación desde Chats o Assistant: dos preguntas y una vista previa; solo se guarda al pulsar **Apply / Aplicar**.
 - Activaciones posteriores desde el interruptor: vista previa antes de cambiar, tanto al activar como al desactivar.
-- **Skip preview next time** permite usar el interruptor directamente en adelante. Se puede recuperar desmarcando la casilla en **Change / Cambiar**.
-- **Change / Cambiar** vuelve a abrir las dos preguntas para cambiar las preferencias.
+- El cuestionario muestra «Paso N de 3»: las dos preguntas y la vista previa.
+- **La próxima vez, cambiar sin esta vista previa** permite usar el interruptor directamente en adelante. Se puede recuperar desmarcando la casilla en **Change / Cambiar**.
+- **Change / Cambiar** solo aparece con la vista sencilla activada y vuelve a abrir las dos preguntas sin cambiar de vista.
+- La vista previa usa la misma tarjeta de conversación que la lista real.
 - Cancelar, volver atrás o cerrar el diálogo no guarda respuestas parciales ni la casilla de vista previa.
 - Assistant mantiene su propia confirmación y Undo, aunque se omita la vista previa del interruptor. Si aún no se ha completado la configuración, Apply abre el cuestionario.
 

@@ -15,10 +15,15 @@ import Flutter
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LiquidGlassTabBar") {
       LiquidGlassTabBarFactory.register(with: registrar)
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "NativeMenuButton") {
+      NativeMenuButtonFactory.register(with: registrar)
+    }
     if #available(iOS 26.0, *),
       let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LiquidGlassView")
     {
       LiquidGlassViewFactory.register(with: registrar)
+      GlassFilterBarFactory.register(with: registrar)
+      GlassButtonFactory.register(with: registrar)
     }
 
     // From https://pub.dev/packages/flutter_local_notifications#-ios-setup

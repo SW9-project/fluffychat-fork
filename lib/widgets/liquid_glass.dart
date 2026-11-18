@@ -6,6 +6,8 @@
 import 'dart:ui' as ui;
 
 import 'package:fluffychat/utils/platform_infos.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,23 +19,91 @@ class LiquidGlass extends StatelessWidget {
   final Widget child;
   final BorderRadius borderRadius;
 
+  /// Tints the native glass, like a prominent iOS button. Ignored by the
+  /// imitation.
+  final Color? tint;
+
+  /// Rounds the short sides fully, whatever size the glass ends up with.
+  final bool capsule;
+
   const LiquidGlass({
     required this.child,
     required this.borderRadius,
+    this.tint,
+    this.capsule = false,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) => PlatformInfos.supportsLiquidGlass
-      ? _NativeLiquidGlass(borderRadius: borderRadius, child: child)
+      ? _NativeLiquidGlass(
+          borderRadius: borderRadius,
+          tint: tint,
+          capsule: capsule,
+          child: child,
+        )
       : _FlutterLiquidGlass(borderRadius: borderRadius, child: child);
+}
+
+/// A native tinted Liquid Glass `UIButton` with an SF Symbol, see
+/// `GlassButtonFactory` in `LiquidGlassView.swift`. iOS 26+ only.
+class NativeGlassButton extends StatelessWidget {
+  /// The name of the SF Symbol, like `square.and.pencil`.
+  final String symbol;
+  final String label;
+  final double size;
+  final VoidCallback onPressed;
+
+  const NativeGlassButton({
+    required this.symbol,
+    required this.label,
+    required this.onPressed,
+    this.size = 44,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final params = {
+      'symbol': symbol,
+      'label': label,
+      'symbolSize': size * 0.4,
+      'tintColor': theme.colorScheme.primary.toARGB32(),
+      'isDark': theme.brightness == Brightness.dark,
+    };
+    return SizedBox.square(
+      dimension: size,
+      child: UiKitView(
+        // A new key recreates the view, which reads its parameters once.
+        key: ValueKey(Object.hashAll(params.values)),
+        viewType: 'fluffychat/glass_button',
+        creationParams: params,
+        creationParamsCodec: const StandardMessageCodec(),
+        gestureRecognizers: {Factory(EagerGestureRecognizer.new)},
+        onPlatformViewCreated: (id) =>
+            MethodChannel('fluffychat/glass_button/$id').setMethodCallHandler((
+              call,
+            ) async {
+              if (call.method == 'pressed' && context.mounted) onPressed();
+            }),
+      ),
+    );
+  }
 }
 
 class _NativeLiquidGlass extends StatelessWidget {
   final Widget child;
   final BorderRadius borderRadius;
+  final Color? tint;
+  final bool capsule;
 
-  const _NativeLiquidGlass({required this.child, required this.borderRadius});
+  const _NativeLiquidGlass({
+    required this.child,
+    required this.borderRadius,
+    this.tint,
+    this.capsule = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +112,8 @@ class _NativeLiquidGlass extends StatelessWidget {
     final params = {
       'cornerRadius': borderRadius.topLeft.x,
       'isDark': Theme.of(context).brightness == Brightness.dark,
+      'tintColor': ?tint?.toARGB32(),
+      'capsule': capsule,
     };
     return Stack(
       children: [

@@ -218,7 +218,8 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
     final heading = switch (_step) {
       0 => text.contactsQuestion,
       1 => text.homeQuestion,
-      _ => text.preview,
+      _ when widget.target == widget.controller.enabled => text.preview,
+      _ => widget.target ? text.turnOn : text.turnOff,
     };
     return Dialog.fullscreen(
       child: Scaffold(
@@ -233,10 +234,10 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_step < 2) ...[
+              if (widget.questions) ...[
                 Text(text.step(_step + 1), style: theme.textTheme.labelLarge),
                 const SizedBox(height: 12),
-                LinearProgressIndicator(value: (_step + 1) / 2),
+                LinearProgressIndicator(value: (_step + 1) / 3),
                 const SizedBox(height: 24),
               ],
               Text(heading, style: theme.textTheme.headlineSmall),

@@ -82,9 +82,23 @@ class ChatListItem extends StatelessWidget {
         lastEvent != null &&
         room.getState(EventTypes.RoomMember, lastEvent.senderId) == null;
     final space = this.space;
+    // Without a menu, like with the swipe actions of iOS, the avatar opens
+    // the chat.
+    final onLongPress = this.onLongPress;
+    final onAvatarTap = onLongPress == null
+        ? onTap
+        : () => onLongPress(context);
 
-    return Material(
-      color: backgroundColor,
+    // Material 3 Expressive rows: rounded cards with a small gap, and unread
+    // chats on a tonal container like in Google Messages.
+    final item = Material(
+      color:
+          backgroundColor ??
+          (unread && !cupertino ? theme.colorScheme.surfaceContainer : null),
+      shape: cupertino
+          ? null
+          : RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      clipBehavior: cupertino ? Clip.none : Clip.antiAlias,
       child: Stack(
         alignment: AlignmentDirectional.centerStart,
         children: [
@@ -103,7 +117,7 @@ class ChatListItem extends StatelessWidget {
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: horizontalPadding,
                   ),
-                  onLongPress: () => onLongPress?.call(context),
+                  onLongPress: onLongPress == null ? null : onAvatarTap,
                   leading: HoverBuilder(
                     builder: (context, hovered) => AnimatedScale(
                       duration: FluffyThemes.animationDuration,
@@ -141,7 +155,7 @@ class ChatListItem extends StatelessWidget {
                                   mxContent: space.avatar,
                                   size: avatarSize * 0.75,
                                   name: space.getLocalizedDisplayname(),
-                                  onTap: () => onLongPress?.call(context),
+                                  onTap: onAvatarTap,
                                 ),
                               ),
                             Positioned(
@@ -184,14 +198,14 @@ class ChatListItem extends StatelessWidget {
                                 name: displayname,
                                 presenceUserId: directChatMatrixId,
                                 presenceBackgroundColor: backgroundColor,
-                                onTap: () => onLongPress?.call(context),
+                                onTap: onAvatarTap,
                               ),
                             ),
                             Positioned(
                               top: 0,
                               right: 0,
                               child: GestureDetector(
-                                onTap: () => onLongPress?.call(context),
+                                onTap: onAvatarTap,
                                 child: AnimatedScale(
                                   duration: FluffyThemes.animationDuration,
                                   curve: FluffyThemes.animationCurve,
@@ -452,5 +466,11 @@ class ChatListItem extends StatelessWidget {
         ],
       ),
     );
+    return cupertino
+        ? item
+        : Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: item,
+          );
   }
 }
