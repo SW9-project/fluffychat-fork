@@ -1,7 +1,7 @@
 # Tutorial de Assistant
 
-Rama actual: `feat/assistant-tutorial-enhancements`, desde
-`feat/assistant-onboarding` (actualizada con `main`).
+Rama para revisión e integración: `feat/assistant-onboarding`, actualizada con
+`main` e incluyendo las mejoras de `feat/assistant-tutorial-enhancements`.
 
 Se abre en la primera visita a Assistant, con tres pasos cortos:
 
@@ -66,4 +66,10 @@ Validación de esta revisión: 68 pruebas aprobadas y análisis sin incidencias.
 Incluye práctica sin persistencia y contenido alcanzable en 320 × 640 con texto
 y zonas de pulsación al 200 %. Revisión visual adicional del widget con Roboto
 y Material Icons, en capturas de 360 × 760; las capturas están en
-`build/ui-review/tutorial-enhanced-*.png`. Esta revisión no instala una nueva APK.
+`build/ui-review/tutorial-enhanced-*.png`.
+
+Esta versión también se ha compilado e instalado en FluffyChat_Light conservando
+la sesión. Revisados los tres pasos y la práctica completa Ask → Preview → Apply
+→ Undo en el emulador. Capturas Android en
+`build/ui-review/enhanced-tutorial-*.png`. Tutorial dejado abierto desde el
+primer paso. Las mejoras están integradas en `feat/assistant-onboarding`.
