@@ -2881,5 +2881,9 @@
     "defaultWallpaperDescription": "Used in all chats that don't have a wallpaper of their own.",
     "chatWallpapers": "Chat-specific wallpapers",
     "setWallpaperForChat": "Set wallpaper for a chat",
-    "useDefaultWallpaper": "Use default wallpaper"
+    "useDefaultWallpaper": "Use default wallpaper",
+    "playSelectedText": "Play",
+    "@playSelectedText": {
+        "description": "Text selection toolbar button that reads the selected text aloud."
+    }
 }
