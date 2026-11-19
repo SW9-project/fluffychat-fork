@@ -29,6 +29,7 @@ import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:fluffychat/utils/other_party_can_receive.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/show_scaffold_dialog.dart';
+import 'package:fluffychat/utils/text_to_speech.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_text_input_dialog.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
@@ -1076,6 +1077,26 @@ class ChatController extends State<ChatPageWithRoom>
 
   void copyEventsAction() {
     Clipboard.setData(ClipboardData(text: _getSelectedEventString()));
+    setState(() {
+      showEmojiPicker = false;
+      selectedEvents.clear();
+    });
+  }
+
+  /// Only text messages, since the body of a file is its name.
+  bool get canReadAloudSelectedEvents =>
+      TextToSpeech.isSupported &&
+      selectedEvents.isNotEmpty &&
+      selectedEvents.every(
+        (e) => {
+          MessageTypes.Text,
+          MessageTypes.Notice,
+          MessageTypes.Emote,
+        }.contains(e.getDisplayEvent(timeline!).messageType),
+      );
+
+  void readAloudEventsAction() {
+    TextToSpeech.instance.speak(_getSelectedEventString());
     setState(() {
       showEmojiPicker = false;
       selectedEvents.clear();

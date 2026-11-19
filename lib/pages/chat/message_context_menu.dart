@@ -141,6 +141,12 @@ class _MessageContextMenu extends StatelessWidget {
           CupertinoIcons.doc_on_doc,
           controller.copyEventsAction,
         ),
+        if (_ask(() => controller.canReadAloudSelectedEvents))
+          _MenuAction(
+            l10n.playSelectedText,
+            CupertinoIcons.speaker_2,
+            controller.readAloudEventsAction,
+          ),
         if (controller.activeThreadId == null && room.canSendDefaultMessages)
           _MenuAction(
             l10n.replyInThread,
@@ -492,10 +498,9 @@ class _MenuLayout extends MultiChildLayoutDelegate {
     layoutChild(_Slot.bubble, BoxConstraints.tight(bubble));
 
     final total = reactions.height + gap + bubble.height + gap + menu.height;
-    final top = (rect.top - reactions.height - gap).clamp(
-      area.top,
-      max(area.top, area.bottom - total),
-    ).toDouble();
+    final top = (rect.top - reactions.height - gap)
+        .clamp(area.top, max(area.top, area.bottom - total))
+        .toDouble();
     final bubbleTop = top + reactions.height + gap;
     double left(double width) => (ownMessage ? rect.right - width : rect.left)
         .clamp(area.left, max(area.left, area.right - width));
