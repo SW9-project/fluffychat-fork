@@ -4,6 +4,7 @@
 
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/themes.dart';
+import 'package:fluffychat/utils/text_to_speech.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
 import 'package:fluffychat/widgets/matrix.dart';
@@ -77,13 +78,15 @@ class AccessibilitySettingsPage extends StatelessWidget {
             const _ChatTextSection(),
             const Divider(),
             for (final toggle in AccessibilityToggle.values)
-              SwitchListTile.adaptive(
-                key: Key('accessibility_toggle_${toggle.id}'),
-                title: Text(words.toggleTitles[toggle]!),
-                subtitle: Text(words.toggleDescriptions[toggle]!),
-                value: settings.isOn(toggle),
-                onChanged: (on) => controller.setToggle(toggle, on),
-              ),
+              if (toggle != AccessibilityToggle.tripleTapToRead ||
+                  TextToSpeech.isSupported)
+                SwitchListTile.adaptive(
+                  key: Key('accessibility_toggle_${toggle.id}'),
+                  title: Text(words.toggleTitles[toggle]!),
+                  subtitle: Text(words.toggleDescriptions[toggle]!),
+                  value: settings.isOn(toggle),
+                  onChanged: (on) => controller.setToggle(toggle, on),
+                ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Wrap(

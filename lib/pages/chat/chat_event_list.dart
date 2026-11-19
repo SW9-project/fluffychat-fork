@@ -8,6 +8,7 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
+import 'package:fluffychat/pages/chat/chat_selection_area.dart';
 import 'package:fluffychat/pages/chat/encryption_info.dart';
 import 'package:fluffychat/pages/chat/events/message.dart';
 import 'package:fluffychat/pages/chat/message_context_menu.dart';
@@ -114,7 +115,7 @@ class ChatEventList extends StatelessWidget {
     final hasWallpaper =
         controller.room.wallpaper.type == ChatWallpaperType.image;
 
-    return SelectionArea(
+    return ChatSelectionArea(
       // The app-wide text scale is applied above; messages and this chat
       // can have their own on top.
       child: AccessibilityTextScale(

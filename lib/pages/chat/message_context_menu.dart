@@ -141,6 +141,12 @@ class _MessageContextMenu extends StatelessWidget {
           CupertinoIcons.doc_on_doc,
           controller.copyEventsAction,
         ),
+        if (_ask(() => controller.canReadAloudSelectedEvents))
+          _MenuAction(
+            l10n.playSelectedText,
+            CupertinoIcons.speaker_2,
+            controller.readAloudEventsAction,
+          ),
         if (controller.activeThreadId == null && room.canSendDefaultMessages)
           _MenuAction(
             l10n.replyInThread,

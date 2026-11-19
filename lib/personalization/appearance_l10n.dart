@@ -128,10 +128,13 @@ class AppearanceL10n {
     toggleTitles: {
       AccessibilityToggle.buttonLabels: 'Button labels',
       AccessibilityToggle.highContrast: 'High contrast',
+      AccessibilityToggle.tripleTapToRead: 'Tap three times to read aloud',
     },
     toggleDescriptions: {
       AccessibilityToggle.buttonLabels: 'Show words under button icons',
       AccessibilityToggle.highContrast: 'Stronger colors and bold text',
+      AccessibilityToggle.tripleTapToRead:
+          'Tap a message three times to hear it read out loud',
     },
     textGroup: 'Text in one place',
     buttonsGroup: 'One button',
@@ -201,10 +204,13 @@ class AppearanceL10n {
     toggleTitles: {
       AccessibilityToggle.buttonLabels: 'Knaptekster',
       AccessibilityToggle.highContrast: 'Høj kontrast',
+      AccessibilityToggle.tripleTapToRead: 'Tryk tre gange for oplæsning',
     },
     toggleDescriptions: {
       AccessibilityToggle.buttonLabels: 'Vis ord under knappernes ikoner',
       AccessibilityToggle.highContrast: 'Stærkere farver og fed tekst',
+      AccessibilityToggle.tripleTapToRead:
+          'Tryk tre gange på en besked for at få den læst højt',
     },
     textGroup: 'Tekst ét sted',
     buttonsGroup: 'Én knap',
@@ -348,6 +354,10 @@ String _toggleEn(AccessibilityToggle toggle, bool on) => switch (toggle) {
     on ? 'Show words under button icons?' : 'Hide the words under buttons?',
   AccessibilityToggle.highContrast =>
     on ? 'Turn on high contrast?' : 'Turn off high contrast?',
+  AccessibilityToggle.tripleTapToRead =>
+    on
+        ? 'Read messages aloud when tapped three times?'
+        : 'Stop reading messages aloud on three taps?',
 };
 
 String _toggleDa(AccessibilityToggle toggle, bool on) => switch (toggle) {
@@ -355,6 +365,10 @@ String _toggleDa(AccessibilityToggle toggle, bool on) => switch (toggle) {
     on ? 'Vise ord under knappernes ikoner?' : 'Skjule ordene under knapperne?',
   AccessibilityToggle.highContrast =>
     on ? 'Slå høj kontrast til?' : 'Slå høj kontrast fra?',
+  AccessibilityToggle.tripleTapToRead =>
+    on
+        ? 'Læse beskeder højt ved tre tryk?'
+        : 'Stoppe oplæsning af beskeder ved tre tryk?',
 };
 
 String _themeEn(ThemeMode mode) => switch (mode) {

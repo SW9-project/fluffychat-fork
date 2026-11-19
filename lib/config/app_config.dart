@@ -23,6 +23,9 @@ abstract class AppConfig {
   static const double spaceBorderRadius = 11.0;
   static const double columnWidth = 360.0;
 
+  /// Language for reading text aloud, as a BCP 47 tag.
+  static const String textToSpeechLanguage = 'en-US';
+
   static const String enablePushTutorial =
       'https://ko-fi.com/post/How-can-I-get-Push-Notifications-without-Google-N7Q825URG6?fromEditor=true';
   static const String encryptionTutorial =

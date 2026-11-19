@@ -50,7 +50,7 @@ class ChatView extends StatelessWidget {
 
   /// The actions of the bar while messages are selected. Those that do not
   /// fit next to the close button and the count move into the "more" menu:
-  /// reply in thread first, then edit, copy and delete.
+  /// reply in thread first, then edit, read aloud, copy and delete.
   List<Widget> _selectionActions(BuildContext context, double leadingWidth) {
     final l10n = L10n.of(context);
     final a11y = AccessibilityScope.of(context);
@@ -81,6 +81,14 @@ class ChatView extends StatelessWidget {
       tooltip: l10n.copyToClipboard,
       onPressed: controller.copyEventsAction,
     );
+    final readAloud = controller.canReadAloudSelectedEvents
+        ? (
+            icon: Icons.volume_up_outlined,
+            label: l10n.playSelectedText,
+            tooltip: l10n.playSelectedText,
+            onPressed: controller.readAloudEventsAction,
+          )
+        : null;
     final delete = controller.canRedactSelectedEvents
         ? (
             icon: Icons.delete_outlined,
@@ -89,7 +97,7 @@ class ChatView extends StatelessWidget {
             onPressed: controller.redactEventsAction,
           )
         : null;
-    final shown = <_SelectionAction>[?edit, ?thread, copy, ?delete];
+    final shown = <_SelectionAction>[?edit, ?thread, ?readAloud, copy, ?delete];
     final hasMenuItems =
         single &&
         (controller.canPinSelectedEvents ||
@@ -118,7 +126,7 @@ class ChatView extends StatelessWidget {
         shown.fold(0.0, (sum, a) => sum + buttonWidth(a.label)) +
         (menu ? buttonWidth(l10n.more) : 0);
     final moved = <_SelectionAction>[];
-    for (final action in [?thread, ?edit, copy, ?delete]) {
+    for (final action in [?thread, ?edit, ?readAloud, copy, ?delete]) {
       if (needed(hasMenuItems || moved.isNotEmpty) <= available) break;
       shown.remove(action);
       moved.add(action);

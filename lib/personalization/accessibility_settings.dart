@@ -207,7 +207,10 @@ enum AccessibilityToggle {
   buttonLabels('button_labels'),
 
   /// Stronger colors and bold text.
-  highContrast('high_contrast');
+  highContrast('high_contrast'),
+
+  /// Tapping a message three times reads it aloud.
+  tripleTapToRead('triple_tap_to_read');
 
   const AccessibilityToggle(this.id);
 
@@ -268,6 +271,7 @@ class AccessibilitySettings {
 
   bool get buttonLabels => isOn(AccessibilityToggle.buttonLabels);
   bool get highContrast => isOn(AccessibilityToggle.highContrast);
+  bool get tripleTapToRead => isOn(AccessibilityToggle.tripleTapToRead);
 
   /// The text scale of the chat with [roomId], on top of the others.
   double chatTextScale(String? roomId) =>

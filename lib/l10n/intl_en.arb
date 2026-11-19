@@ -937,8 +937,8 @@
         "type": "String",
         "placeholders": {}
     },
-    "hideRedactedMessages": "Hide redacted messages",
-    "hideRedactedMessagesBody": "If someone redacts a message, this message won't be visible in the chat anymore.",
+    "hideRedactedMessages": "Hide deleted messages",
+    "hideRedactedMessagesBody": "If someone deletes a message, this message won't be visible in the chat anymore.",
     "hideInvalidOrUnknownMessageFormats": "Hide invalid or unknown message formats",
     "block": "Block",
     "blockedUsers": "Blocked users",
@@ -976,8 +976,8 @@
         "type": "String",
         "placeholders": {}
     },
-    "redactMessageDescription": "The message will be redacted for all participants in this conversation. This cannot be undone.",
-    "optionalRedactReason": "(Optional) Reason for redacting this message...",
+    "redactMessageDescription": "The message will be deleted for all participants in this conversation. This cannot be undone.",
+    "optionalRedactReason": "(Optional) Reason for deleting this message...",
     "invitedUser": "📩 {username} invited {targetName}",
     "@invitedUser": {
         "type": "String",
@@ -1372,7 +1372,7 @@
         "type": "String",
         "placeholders": {}
     },
-    "redactedBy": "Redacted by {username}",
+    "redactedBy": "Deleted by {username}",
     "@redactedBy": {
         "type": "String",
         "placeholders": {
@@ -1381,7 +1381,7 @@
             }
         }
     },
-    "redactedByBecause": "Redacted by {username} because: \"{reason}\"",
+    "redactedByBecause": "Deleted by {username} because: \"{reason}\"",
     "@redactedByBecause": {
         "type": "String",
         "placeholders": {
@@ -1393,7 +1393,7 @@
             }
         }
     },
-    "redactedAnEvent": "{username} redacted an event",
+    "redactedAnEvent": "{username} deleted a message",
     "@redactedAnEvent": {
         "type": "String",
         "placeholders": {
@@ -1402,7 +1402,7 @@
             }
         }
     },
-    "redactMessage": "Redact message",
+    "redactMessage": "Delete message",
     "@redactMessage": {
         "type": "String",
         "placeholders": {}
@@ -2882,5 +2882,9 @@
     "defaultWallpaperDescription": "Used in all chats that don't have a wallpaper of their own.",
     "chatWallpapers": "Chat-specific wallpapers",
     "setWallpaperForChat": "Set wallpaper for a chat",
-    "useDefaultWallpaper": "Use default wallpaper"
+    "useDefaultWallpaper": "Use default wallpaper",
+    "playSelectedText": "Play",
+    "@playSelectedText": {
+        "description": "Text selection toolbar button that reads the selected text aloud."
+    }
 }
