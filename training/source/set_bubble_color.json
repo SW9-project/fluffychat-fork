@@ -1,0 +1,6 @@
+{
+  "function": "set_bubble_color",
+  "groups": [
+    {"args": {"color": "blue"}, "prompts": ["make the chat bubbles blue"]}
+  ]
+}

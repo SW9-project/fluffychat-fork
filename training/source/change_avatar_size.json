@@ -39,7 +39,6 @@
         "i cant see the faces",
         "photos of my contacts bigger",
         "my family's faces are so small in the list",
-        "make the profile pictures a bit bigger",
         "I can't see whose message it is",
         "the tiny circles with people's pictures should be bigger",
         "make the contact photos larger please",
@@ -51,20 +50,21 @@
         "the people's pictures are tiny",
         "can u make the profile pics bigger",
         "larger avatars",
-        "my daughter's photo is so small I can't see it",
-        "increase the size of the profile pictures a little"
+        "my daughter's photo is so small I can't see it"
       ]
     },
     {
-      "args": {"direction": "bigger", "steps": 2},
+      "args": {"direction": "bigger", "steps": 1},
       "prompts": [
-        "make the profile pictures much bigger",
-        "considerably larger profile photos"
+        "make the profile pictures a bit bigger",
+        "increase the size of the profile pictures a little"
       ]
     },
     {
       "args": {"direction": "bigger", "steps": 3},
       "prompts": [
+        "make the profile pictures much bigger",
+        "considerably larger profile photos",
         "make the profile pictures as big as possible",
         "huge avatars please",
         "the profile pictures should be a lot bigger"
@@ -87,7 +87,12 @@
         "smaller faces please"
       ]
     },
-    {"args": {"direction": "smaller", "steps": 2}, "prompts": ["make the profile pictures much smaller"]},
-    {"args": {"direction": "smaller", "steps": 3}, "prompts": ["smallest profile pictures"]}
+    {
+      "args": {"direction": "smaller", "steps": 3},
+      "prompts": [
+        "make the profile pictures much smaller",
+        "smallest profile pictures"
+      ]
+    }
   ]
 }

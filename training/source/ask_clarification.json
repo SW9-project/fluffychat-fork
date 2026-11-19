@@ -58,6 +58,16 @@
       ]
     },
     {
+      "args": {"options": ["change_spacing", "change_line_spacing"]},
+      "prompts": [
+        "the spacing",
+        "change the spacing",
+        "adjust the spacing",
+        "I want to change the spacing",
+        "different spacing please"
+      ]
+    },
+    {
       "args": {"options": ["change_text_size", "set_high_contrast"]},
       "prompts": [
         "change the text",
@@ -78,12 +88,17 @@
       ]
     },
     {
-      "args": {"options": ["set_high_contrast", "set_theme"]},
+      "args": {"options": ["set_high_contrast", "set_theme", "set_bubble_color", "set_app_color"]},
       "prompts": [
         "change the colors",
         "the colors are bad",
         "different colors please",
-        "I don't like the colors",
+        "I don't like the colors"
+      ]
+    },
+    {
+      "args": {"options": ["set_high_contrast", "set_theme"]},
+      "prompts": [
         "make it darker",
         "make it lighter",
         "my eyes hurt when I use the app"

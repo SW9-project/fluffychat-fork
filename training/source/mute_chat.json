@@ -1,0 +1,6 @@
+{
+  "function": "mute_chat",
+  "groups": [
+    {"args": {"enabled": true}, "prompts": ["mute this chat"]}
+  ]
+}

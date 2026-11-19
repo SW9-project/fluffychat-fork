@@ -46,7 +46,6 @@
         "i always hit the wrong one theyre too close",
         "I wanted to send but pressed the microphone, they are too close",
         "the icons are jammed together",
-        "Could you please put a little more distance between the buttons?",
         "the things to tap are glued together",
         "more gap between the icons pls",
         "the buttons need more space around them",
@@ -59,16 +58,12 @@
         "the buttons are too near each other"
       ]
     },
-    {
-      "args": {"direction": "more", "steps": 2},
-      "prompts": [
-        "much more space between the buttons",
-        "considerably more room between the icons"
-      ]
-    },
+    {"args": {"direction": "more", "steps": 1}, "prompts": ["Could you please put a little more distance between the buttons?"]},
     {
       "args": {"direction": "more", "steps": 3},
       "prompts": [
+        "much more space between the buttons",
+        "considerably more room between the icons",
         "spread the buttons out a lot",
         "as much space between the buttons as possible",
         "a lot more spacing please"
@@ -93,7 +88,12 @@
         "the icons are too far from each other"
       ]
     },
-    {"args": {"direction": "less", "steps": 2}, "prompts": ["much less space between the buttons"]},
-    {"args": {"direction": "less", "steps": 3}, "prompts": ["as little space between the buttons as possible"]}
+    {
+      "args": {"direction": "less", "steps": 3},
+      "prompts": [
+        "much less space between the buttons",
+        "as little space between the buttons as possible"
+      ]
+    }
   ]
 }

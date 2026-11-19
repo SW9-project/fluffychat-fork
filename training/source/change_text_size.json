@@ -51,11 +51,8 @@
         "the text is like ants",
         "make the font size larger so I can read without glasses",
         "letters too small",
-        "make the text a little bigger",
-        "slightly larger text please",
         "the writing is too small for an old lady like me",
         "fonts too small",
-        "Could the letters be a bit bigger? I struggle to read them.",
         "make the txt larger",
         "the text is way too small",
         "i cant read the words",
@@ -67,7 +64,15 @@
       ]
     },
     {
-      "args": {"direction": "bigger", "steps": 2},
+      "args": {"direction": "bigger", "steps": 1},
+      "prompts": [
+        "make the text a little bigger",
+        "slightly larger text please",
+        "Could the letters be a bit bigger? I struggle to read them."
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "steps": 3},
       "prompts": [
         "make the text much bigger",
         "the text needs to be quite a bit larger",
@@ -76,12 +81,7 @@
         "increase the text size by a fair amount",
         "make the writing a good deal bigger",
         "font much bigger pls",
-        "can the text be significantly larger"
-      ]
-    },
-    {
-      "args": {"direction": "bigger", "steps": 3},
-      "prompts": [
+        "can the text be significantly larger",
         "make the text as big as possible",
         "biggest font please",
         "make the text a lot bigger",
@@ -111,21 +111,16 @@
         "the words are too big to fit on the screen",
         "smaler font pls",
         "the text is too large for me, I liked it smaller",
-        "make the font a little smaller",
         "teh letters r too big",
         "the letters are too big for the screen"
       ]
     },
-    {
-      "args": {"direction": "smaller", "steps": 2},
-      "prompts": [
-        "make the text much smaller",
-        "the font needs to be considerably smaller"
-      ]
-    },
+    {"args": {"direction": "smaller", "steps": 1}, "prompts": ["make the font a little smaller"]},
     {
       "args": {"direction": "smaller", "steps": 3},
       "prompts": [
+        "make the text much smaller",
+        "the font needs to be considerably smaller",
         "make the text as small as possible",
         "smallest font please",
         "make the text a lot smaller"
@@ -150,7 +145,7 @@
       ]
     },
     {
-      "args": {"direction": "bigger", "target": "messages", "steps": 2},
+      "args": {"direction": "bigger", "target": "messages", "steps": 3},
       "prompts": [
         "make the messages much bigger"
       ]
@@ -272,8 +267,8 @@
     {"args": {"direction": "smaller", "scope": "one_chat", "chat": "Maria"}, "prompts": ["the text in Maria's chat is too big"]},
     {"args": {"direction": "smaller", "scope": "one_chat", "chat": "George"}, "prompts": ["make the font smaller in the chat with George"]},
     {"args": {"direction": "smaller", "scope": "one_chat", "chat": "work group"}, "prompts": ["smaller letters in the work group chat"]},
-    {"args": {"direction": "bigger", "steps": 3, "scope": "one_chat", "chat": "Maria"}, "prompts": ["make the text as big as possible in the chat with Maria"]},
-    {"args": {"direction": "bigger", "steps": 3, "scope": "one_chat", "chat": "Grandpa"}, "prompts": ["in Grandpa's chat I want huge letters"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Maria", "steps": 3}, "prompts": ["make the text as big as possible in the chat with Maria"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Grandpa", "steps": 3}, "prompts": ["in Grandpa's chat I want huge letters"]},
     {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Mum"}, "prompts": ["bigger letters in the chat with Mum"]},
     {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Tom"}, "prompts": ["the text in Tom's chat is too small to read"]},
     {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Walking Club"}, "prompts": ["make the font larger in Walking Club"]}

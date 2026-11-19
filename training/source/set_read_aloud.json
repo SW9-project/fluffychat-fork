@@ -1,0 +1,6 @@
+{
+  "function": "set_read_aloud",
+  "groups": [
+    {"args": {"enabled": true}, "prompts": ["read my messages out loud"]}
+  ]
+}

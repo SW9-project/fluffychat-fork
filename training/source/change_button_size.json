@@ -36,7 +36,6 @@
         "buttons bigger",
         "I can't find the buttons, they're too small",
         "it's hard to tap on the icons",
-        "can you make the buttons a bit larger",
         "I want chunkier buttons",
         "the buttons are so small my finger covers them",
         "bttns r tiny",
@@ -48,18 +47,14 @@
         "Could the buttons please be made larger? I find them difficult to press."
       ]
     },
+    {"args": {"direction": "bigger", "steps": 1}, "prompts": ["can you make the buttons a bit larger"]},
     {
-      "args": {"direction": "bigger", "steps": 2},
+      "args": {"direction": "bigger", "steps": 3},
       "prompts": [
         "make the buttons much bigger",
         "the buttons need to be quite a bit larger",
         "considerably larger icons please",
-        "much bigger buttons pls"
-      ]
-    },
-    {
-      "args": {"direction": "bigger", "steps": 3},
-      "prompts": [
+        "much bigger buttons pls",
         "make the buttons as big as possible",
         "the biggest buttons you have",
         "make the buttons a lot bigger",
@@ -78,12 +73,17 @@
         "the buttons take up too much room",
         "reduce the button size",
         "buttons r too big now",
-        "the icons are too large, make them smaller",
-        "can you shrink the buttons a little"
+        "the icons are too large, make them smaller"
       ]
     },
-    {"args": {"direction": "smaller", "steps": 2}, "prompts": ["make the buttons much smaller"]},
-    {"args": {"direction": "smaller", "steps": 3}, "prompts": ["smallest buttons please"]},
+    {"args": {"direction": "smaller", "steps": 1}, "prompts": ["can you shrink the buttons a little"]},
+    {
+      "args": {"direction": "smaller", "steps": 3},
+      "prompts": [
+        "make the buttons much smaller",
+        "smallest buttons please"
+      ]
+    },
     {
       "args": {"direction": "bigger", "button": "send"},
       "prompts": [
@@ -124,7 +124,7 @@
         "the emoji face is tiny"
       ]
     },
-    {"args": {"direction": "bigger", "button": "emoji", "steps": 2}, "prompts": ["make the emoji button much bigger"]},
+    {"args": {"direction": "bigger", "button": "emoji", "steps": 3}, "prompts": ["make the emoji button much bigger"]},
     {
       "args": {"direction": "bigger", "button": "microphone"},
       "prompts": [

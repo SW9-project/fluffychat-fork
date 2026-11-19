@@ -46,10 +46,11 @@ as `tools`. Every example ends with the call the model has to learn.
 
 - Arguments the user did not give are left out. The build drops any argument equal to
   its default, so the model never learns to write `target: all` or `steps: 1`.
-- `steps` comes only from words about the size of the change: none, "a little" or "a
-  bit" is 1, "much", "quite a bit" or "considerably" is 2, "a lot", "way bigger", "huge"
-  or "as big as possible" is 3. How bad the problem sounds ("way too small") does not
-  change it.
+- `steps` comes only from words about the size of the change. It defaults to 2, so it is
+  left out when the user says nothing about the amount. "A little", "a bit", "slightly"
+  or "somewhat" is 1; "much", "quite a bit", "considerably", "a lot", "way bigger",
+  "huge" or "as big as possible" is 3. How bad the problem sounds ("way too small") does
+  not change it. In a conversation, the words of the follow-up count ("a bit more" is 1).
 - A named chat always gives `scope: one_chat` and the name as written, without the
   possessive ("Maria's chat" gives `Maria`). "This chat" or "one chat" gives
   `scope: one_chat` without a name.
@@ -60,10 +61,16 @@ as `tools`. Every example ends with the call the model has to learn.
   bright or too dark screen: `set_theme`.
 - "Reset", "default", "back to normal" or "undo the changes": `reset_settings`.
 - Clear about the app's look but not about what or which way: `ask_clarification`,
-  with the functions that might fit, in declaration order. One function when only its
+  with the functions that might fit, in declaration order ("the spacing" gives
+  `change_spacing` and `change_line_spacing`, "change the colors" gives `set_high_contrast`,
+  `set_theme`, `set_bubble_color` and `set_app_color`). One function when only its
   details are missing ("change the text size").
+- Bubble and app colors, wallpaper, pin, mute, reading aloud, and the shortcuts (swipe to
+  reply, double tap to react, Enter to send, GIFs playing by themselves) have their own
+  functions. Leave out what the user does not say ("make the chat bubbles blue" has
+  no `side`, "mute this chat" no `chat`).
 - Anything else, including other app tasks, look changes no function covers (another
-  font, colored bubbles) and sentences that only use words like "big" or "bright":
+  font) and sentences that only use words like "big" or "bright":
   `no_action`.
 
 ## Conversations
