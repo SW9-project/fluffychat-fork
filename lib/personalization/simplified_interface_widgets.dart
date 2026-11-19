@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:material_ui/material_ui.dart';
@@ -34,9 +35,9 @@ class SimplifiedInterfaceSwitch extends StatelessWidget {
           ),
           // Only while on: changing choices must not switch the view as a side effect.
           if (controller.enabled)
-            TextButton(
+            NativeButton(
               key: const Key('simple_personalize'),
-              style: TextButton.styleFrom(
+              materialStyle: TextButton.styleFrom(
                 minimumSize: Size(sizes.touchTarget(48), sizes.buttonBox(48)),
               ),
               onPressed: () => requestSimpleViewChange(
@@ -45,7 +46,7 @@ class SimplifiedInterfaceSwitch extends StatelessWidget {
                 true,
                 personalize: true,
               ),
-              child: Text(text.edit),
+              label: text.edit,
             ),
           Semantics(
             label: text.simpleView,

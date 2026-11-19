@@ -9,6 +9,7 @@ import 'package:fluffychat/utils/url_launcher.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
 import 'package:fluffychat/widgets/mxc_image.dart';
 import 'package:fluffychat/widgets/mxc_image_viewer.dart';
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -33,7 +34,6 @@ class EmotesSettingsView extends StatelessWidget {
         ),
       );
     }
-    final theme = Theme.of(context);
 
     final client = Matrix.of(context).client;
     final imageKeys = controller.pack!.images.keys.toList();
@@ -48,9 +48,9 @@ class EmotesSettingsView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: controller.showSave
-            ? TextButton(
+            ? NativeButton(
                 onPressed: controller.resetAction,
-                child: Text(L10n.of(context).cancel),
+                label: L10n.of(context).cancel,
               )
             : null,
         title: Text(L10n.of(context).customEmojisAndStickers),
@@ -58,13 +58,10 @@ class EmotesSettingsView extends StatelessWidget {
           if (controller.showSave)
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
-              child: TextButton(
+              child: NativeButton(
                 onPressed: () => controller.save(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                ),
-                child: Text(L10n.of(context).saveChanges),
+                style: NativeButtonStyle.filled,
+                label: L10n.of(context).saveChanges,
               ),
             )
           else
@@ -203,10 +200,12 @@ class EmotesSettingsView extends StatelessWidget {
             if (!controller.readonly) ...[
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: ElevatedButton.icon(
+                child: NativeButton(
                   onPressed: controller.createStickers,
-                  icon: const Icon(Icons.upload_outlined),
-                  label: Text(L10n.of(context).createSticker),
+                  style: NativeButtonStyle.elevated,
+                  icon: Icons.upload_outlined,
+                  symbol: 'square.and.arrow.up',
+                  label: L10n.of(context).createSticker,
                 ),
               ),
               const Divider(),

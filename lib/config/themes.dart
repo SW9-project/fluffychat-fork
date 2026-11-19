@@ -208,11 +208,29 @@ abstract class FluffyThemes {
           systemNavigationBarColor: colorScheme.surface,
         ),
       ),
+      // iOS has no ripple: touches only highlight.
+      splashFactory: cupertino ? NoSplash.splashFactory : null,
+      // iOS buttons: plain, gray, tinted and filled capsules (UIButton
+      // configurations) for text, outlined, elevated and filled buttons.
+      textButtonTheme: cupertino
+          ? TextButtonThemeData(style: _cupertinoButton(colorScheme))
+          : null,
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(width: 1, color: colorScheme.primary),
-        ),
+        style: cupertino
+            ? _cupertinoButton(colorScheme, background: const Color(0x1F767680))
+            : OutlinedButton.styleFrom(
+                side: BorderSide(width: 1, color: colorScheme.primary),
+              ),
       ),
+      filledButtonTheme: cupertino
+          ? FilledButtonThemeData(
+              style: _cupertinoButton(
+                colorScheme,
+                background: colorScheme.primary,
+                foreground: colorScheme.onPrimary,
+              ),
+            )
+          : null,
       progressIndicatorTheme: ProgressIndicatorThemeData(
         // ignore: deprecated_member_use
         year2023: false,
@@ -228,13 +246,20 @@ abstract class FluffyThemes {
             )
           : const SnackBarThemeData(behavior: SnackBarBehavior.floating),
       elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.secondaryContainer,
-          foregroundColor: colorScheme.onSecondaryContainer,
-          elevation: 0,
-          padding: const EdgeInsets.all(16),
-          textStyle: const TextStyle(fontSize: 16),
-        ),
+        style: cupertino
+            ? _cupertinoButton(
+                colorScheme,
+                background: colorScheme.primary.withAlpha(38),
+              ).copyWith(
+                padding: const WidgetStatePropertyAll(EdgeInsets.all(16)),
+              )
+            : ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.secondaryContainer,
+                foregroundColor: colorScheme.onSecondaryContainer,
+                elevation: 0,
+                padding: const EdgeInsets.all(16),
+                textStyle: const TextStyle(fontSize: 16),
+              ),
       ),
     );
     return theme.copyWith(
@@ -245,6 +270,48 @@ abstract class FluffyThemes {
           fontWeight: cupertino ? FontWeight.w600 : FontWeight.w500,
         ),
       ),
+    );
+  }
+
+  /// A UIKit button: a flat capsule that dims while pressed and turns gray
+  /// when disabled. Without [background] it is a plain text button.
+  static ButtonStyle _cupertinoButton(
+    ColorScheme colorScheme, {
+    Color? background,
+    Color? foreground,
+  }) {
+    final fg = foreground ?? colorScheme.primary;
+    final fgColor = WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.disabled)
+          ? colorScheme.onSurface.withAlpha(77)
+          : states.contains(WidgetState.pressed)
+          ? fg.withValues(alpha: fg.a * 0.4)
+          : fg,
+    );
+    return ButtonStyle(
+      elevation: const WidgetStatePropertyAll(0),
+      shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+      shape: const WidgetStatePropertyAll(StadiumBorder()),
+      side: const WidgetStatePropertyAll(BorderSide.none),
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      splashFactory: NoSplash.splashFactory,
+      textStyle: WidgetStatePropertyAll(
+        TextStyle(
+          fontSize: 17,
+          fontWeight: background == null ? FontWeight.w400 : FontWeight.w600,
+        ),
+      ),
+      foregroundColor: fgColor,
+      iconColor: fgColor,
+      backgroundColor: background == null
+          ? null
+          : WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.disabled)
+                  ? const Color(0x1F767680)
+                  : states.contains(WidgetState.pressed)
+                  ? background.withValues(alpha: background.a * 0.7)
+                  : background,
+            ),
     );
   }
 

@@ -253,35 +253,15 @@ class ChatView extends StatelessWidget {
             if (scrollUpBannerEventId != null && activeThreadId == null) {
               appbarBottomHeight += ChatAppBarListTile.fixedHeight;
             }
-            // The back and menu buttons can carry a label under them.
-            final a11y = AccessibilityScope.of(context);
-            final labeledBarHeight =
-                max(
-                  a11y.buttonBox(48, AccessibleButton.back),
-                  a11y.buttonBox(48, AccessibleButton.menu),
-                ) +
-                AccessibilityButtonLabel.heightOf(context);
-            final themeBarHeight = theme.appBarTheme.toolbarHeight ?? 56;
-            final labelsOn = a11y.buttonLabels;
-            // Room for the label under the back button.
-            final leadingWidth = labelsOn
-                ? max(
-                    a11y.buttonBox(56, AccessibleButton.back),
-                    // The label is inside the button, past its padding.
-                    AccessibilityButtonLabel.widthOf(
-                          context,
-                          MaterialLocalizations.of(context).backButtonTooltip,
-                        ) +
-                        8,
-                  )
-                : theme.appBarTheme.leadingWidth ?? kToolbarHeight;
+            final labelsOn = AccessibilityScope.of(context).buttonLabels;
+            final (:toolbarHeight, :leadingWidth) = ChatAppBarTitle.barSize(
+              context,
+            );
             return Scaffold(
               key: Key('chat_page'),
               extendBodyBehindAppBar: true,
               appBar: AppBar(
-                toolbarHeight: labeledBarHeight > themeBarHeight
-                    ? labeledBarHeight
-                    : null,
+                toolbarHeight: toolbarHeight,
                 leadingWidth: leadingWidth,
                 actionsPadding: labelsOn
                     ? const EdgeInsetsDirectional.only(end: 8)

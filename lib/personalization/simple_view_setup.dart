@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 SW9-project contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'accessibility_scope.dart';
@@ -275,13 +276,15 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                   _contactNames(text),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: OutlinedButton.icon(
+                    child: NativeButton(
                       key: const Key('setup_choose_names'),
                       onPressed: widget.source?.conversations.isNotEmpty == true
                           ? _chooseNames
                           : null,
-                      icon: const Icon(Icons.person_add_outlined),
-                      label: Text(text.editNames),
+                      style: NativeButtonStyle.outlined,
+                      icon: Icons.person_add_outlined,
+                      symbol: 'person.badge.plus',
+                      label: text.editNames,
                     ),
                   ),
                 ],
@@ -360,18 +363,19 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
               spacing: 12,
               runSpacing: 8,
               children: [
-                TextButton(
+                NativeButton(
                   key: const Key('simple_setup_cancel'),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(text.cancel),
+                  label: text.cancel,
                 ),
                 if (_step > 0 && widget.questions)
-                  OutlinedButton(
+                  NativeButton(
                     key: const Key('simple_setup_back'),
                     onPressed: () => _go(_step - 1),
-                    child: Text(text.back),
+                    style: NativeButtonStyle.outlined,
+                    label: text.back,
                   ),
-                FilledButton(
+                NativeButton(
                   key: Key(
                     _step == 2 ? 'simple_setup_apply' : 'simple_setup_next',
                   ),
@@ -380,7 +384,8 @@ class _SimpleSetupDialogState extends State<_SimpleSetupDialog> {
                       : Navigator.of(
                           context,
                         ).pop(_ViewChoice(_draft, _skip, _selected)),
-                  child: Text(_step == 2 ? text.apply : text.next),
+                  style: NativeButtonStyle.filled,
+                  label: _step == 2 ? text.apply : text.next,
                 ),
               ],
             ),

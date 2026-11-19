@@ -7,6 +7,7 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/device_settings/device_settings.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'user_device_list_item.dart';
@@ -101,18 +102,19 @@ class DevicesSettingsView extends StatelessWidget {
                           ),
                           child: SizedBox(
                             width: double.infinity,
-                            child: TextButton.icon(
-                              label: Text(
-                                L10n.of(context).removeAllOtherDevices,
-                              ),
-                              style: TextButton.styleFrom(
+                            child: NativeButton(
+                              label: L10n.of(context).removeAllOtherDevices,
+                              style: NativeButtonStyle.text,
+                              symbol: 'trash',
+                              tint: theme.colorScheme.error,
+                              materialStyle: TextButton.styleFrom(
                                 iconColor: theme.colorScheme.onErrorContainer,
                                 foregroundColor:
                                     theme.colorScheme.onErrorContainer,
                                 backgroundColor:
                                     theme.colorScheme.errorContainer,
                               ),
-                              icon: const Icon(Icons.delete_outline),
+                              icon: Icons.delete_outline,
                               onPressed: () => controller.removeDevicesAction(
                                 controller.notThisDevice,
                               ),

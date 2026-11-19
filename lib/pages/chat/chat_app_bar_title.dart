@@ -3,10 +3,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:math';
+
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/chat.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/utils/date_time_extension.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_locals.dart';
@@ -21,6 +24,41 @@ import 'package:matrix/matrix.dart';
 class ChatAppBarTitle extends StatelessWidget {
   final ChatController controller;
   const ChatAppBarTitle(this.controller, {super.key});
+
+  /// The chat's top bar height (null keeps the theme's) and back button
+  /// width, so the labels under its buttons fit. The accessibility preview
+  /// draws its bar with the same sizes.
+  static ({double? toolbarHeight, double leadingWidth}) barSize(
+    BuildContext context,
+  ) {
+    final theme = Theme.of(context);
+    final a11y = AccessibilityScope.of(context);
+    // The back and menu buttons can carry a label under them.
+    final labeledBarHeight =
+        max(
+          a11y.buttonBox(48, AccessibleButton.back),
+          a11y.buttonBox(48, AccessibleButton.menu),
+        ) +
+        AccessibilityButtonLabel.heightOf(context);
+    final themeBarHeight = theme.appBarTheme.toolbarHeight ?? 56;
+    return (
+      toolbarHeight: labeledBarHeight > themeBarHeight
+          ? labeledBarHeight
+          : null,
+      // Room for the label under the back button.
+      leadingWidth: a11y.buttonLabels
+          ? max(
+              a11y.buttonBox(56, AccessibleButton.back),
+              // The label is inside the button, past its padding.
+              AccessibilityButtonLabel.widthOf(
+                    context,
+                    MaterialLocalizations.of(context).backButtonTooltip,
+                  ) +
+                  8,
+            )
+          : theme.appBarTheme.leadingWidth ?? kToolbarHeight,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

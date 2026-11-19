@@ -78,50 +78,51 @@ class Avatar extends StatelessWidget {
                   side: BorderSide.none,
                 ),
             clipBehavior: Clip.antiAlias,
-            child: MxcImage(
-              client: client,
-              borderRadius: borderRadius,
-              key: ValueKey(mxContent.toString()),
-              cacheKey:
-                  '${mxContent}_${size}_${animated ? 'animated' : 'static'}',
-              uri: mxContent,
-              isThumbnail: !animated,
-              animated: animated,
-              fit: BoxFit.cover,
-              width: size,
-              height: size,
-              placeholder: (_) => noPic
-                  ? Container(
-                      decoration: BoxDecoration(
+            // Without a picture there is nothing to load.
+            child: noPic
+                ? Container(
+                    decoration: BoxDecoration(
+                      color:
+                          backgroundColor ??
+                          fallbackLetters.colorScheme.primaryContainer,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      fallbackLetters,
+                      textAlign: TextAlign.center,
+                      // The letters are sized from the avatar size, so text
+                      // scaling would make them overflow the avatar.
+                      textScaler: TextScaler.noScaling,
+                      style: TextStyle(
+                        fontFamily: 'RobotoMono',
                         color:
-                            backgroundColor ??
-                            fallbackLetters.colorScheme.primaryContainer,
+                            textColor ??
+                            fallbackLetters.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                        fontSize: (size / 2.5).roundToDouble(),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        fallbackLetters,
-                        textAlign: TextAlign.center,
-                        // The letters are sized from the avatar size, so text
-                        // scaling would make them overflow the avatar.
-                        textScaler: TextScaler.noScaling,
-                        style: TextStyle(
-                          fontFamily: 'RobotoMono',
-                          color:
-                              textColor ??
-                              fallbackLetters.colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                          fontSize: (size / 2.5).roundToDouble(),
-                        ),
-                      ),
-                    )
-                  : Center(
+                    ),
+                  )
+                : MxcImage(
+                    client: client,
+                    borderRadius: borderRadius,
+                    key: ValueKey(mxContent.toString()),
+                    cacheKey:
+                        '${mxContent}_${size}_${animated ? 'animated' : 'static'}',
+                    uri: mxContent,
+                    isThumbnail: !animated,
+                    animated: animated,
+                    fit: BoxFit.cover,
+                    width: size,
+                    height: size,
+                    placeholder: (_) => Center(
                       child: Icon(
                         Icons.person_2,
                         color: theme.colorScheme.tertiary,
                         size: size / 1.5,
                       ),
                     ),
-            ),
+                  ),
           ),
         ),
         if (presenceUserId != null)

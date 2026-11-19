@@ -22,6 +22,7 @@ import 'package:fluffychat/utils/size_string.dart';
 import 'package:fluffychat/utils/start_push_foreground_service.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/adaptive_dialog_action.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/dialog_text_field.dart';
+import 'package:fluffychat/widgets/glass_slider.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart' hide Result;
 import 'package:mime/mime.dart';
@@ -861,7 +862,7 @@ class _ImageEditPageState extends State<_ImageEditPage> {
                                       setState(() => _eraser = true),
                                 ),
                                 Expanded(
-                                  child: Slider(
+                                  child: GlassSlider(
                                     min: 1,
                                     max: 30,
                                     value: _strokeWidth,

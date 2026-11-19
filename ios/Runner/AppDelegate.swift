@@ -24,6 +24,8 @@ import Flutter
       LiquidGlassViewFactory.register(with: registrar)
       GlassFilterBarFactory.register(with: registrar)
       GlassButtonFactory.register(with: registrar)
+      GlassSliderFactory.register(with: registrar)
+      NativeButtonFactory.register(with: registrar)
     }
 
     // From https://pub.dev/packages/flutter_local_notifications#-ios-setup

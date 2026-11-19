@@ -259,3 +259,217 @@ class GlassButton: NSObject, FlutterPlatformView {
 
   func view() -> UIView { button }
 }
+
+/// A native `UISlider`, which since iOS 26 has a Liquid Glass thumb and tick
+/// marks. Flutter sends its state with `update` and is told about drags with
+/// `changeStart`, `changed` and `changeEnd`.
+@available(iOS 26.0, *)
+class GlassSliderFactory: NSObject, FlutterPlatformViewFactory {
+  static let viewType = "fluffychat/glass_slider"
+
+  private let messenger: FlutterBinaryMessenger
+
+  static func register(with registrar: FlutterPluginRegistrar) {
+    registrar.register(GlassSliderFactory(messenger: registrar.messenger()), withId: viewType)
+  }
+
+  init(messenger: FlutterBinaryMessenger) {
+    self.messenger = messenger
+    super.init()
+  }
+
+  func create(
+    withFrame frame: CGRect,
+    viewIdentifier viewId: Int64,
+    arguments args: Any?
+  ) -> FlutterPlatformView {
+    GlassSlider(
+      frame: frame,
+      channel: FlutterMethodChannel(
+        name: "\(GlassSliderFactory.viewType)/\(viewId)",
+        binaryMessenger: messenger
+      ),
+      arguments: args as? [String: Any] ?? [:]
+    )
+  }
+
+  func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+    FlutterStandardMessageCodec.sharedInstance()
+  }
+}
+
+@available(iOS 26.0, *)
+class GlassSlider: NSObject, FlutterPlatformView {
+  private let slider = UISlider()
+  private let channel: FlutterMethodChannel
+
+  init(frame: CGRect, channel: FlutterMethodChannel, arguments: [String: Any]) {
+    self.channel = channel
+    super.init()
+    slider.frame = frame
+    slider.addAction(
+      UIAction { [weak self] _ in self?.channel.invokeMethod("changeStart", arguments: nil) },
+      for: .touchDown
+    )
+    slider.addAction(
+      UIAction { [weak self] _ in
+        guard let self else { return }
+        self.channel.invokeMethod("changed", arguments: Double(self.slider.value))
+      },
+      for: .valueChanged
+    )
+    slider.addAction(
+      UIAction { [weak self] _ in self?.channel.invokeMethod("changeEnd", arguments: nil) },
+      for: [.touchUpInside, .touchUpOutside, .touchCancel]
+    )
+    update(arguments)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "update", let arguments = call.arguments as? [String: Any] else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      self?.update(arguments)
+      result(nil)
+    }
+  }
+
+  func view() -> UIView { slider }
+
+  private func update(_ arguments: [String: Any]) {
+    let min = Float(arguments["min"] as? Double ?? 0)
+    let max = Float(arguments["max"] as? Double ?? 1)
+    if slider.minimumValue != min || slider.maximumValue != max {
+      slider.minimumValue = min
+      slider.maximumValue = max
+    }
+    let ticks = arguments["ticks"] as? Int ?? 0
+    if (slider.trackConfiguration?.ticks.count ?? 0) != ticks {
+      slider.trackConfiguration =
+        ticks > 1 ? UISlider.TrackConfiguration(numberOfTicks: ticks) : nil
+    }
+    let value = Float(arguments["value"] as? Double ?? Double(min))
+    if slider.value != value { slider.value = value }
+    slider.isEnabled = arguments["enabled"] as? Bool ?? true
+    slider.accessibilityLabel = arguments["label"] as? String
+    slider.accessibilityValue = arguments["valueLabel"] as? String
+    if let argb = arguments["tintColor"] as? Int {
+      slider.minimumTrackTintColor = UIColor(
+        red: CGFloat((argb >> 16) & 0xFF) / 255,
+        green: CGFloat((argb >> 8) & 0xFF) / 255,
+        blue: CGFloat(argb & 0xFF) / 255,
+        alpha: CGFloat((argb >> 24) & 0xFF) / 255
+      )
+    }
+    if let isDark = arguments["isDark"] as? Bool {
+      slider.overrideUserInterfaceStyle = isDark ? .dark : .light
+    }
+  }
+}
+
+/// A native labelled `UIButton`: plain, glass or prominent glass. Flutter
+/// sends its state with `update`, which answers with the intrinsic size, and
+/// is told about taps with `pressed`.
+@available(iOS 26.0, *)
+class NativeButtonFactory: NSObject, FlutterPlatformViewFactory {
+  static let viewType = "fluffychat/native_button"
+
+  private let messenger: FlutterBinaryMessenger
+
+  static func register(with registrar: FlutterPluginRegistrar) {
+    registrar.register(NativeButtonFactory(messenger: registrar.messenger()), withId: viewType)
+  }
+
+  init(messenger: FlutterBinaryMessenger) {
+    self.messenger = messenger
+    super.init()
+  }
+
+  func create(
+    withFrame frame: CGRect,
+    viewIdentifier viewId: Int64,
+    arguments args: Any?
+  ) -> FlutterPlatformView {
+    NativeButton(
+      frame: frame,
+      channel: FlutterMethodChannel(
+        name: "\(NativeButtonFactory.viewType)/\(viewId)",
+        binaryMessenger: messenger
+      ),
+      arguments: args as? [String: Any] ?? [:]
+    )
+  }
+
+  func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+    FlutterStandardMessageCodec.sharedInstance()
+  }
+}
+
+@available(iOS 26.0, *)
+class NativeButton: NSObject, FlutterPlatformView {
+  private let button = UIButton(type: .system)
+  private let channel: FlutterMethodChannel
+
+  init(frame: CGRect, channel: FlutterMethodChannel, arguments: [String: Any]) {
+    self.channel = channel
+    super.init()
+    button.frame = frame
+    button.addAction(
+      UIAction { [weak self] _ in self?.channel.invokeMethod("pressed", arguments: nil) },
+      for: .primaryActionTriggered
+    )
+    update(arguments)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self, call.method == "update", let arguments = call.arguments as? [String: Any]
+      else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      self.update(arguments)
+      let size = self.button.intrinsicContentSize
+      result([Double(ceil(size.width)), Double(ceil(size.height))])
+    }
+  }
+
+  func view() -> UIView { button }
+
+  private func update(_ arguments: [String: Any]) {
+    let style = arguments["style"] as? String
+    var config: UIButton.Configuration =
+      switch style {
+      case "prominent": .prominentGlass()
+      case "glass": .glass()
+      default: .plain()
+      }
+    config.title = arguments["label"] as? String
+    config.titleLineBreakMode = .byTruncatingTail
+    // Already scaled by the app's text size in Flutter.
+    let fontSize = CGFloat(arguments["fontSize"] as? Double ?? 17)
+    let weight: UIFont.Weight = style == "prominent" ? .semibold : .regular
+    config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer {
+      var attributes = $0
+      attributes.font = .systemFont(ofSize: fontSize, weight: weight)
+      return attributes
+    }
+    if let symbol = arguments["symbol"] as? String {
+      config.image = UIImage(systemName: symbol)
+      config.imagePadding = 6
+      config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+        pointSize: fontSize * 0.9,
+        weight: style == "prominent" ? .semibold : .regular
+      )
+    }
+    button.configuration = config
+    button.isEnabled = arguments["enabled"] as? Bool ?? true
+    if let argb = arguments["tintColor"] as? Int {
+      button.tintColor = UIColor(
+        red: CGFloat((argb >> 16) & 0xFF) / 255,
+        green: CGFloat((argb >> 8) & 0xFF) / 255,
+        blue: CGFloat(argb & 0xFF) / 255,
+        alpha: CGFloat((argb >> 24) & 0xFF) / 255
+      )
+    }
+    if let isDark = arguments["isDark"] as? Bool {
+      button.overrideUserInterfaceStyle = isDark ? .dark : .light
+    }
+  }
+}

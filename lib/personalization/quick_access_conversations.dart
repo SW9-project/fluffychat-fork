@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 SW9-project contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'simple_view_dialog.dart';
@@ -115,12 +116,11 @@ class QuickAccessConversations extends StatelessWidget {
                 automatic ? text.frequent : text.quickAccess,
                 style: theme.textTheme.titleLarge,
               ),
-              TextButton.icon(
+              NativeButton(
                 key: const Key('quick_access_choose'),
-                icon: const Icon(Icons.edit_outlined),
-                label: Text(
-                  selected.isEmpty ? text.choose : text.editQuickAccess,
-                ),
+                icon: Icons.edit_outlined,
+                symbol: 'pencil',
+                label: selected.isEmpty ? text.choose : text.editQuickAccess,
                 onPressed: conversations.isEmpty
                     ? null
                     : () async {
@@ -258,17 +258,18 @@ class _QuickAccessPickerState extends State<_QuickAccessPicker> {
               spacing: 12,
               runSpacing: 8,
               children: [
-                OutlinedButton(
+                NativeButton(
                   key: const Key('quick_access_cancel'),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(text.cancel),
+                  style: NativeButtonStyle.outlined,
+                  label: text.cancel,
                 ),
-                FilledButton(
+                NativeButton(
                   key: const Key('quick_access_save'),
                   onPressed: () => Navigator.of(context).pop([..._selected]),
-                  child: Text(
-                    '${text.save} (${_selected.length}/${SimplifiedInterfaceController.maxQuickAccess})',
-                  ),
+                  style: NativeButtonStyle.filled,
+                  label:
+                      '${text.save} (${_selected.length}/${SimplifiedInterfaceController.maxQuickAccess})',
                 ),
               ],
             ),

@@ -8,6 +8,7 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/settings_password/settings_password.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -71,20 +72,22 @@ class SettingsPasswordView extends StatelessWidget {
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: controller.loading
-                        ? null
-                        : controller.changePassword,
-                    child: controller.loading
-                        ? Theme.of(context).cupertinoStyle
+                  child: controller.loading
+                      ? ElevatedButton(
+                          onPressed: null,
+                          child: Theme.of(context).cupertinoStyle
                               ? const CupertinoActivityIndicator()
-                              : const LinearProgressIndicator()
-                        : Text(L10n.of(context).changePassword),
-                  ),
+                              : const LinearProgressIndicator(),
+                        )
+                      : NativeButton(
+                          onPressed: controller.changePassword,
+                          style: NativeButtonStyle.elevated,
+                          label: L10n.of(context).changePassword,
+                        ),
                 ),
                 const SizedBox(height: 16),
-                TextButton(
-                  child: Text(L10n.of(context).passwordRecoverySettings),
+                NativeButton(
+                  label: L10n.of(context).passwordRecoverySettings,
                   onPressed: () => context.go('/rooms/settings/security/3pid'),
                 ),
               ],

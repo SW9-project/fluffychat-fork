@@ -9,6 +9,7 @@ import 'package:fluffychat/pages/chat_encryption_settings/chat_encryption_settin
 import 'package:fluffychat/utils/beautify_string_extension.dart';
 import 'package:fluffychat/utils/date_time_extension.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -35,9 +36,9 @@ class ChatEncryptionSettingsView extends StatelessWidget {
           ),
           title: Text(L10n.of(context).encryption),
           actions: [
-            TextButton(
+            NativeButton(
               onPressed: () => launchUrlString(AppConfig.encryptionTutorial),
-              child: Text(L10n.of(context).help),
+              label: L10n.of(context).help,
             ),
           ],
         ),
@@ -45,7 +46,7 @@ class ChatEncryptionSettingsView extends StatelessWidget {
           child: Column(
             mainAxisSize: .min,
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.symmetric(horizontal: 16),
                 title: Text(L10n.of(context).encryptThisChat),
                 value: room.encrypted,
@@ -69,8 +70,10 @@ class ChatEncryptionSettingsView extends StatelessWidget {
                   ),
                   child: SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
+                    child: NativeButton(
+                      style: NativeButtonStyle.outlined,
+                      symbol: 'checkmark.seal',
+                      materialStyle: OutlinedButton.styleFrom(
                         backgroundColor: theme.colorScheme.primaryContainer,
                         foregroundColor: theme.colorScheme.onPrimaryContainer,
                         side: BorderSide(
@@ -79,8 +82,8 @@ class ChatEncryptionSettingsView extends StatelessWidget {
                         ),
                       ),
                       onPressed: controller.startVerification,
-                      icon: const Icon(Icons.verified_outlined),
-                      label: Text(L10n.of(context).verifyStart),
+                      icon: Icons.verified_outlined,
+                      label: L10n.of(context).verifyStart,
                     ),
                   ),
                 ),

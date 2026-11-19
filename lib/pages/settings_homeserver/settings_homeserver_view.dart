@@ -10,6 +10,7 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/utils/localized_exception_extension.dart';
 import 'package:fluffychat/widgets/layouts/max_width_body.dart';
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:fluffychat/widgets/settings_section.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:material_ui/material_ui.dart';
@@ -102,14 +103,14 @@ class SettingsHomeserverView extends StatelessWidget {
                               mainAxisSize: .min,
                               children: [
                                 if (contact.emailAddress != null)
-                                  TextButton(
+                                  NativeButton(
                                     onPressed: () {},
-                                    child: Text(contact.emailAddress!),
+                                    label: contact.emailAddress!,
                                   ),
                                 if (contact.matrixId != null)
-                                  TextButton(
+                                  NativeButton(
                                     onPressed: () {},
-                                    child: Text(contact.matrixId!),
+                                    label: contact.matrixId!,
                                   ),
                               ],
                             ),

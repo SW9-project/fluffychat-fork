@@ -13,6 +13,7 @@ import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/layouts/main_navigation_bar.dart';
 import 'package:fluffychat/widgets/matrix.dart';
+import 'package:fluffychat/widgets/native_button.dart';
 import 'package:fluffychat/widgets/settings_section.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -151,31 +152,27 @@ class SettingsView extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      TextButton.icon(
+                      NativeButton(
                         onPressed: controller.setDisplaynameAction,
-                        icon: const Icon(Icons.edit_outlined, size: 16),
-                        style: TextButton.styleFrom(
+                        icon: Icons.edit_outlined,
+                        symbol: 'pencil',
+                        tint: theme.colorScheme.onSurface,
+                        materialStyle: TextButton.styleFrom(
                           foregroundColor: theme.colorScheme.onSurface,
                           iconColor: theme.colorScheme.onSurface,
+                          iconSize: 16,
+                          textStyle: const TextStyle(fontSize: 18),
                         ),
-                        label: Text(
-                          displayname,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 18),
-                        ),
+                        label: displayname,
                       ),
-                      TextButton(
+                      NativeButton(
                         onPressed: () => FluffyShare.share(mxid, context),
-                        style: TextButton.styleFrom(
+                        tint: theme.colorScheme.secondary,
+                        materialStyle: TextButton.styleFrom(
                           foregroundColor: theme.colorScheme.secondary,
                           iconColor: theme.colorScheme.secondary,
                         ),
-                        child: Text(
-                          mxid,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        label: mxid,
                       ),
                       const SizedBox(height: 8),
                     ],

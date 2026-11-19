@@ -14,6 +14,7 @@ import 'package:fluffychat/utils/chat_wallpaper.dart';
 import 'package:fluffychat/utils/file_selector.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
+import 'package:fluffychat/widgets/glass_slider.dart';
 import 'package:fluffychat/widgets/matrix.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -180,7 +181,7 @@ class _WallpaperEditorState extends State<WallpaperEditor> {
             ),
             if (wallpaper != null && isImage) ...[
               ListTile(title: Text(L10n.of(context).opacity)),
-              Slider.adaptive(
+              GlassSlider(
                 min: 0.1,
                 max: 1.0,
                 divisions: 9,
@@ -192,7 +193,7 @@ class _WallpaperEditorState extends State<WallpaperEditor> {
                 onChangeEnd: _saveOpacity,
               ),
               ListTile(title: Text(L10n.of(context).blur)),
-              Slider.adaptive(
+              GlassSlider(
                 min: 0.0,
                 max: 10.0,
                 divisions: 10,
