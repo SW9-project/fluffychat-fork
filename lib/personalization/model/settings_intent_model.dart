@@ -14,6 +14,10 @@ class ProposedCall {
 
   const ProposedCall(this.name, this.args);
 
+  /// This call with [key] set to [value], to answer a question of the app.
+  ProposedCall withArg(String key, Object? value) =>
+      ProposedCall(name, {...args, key: value});
+
   @override
   String toString() => 'ProposedCall($name, $args)';
 }

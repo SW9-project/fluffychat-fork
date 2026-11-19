@@ -306,6 +306,20 @@ void main() {
       );
     });
 
+    test('withArg answers a question of the app', () {
+      const call = ProposedCall('set_bubble_color', {'color': 'red'});
+      expect(
+        (_interpret(call.name, call.args) as AssistNeedsDetail).parameter,
+        'side',
+      );
+      final answered = call.withArg('side', 'theirs');
+      expect(
+        (_interpret(answered.name, answered.args) as AssistAppProposal).change,
+        AppChange(AppSetting.otherBubbleColor, null, Colors.red.toARGB32()),
+      );
+      expect(call.args, {'color': 'red'});
+    });
+
     test('app color, wallpaper and gestures', () {
       AppChange change(AssistResult r) => (r as AssistAppProposal).change;
       expect(
