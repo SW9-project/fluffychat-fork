@@ -12,6 +12,8 @@ import 'package:matrix/matrix.dart';
 import '../accessibility_controller.dart';
 import '../accessibility_settings.dart';
 import '../appearance_l10n.dart';
+import '../assistant_tutorial.dart';
+import '../assistant_tutorial_l10n.dart';
 import '../model/personalization_tools.dart';
 import '../model/settings_intent_model.dart';
 import '../model/tool_call_interpreter.dart';
@@ -96,6 +98,9 @@ class AssistView extends StatefulWidget {
   /// The user's chats, most recent first.
   final List<AssistChat> Function() chats;
 
+  /// The guided tour shown in place, or null for none.
+  final AssistantGuide? guide;
+
   const AssistView({
     required this.model,
     required this.manager,
@@ -105,6 +110,7 @@ class AssistView extends StatefulWidget {
     required this.themeMode,
     required this.chats,
     this.transcriber,
+    this.guide,
     super.key,
   });
 
@@ -180,8 +186,47 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     );
     _listenToVoice(widget.transcriber);
     _controller.addListener(_onFieldChanged);
+    widget.guide?.addListener(_onGuide);
     WidgetsBinding.instance.addObserver(this);
   }
+
+  int? _guideStep;
+
+  /// Entering the "try it" step puts the example in the real prompt field.
+  void _onGuide() {
+    final step = widget.guide?.step;
+    if (step == 1 && _guideStep != 1 && _controller.text.isEmpty) {
+      _setField(AssistantTutorialL10n.of(context).example);
+    }
+    _guideStep = step;
+  }
+
+  /// The real control the guide's example points at.
+  AssistantGuideSpot? get _guideSpot {
+    if (widget.guide?.step != 1) return null;
+    final last = _last;
+    final suggestion = last?.suggestion;
+    if (suggestion != null && widget.manager.current == suggestion) {
+      return AssistantGuideSpot.apply;
+    }
+    if (suggestion != null &&
+        widget.manager.applied?.suggestion == suggestion) {
+      return AssistantGuideSpot.undo;
+    }
+    if (last?.outcome == _Outcome.undone) return AssistantGuideSpot.done;
+    if (last?.outcome == _Outcome.declined) return AssistantGuideSpot.declined;
+    return AssistantGuideSpot.send;
+  }
+
+  /// The guide above the prompt field. It waits until the AI is set up, so
+  /// a first visit shows only the Set up button.
+  Widget _guideCard(AssistantGuideSpot? spot) => widget.guide == null
+      ? const SizedBox.shrink()
+      : AssistantGuideCard(
+          guide: widget.guide!,
+          spot: spot,
+          onOpenSettings: widget.onOpenAccessibilitySettings,
+        );
 
   void _onFieldChanged() {
     if (_controller.text.isEmpty) _usedVoice = false;
@@ -193,6 +238,10 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     if (oldWidget.transcriber != widget.transcriber) {
       _forgetVoice(oldWidget.transcriber);
       _listenToVoice(widget.transcriber);
+    }
+    if (oldWidget.guide != widget.guide) {
+      oldWidget.guide?.removeListener(_onGuide);
+      widget.guide?.addListener(_onGuide);
     }
     if (oldWidget.model == widget.model) return;
     oldWidget.model?.status.removeListener(_onModelStatus);
@@ -247,6 +296,7 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     widget.model?.status.removeListener(_onModelStatus);
+    widget.guide?.removeListener(_onGuide);
     _forgetVoice(widget.transcriber);
     _controller.dispose();
     _scrollController.dispose();
@@ -666,13 +716,17 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final model = widget.model;
-    if (model == null) return _statusPanel(context, null);
-    return ValueListenableBuilder<ModelStatus>(
-      valueListenable: model.status,
-      builder: (context, status, _) => switch (status.state) {
-        ModelState.ready => _conversationView(context),
-        _ => _statusPanel(context, status),
-      },
+    return ListenableBuilder(
+      listenable: Listenable.merge([widget.manager, ?widget.guide]),
+      builder: (context, _) => model == null
+          ? _statusPanel(context, null)
+          : ValueListenableBuilder<ModelStatus>(
+              valueListenable: model.status,
+              builder: (context, status, _) => switch (status.state) {
+                ModelState.ready => _conversationView(context),
+                _ => _statusPanel(context, status),
+              },
+            ),
     );
   }
 
@@ -730,25 +784,31 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
       case ModelState.ready:
         children = const [];
     }
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              Icon(
-                Icons.chat_bubble_outline,
-                size: 48,
-                color: theme.colorScheme.primary,
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
+                  mainAxisSize: .min,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 48,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    ...children,
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              ...children,
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -757,43 +817,41 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     final theme = Theme.of(context);
     final l10n = PersonalizationL10n.of(context);
     final ready = _tools != null && !_busy;
+    final spot = _guideSpot;
     return Column(
       children: [
         Expanded(
-          child: ListenableBuilder(
-            listenable: widget.manager,
-            builder: (context, _) => ListView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              children: [
-                _AssistantBubble(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.assistIntro),
-                      if (SimplifiedInterfaceScope.maybeOf(context)
-                          case final controller?)
-                        TextButton.icon(
-                          key: const Key('assist_simple_view'),
-                          onPressed: _busy
-                              ? null
-                              : () => _offerSimpleView(controller),
-                          icon: const Icon(Icons.view_agenda_outlined),
-                          label: Text(
-                            controller.enabled
-                                ? SimplifiedInterfaceL10n.of(context).turnOff
-                                : SimplifiedInterfaceL10n.of(context).turnOn,
-                          ),
+          child: ListView(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            children: [
+              _AssistantBubble(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.assistIntro),
+                    if (SimplifiedInterfaceScope.maybeOf(context)
+                        case final controller?)
+                      TextButton.icon(
+                        key: const Key('assist_simple_view'),
+                        onPressed: _busy
+                            ? null
+                            : () => _offerSimpleView(controller),
+                        icon: const Icon(Icons.view_agenda_outlined),
+                        label: Text(
+                          controller.enabled
+                              ? SimplifiedInterfaceL10n.of(context).turnOff
+                              : SimplifiedInterfaceL10n.of(context).turnOn,
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-                for (final exchange in _exchanges) ...[
-                  _UserBubble(text: exchange.prompt),
-                  _AssistantBubble(child: _answer(context, exchange)),
-                ],
+              ),
+              for (final exchange in _exchanges) ...[
+                _UserBubble(text: exchange.prompt),
+                _AssistantBubble(child: _answer(context, exchange)),
               ],
-            ),
+            ],
           ),
         ),
         SafeArea(
@@ -804,6 +862,12 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
               mainAxisSize: .min,
               crossAxisAlignment: .stretch,
               children: [
+                // Out of the way while the example's answer is on its way.
+                if (widget.guide?.step != null &&
+                    !(widget.guide!.step == 1 && _busy)) ...[
+                  _guideCard(spot),
+                  const SizedBox(height: 8),
+                ],
                 ?_voiceLine(context),
                 Row(
                   children: [
@@ -824,14 +888,17 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
                     ),
                     const SizedBox(width: 8),
                     ?_micButton(context),
-                    IconButton.filled(
-                      key: const Key('assist_send'),
-                      onPressed: ready && !_voiceBusy ? _submit : null,
-                      tooltip: l10n.ask,
-                      icon: const Icon(Icons.send),
-                      style: IconButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
+                    AssistantGuideSpotlight(
+                      on: spot == AssistantGuideSpot.send,
+                      child: IconButton.filled(
+                        key: const Key('assist_send'),
+                        onPressed: ready && !_voiceBusy ? _submit : null,
+                        tooltip: l10n.ask,
+                        icon: const Icon(Icons.send),
+                        style: IconButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                        ),
                       ),
                     ),
                   ],
@@ -1130,15 +1197,21 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
         spacing: 8,
         runSpacing: 4,
         children: [
-          OutlinedButton(
-            key: const Key('assist_no_thanks'),
-            onPressed: () => _decline(exchange),
-            child: Text(l10n.noThanks),
+          AssistantGuideSpotlight(
+            on: _guideSpot == AssistantGuideSpot.apply,
+            child: OutlinedButton(
+              key: const Key('assist_no_thanks'),
+              onPressed: () => _decline(exchange),
+              child: Text(l10n.noThanks),
+            ),
           ),
-          FilledButton(
-            key: const Key('assist_apply'),
-            onPressed: () => _apply(exchange),
-            child: Text(l10n.applyChange),
+          AssistantGuideSpotlight(
+            on: _guideSpot == AssistantGuideSpot.apply,
+            child: FilledButton(
+              key: const Key('assist_apply'),
+              onPressed: () => _apply(exchange),
+              child: Text(l10n.applyChange),
+            ),
           ),
         ],
       );
@@ -1146,11 +1219,14 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
       actions = Row(
         children: [
           Expanded(child: Text(_applied(context, change))),
-          TextButton.icon(
-            key: const Key('assist_undo'),
-            onPressed: () => _undo(exchange),
-            icon: const Icon(Icons.undo),
-            label: Text(l10n.undo),
+          AssistantGuideSpotlight(
+            on: _guideSpot == AssistantGuideSpot.undo,
+            child: TextButton.icon(
+              key: const Key('assist_undo'),
+              onPressed: () => _undo(exchange),
+              icon: const Icon(Icons.undo),
+              label: Text(l10n.undo),
+            ),
           ),
         ],
       );

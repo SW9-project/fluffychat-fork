@@ -44,6 +44,9 @@ class _AssistantPageState extends State<AssistantPage> {
   /// [_model]. Leaving the tab ends a recording.
   SpeechTranscriber? _transcriber;
 
+  /// The in-place tour; it starts on its own only on the first visit.
+  final AssistantGuide _guide = AssistantGuide();
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +64,7 @@ class _AssistantPageState extends State<AssistantPage> {
   void dispose() {
     _transcriber?.dispose();
     _model?.dispose();
+    _guide.dispose();
     super.dispose();
   }
 
@@ -83,53 +87,47 @@ class _AssistantPageState extends State<AssistantPage> {
   Widget build(BuildContext context) {
     final manager = PersonalizationLayer.maybeManagerOf(context);
     final accessibility = AccessibilityScope.maybeControllerOf(context);
-    return AssistantTutorialGate(
-      onOpenSettings: () => context.go('/rooms/settings/accessibility'),
-      child: MainNavigationBarInsets(
-        child: Scaffold(
-          appBar: AppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(L10n.of(context).assistant),
-                // Debug builds only: the model runs on the developer's computer.
-                if (EmulatorHostModel.enabled)
-                  Text(
-                    'Model on this computer',
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-              ],
-            ),
-            automaticallyImplyLeading: false,
-            actions: [
-              IconButton(
-                tooltip: AssistantTutorialL10n.of(context).replay,
-                icon: LabeledIcon(
-                  icon: const Icon(Icons.help_outline),
-                  label: AssistantTutorialL10n.of(context).replay,
+    return MainNavigationBarInsets(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(L10n.of(context).assistant),
+              // Debug builds only: the model runs on the developer's computer.
+              if (EmulatorHostModel.enabled)
+                Text(
+                  'Model on this computer',
+                  style: Theme.of(context).textTheme.labelSmall,
                 ),
-                onPressed: () => showAssistantTutorial(
-                  context,
-                  onOpenSettings: () =>
-                      context.go('/rooms/settings/accessibility'),
-                ),
-              ),
             ],
           ),
-          body: manager == null || accessibility == null
-              ? const SizedBox.expand()
-              : AssistView(
-                  model: _model,
-                  transcriber: _transcriber,
-                  manager: manager,
-                  accessibility: accessibility,
-                  onOpenAccessibilitySettings: () =>
-                      context.go('/rooms/settings/accessibility'),
-                  tools: _tools,
-                  themeMode: () => ThemeController.of(context).themeMode,
-                  chats: () => _chats(context),
-                ),
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              tooltip: AssistantTutorialL10n.of(context).replay,
+              icon: LabeledIcon(
+                icon: const Icon(Icons.help_outline),
+                label: AssistantTutorialL10n.of(context).replay,
+              ),
+              onPressed: _guide.start,
+            ),
+          ],
         ),
+        body: manager == null || accessibility == null
+            ? const SizedBox.expand()
+            : AssistView(
+                model: _model,
+                transcriber: _transcriber,
+                manager: manager,
+                accessibility: accessibility,
+                onOpenAccessibilitySettings: () =>
+                    context.go('/rooms/settings/accessibility'),
+                tools: _tools,
+                themeMode: () => ThemeController.of(context).themeMode,
+                chats: () => _chats(context),
+                guide: _guide,
+              ),
       ),
     );
   }

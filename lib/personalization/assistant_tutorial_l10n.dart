@@ -32,11 +32,6 @@ class AssistantTutorialL10n {
     'Assistant te ayuda a cambiar el texto, los botones y la interfaz. Tú revisas cada cambio antes de aplicarlo.',
     'Assistant hjælper med tekst, knapper og layout. Du ser hver ændring, før du anvender den.',
   );
-  String get setup => _text(
-    'If you see Set up, tap it once to get started.',
-    'Si aparece Set up, púlsalo una vez para empezar.',
-    'Tryk på Klargør, hvis knappen vises, for at komme i gang.',
-  );
   String get ask => _text(
     'Ask, review, apply',
     'Pide, revisa y aplica',
@@ -52,6 +47,31 @@ class AssistantTutorialL10n {
     'Haz el texto más grande',
     'Gør teksten større',
   );
+  String trySend(String ask) => _text(
+    'The example is already in the box below. Tap $ask (the arrow) to send it.',
+    'El ejemplo ya está en el cuadro de abajo. Pulsa $ask (la flecha) para enviarlo.',
+    'Eksemplet står allerede i feltet nedenfor. Tryk $ask (pilen) for at sende det.',
+  );
+  String tryApply(String apply, String noThanks) => _text(
+    'This is a preview of the change; nothing has changed yet. Tap $apply to keep it, or $noThanks to discard it.',
+    'Esto es una vista previa del cambio; todavía no ha cambiado nada. Pulsa $apply para aplicarlo o $noThanks para descartarlo.',
+    'Dette er en forhåndsvisning af ændringen; intet er ændret endnu. Tryk $apply for at beholde den, eller $noThanks for at kassere den.',
+  );
+  String tryDeclined(String next) => _text(
+    'The change was discarded, so nothing changed. Tap $next to continue.',
+    'El cambio se descartó, así que no ha cambiado nada. Pulsa $next para continuar.',
+    'Ændringen blev kasseret, så intet er ændret. Tryk $next for at fortsætte.',
+  );
+  String tryUndo(String undo) => _text(
+    'The change is on now. Tap $undo to go back.',
+    'El cambio ya está activo. Pulsa $undo para volver atrás.',
+    'Ændringen er slået til nu. Tryk $undo for at gå tilbage.',
+  );
+  String tryDone(String next) => _text(
+    'Everything is back as before. Tap $next to continue.',
+    'Todo ha vuelto a como estaba. Pulsa $next para continuar.',
+    'Alt er som før igen. Tryk $next for at fortsætte.',
+  );
   String manual(String settings) => _text(
     'You can also use $settings',
     'También puedes usar $settings',
@@ -62,34 +82,10 @@ class AssistantTutorialL10n {
     'También puedes elegir los cambios tú. Pulsa $settings abajo a la derecha y entra en $accessibility.',
     'Du kan også vælge ændringerne selv. Tryk $settings nederst til højre og derefter $accessibility.',
   );
-  String get bottomBar =>
-      _text('Bottom bar', 'Barra inferior', 'Nederste bjælke');
-  String get practice =>
-      _text('Try an example', 'Prueba un ejemplo', 'Prøv et eksempel');
-  String get practiceHint => _text(
-    'Practice only. Your settings stay the same.',
-    'Es una práctica. Tus ajustes se mantienen.',
-    'Kun en øvelse. Dine indstillinger bevares.',
-  );
-  String get sample => _text('Your message', 'Tu mensaje', 'Din besked');
-  String get currentSize =>
-      _text('Current text size', 'Tamaño actual', 'Nuværende tekststørrelse');
-  String get largerSize =>
-      _text('Larger text', 'Texto más grande', 'Større tekst');
-  String get exampleApplied => _text(
-    'The example text is bigger.',
-    'El texto del ejemplo es más grande.',
-    'Eksempelteksten er større.',
-  );
-  String get exampleUndone => _text(
-    'Back to the original size.',
-    'De vuelta al tamaño original.',
-    'Tilbage til den oprindelige størrelse.',
-  );
-  String replayHint(String settings) => _text(
-    'You can replay this guide from $settings.',
-    'Puedes repetir esta guía desde $settings.',
-    'Du kan se vejledningen igen i $settings.',
+  String get replayHint => _text(
+    'You can replay this guide with the ? button at the top of Assistant.',
+    'Puedes repetir esta guía con el botón ? de la parte superior de Assistant.',
+    'Du kan se vejledningen igen med ?-knappen øverst i Assistant.',
   );
   String get openSettings => _text(
     'Open accessibility settings',
@@ -100,16 +96,5 @@ class AssistantTutorialL10n {
     'Assistant tutorial',
     'Tutorial de Assistant',
     'Vejledning til Assistant',
-  );
-  String get showNow => _text('View tutorial', 'Ver tutorial', 'Se vejledning');
-  String get showNext => _text(
-    'Show on next Assistant visit',
-    'Mostrar al volver a abrir Assistant',
-    'Vis næste gang Assistant åbnes',
-  );
-  String get showNextHelp => _text(
-    'Turn on to see the tutorial next time.',
-    'Actívalo para ver el tutorial la próxima vez.',
-    'Slå til for at se vejledningen næste gang.',
   );
 }

@@ -7,7 +7,6 @@ import 'package:async/async.dart';
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
-import 'package:fluffychat/personalization/assistant_tutorial.dart';
 import 'package:fluffychat/personalization/personalization_l10n.dart';
 import 'package:fluffychat/utils/fluffy_share.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
@@ -249,10 +248,6 @@ class SettingsView extends StatelessWidget {
                         ? theme.colorScheme.surfaceContainerHigh
                         : null,
                     onTap: () => context.go('/rooms/settings/accessibility'),
-                  ),
-                  AssistantTutorialSettings(
-                    onOpenSettings: () =>
-                        context.go('/rooms/settings/accessibility'),
                   ),
                   ListTile(
                     leading: const SettingsIcon(

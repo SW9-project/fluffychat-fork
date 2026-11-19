@@ -1,222 +1,273 @@
 // SPDX-FileCopyrightText: 2026 SW9-project contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_controller.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
+import 'package:fluffychat/personalization/assist/assist_view.dart';
 import 'package:fluffychat/personalization/assistant_tutorial.dart';
+import 'package:fluffychat/personalization/heuristics/heuristic.dart';
+import 'package:fluffychat/personalization/model/personalization_tools.dart';
+import 'package:fluffychat/personalization/model/settings_intent_model.dart';
+import 'package:fluffychat/personalization/signals/interaction_signal.dart';
+import 'package:fluffychat/personalization/suggestions/suggestion_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'assist_view_test.dart' show FakeModel;
+
+/// Answers only once [answer] completes, to see the wait.
+class _SlowModel extends FakeModel {
+  final reply = Completer<void>();
+  _SlowModel()
+    : super(
+        ModelState.ready,
+        answer: (_) =>
+            const ProposedCall('change_text_size', {'direction': 'bigger'}),
+      );
+
+  @override
+  Future<ProposedCall?> propose(
+    List<ModelTurn> conversation,
+    List<FunctionDeclaration> functions,
+  ) async {
+    await reply.future;
+    return super.propose(conversation, functions);
+  }
+}
+
+final _tools = PersonalizationTools.fromJson(
+  jsonDecode(File(PersonalizationTools.asset).readAsStringSync())
+      as Map<String, Object?>,
+);
+
 void main() {
   late SharedPreferences store;
+  late AccessibilityController accessibility;
+  late SuggestionManager manager;
+  late AssistantGuide guide;
   var openedSettings = 0;
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     store = await SharedPreferences.getInstance();
+    accessibility = AccessibilityController(store);
+    manager = SuggestionManager(
+      accessibility: accessibility,
+      store: store,
+      config: const HeuristicsConfig(
+        signals: SignalConfig(),
+        undoDuration: Duration(minutes: 1),
+        heuristics: [],
+      ),
+    );
+    guide = AssistantGuide(store: store);
     openedSettings = 0;
   });
 
-  Widget app(Widget child, {double scale = 1}) => MaterialApp(
-    localizationsDelegates: L10n.localizationsDelegates,
-    supportedLocales: L10n.supportedLocales,
-    locale: const Locale('en'),
-    builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: TextScaler.linear(scale)),
-      child: child!,
+  tearDown(() => manager.dismissApplied());
+
+  FakeModel biggerText([ModelState state = ModelState.ready]) => FakeModel(
+    state,
+    answer: (_) =>
+        const ProposedCall('change_text_size', {'direction': 'bigger'}),
+  );
+
+  Widget app(FakeModel? model, {double scale = 1}) => AccessibilityScope(
+    controller: accessibility,
+    child: MaterialApp(
+      localizationsDelegates: L10n.localizationsDelegates,
+      supportedLocales: L10n.supportedLocales,
+      locale: const Locale('en'),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(scale)),
+        child: child!,
+      ),
+      home: Scaffold(
+        body: AssistView(
+          model: model,
+          manager: manager,
+          accessibility: accessibility,
+          onOpenAccessibilitySettings: () => openedSettings++,
+          tools: Future.value(_tools),
+          themeMode: () => ThemeMode.system,
+          chats: () => const [],
+          guide: guide,
+        ),
+      ),
     ),
-    home: Scaffold(body: child),
   );
 
-  Widget gate() => AssistantTutorialGate(
-    store: store,
-    onOpenSettings: () => openedSettings++,
-    child: const Text('Assistant screen'),
-  );
-
-  Future<void> tap(WidgetTester tester, String name) async {
-    await tester.tap(find.byKey(Key('assistant_tutorial_$name')));
+  Future<void> tap(WidgetTester tester, String key) async {
+    final target = find.byKey(Key(key));
+    await tester.ensureVisible(target);
+    await tester.pumpAndSettle();
+    await tester.tap(target);
     await tester.pumpAndSettle();
   }
 
-  Future<void> practice(WidgetTester tester, String action) async {
-    final button = find.byKey(Key('tutorial_example_$action'));
-    await tester.ensureVisible(button);
-    await tester.pumpAndSettle();
-    await tester.tap(button);
-    await tester.pumpAndSettle();
-  }
+  String hint(WidgetTester tester) =>
+      tester.widget<Text>(find.byKey(const Key('assistant_guide_hint'))).data!;
 
-  testWidgets('practice previews, applies and undoes without saving settings', (
+  bool spotlit(String key) => find
+      .ancestor(
+        of: find.byKey(Key(key)),
+        matching: find.byKey(const Key('assistant_guide_spotlight')),
+      )
+      .evaluate()
+      .isNotEmpty;
+
+  testWidgets('the example runs for real in the Assistant, then undoes', (
     tester,
   ) async {
-    final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(app(gate()));
+    final model = biggerText();
+    await tester.pumpWidget(app(model));
     await tester.pumpAndSettle();
-    await tap(tester, 'next');
-    expect(find.byKey(const Key('tutorial_example_apply')), findsNothing);
-    await practice(tester, 'ask');
-    expect(find.byKey(const Key('tutorial_sample_current')), findsOneWidget);
-    expect(find.byKey(const Key('tutorial_sample_larger')), findsOneWidget);
-    expect(
-      find.bySemanticsLabel('Suggested. Larger text. Your message'),
-      findsOneWidget,
-    );
-    await practice(tester, 'apply');
-    expect(find.text('The example text is bigger.'), findsOneWidget);
-    expect(find.byKey(const Key('tutorial_sample_larger')), findsOneWidget);
-    expect(store.getKeys(), isEmpty);
-    await practice(tester, 'undo');
-    expect(find.text('Back to the original size.'), findsOneWidget);
-    expect(find.byKey(const Key('tutorial_sample_larger')), findsNothing);
-    expect(find.byKey(const Key('tutorial_sample_current')), findsOneWidget);
-    expect(store.getKeys(), isEmpty);
+    expect(find.byKey(const Key('assistant_guide')), findsOneWidget);
+    expect(find.text('Meet Assistant · Step 1 of 3'), findsOneWidget);
+    // The real prompt field is usable while the guide is open.
+    expect(find.byKey(const Key('assist_input')), findsOneWidget);
+
+    await tap(tester, 'assistant_tutorial_next');
+    expect(find.text('Make the text bigger'), findsOneWidget);
+    expect(spotlit('assist_send'), isTrue);
+    expect(hint(tester), contains('Tap Ask'));
+
+    await tap(tester, 'assist_send');
+    expect(model.prompts, ['Make the text bigger']);
+    expect(spotlit('assist_apply'), isTrue);
+    expect(spotlit('assist_send'), isFalse);
+    expect(accessibility.settings, AccessibilitySettings.defaults);
+
+    await tap(tester, 'assist_apply');
+    expect(accessibility.settings, isNot(AccessibilitySettings.defaults));
+    expect(spotlit('assist_undo'), isTrue);
+    expect(hint(tester), contains('Undo'));
+
+    await tap(tester, 'assist_undo');
+    expect(accessibility.settings, AccessibilitySettings.defaults);
+    expect(hint(tester), startsWith('Everything is back'));
+
+    await tap(tester, 'assistant_tutorial_next');
+    expect(find.text('Meet Assistant · Step 3 of 3'), findsOneWidget);
+    await tap(tester, 'assistant_tutorial_next');
+    expect(find.byKey(const Key('assistant_guide')), findsNothing);
+    expect(store.getBool(assistantTutorialPendingKey), isFalse);
+    expect(AssistantGuide(store: store).step, isNull);
     expect(openedSettings, 0);
-    await tap(tester, 'skip');
-    expect(store.getKeys(), {assistantTutorialPendingKey});
-    semantics.dispose();
   });
 
-  testWidgets('first visit offers three steps without changing app settings', (
+  testWidgets('the guide waits out the answer, then explains the preview', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(360, 720);
+    final model = _SlowModel();
+    await tester.pumpWidget(app(model));
+    await tester.pumpAndSettle();
+    await tap(tester, 'assistant_tutorial_next');
+    await tester.tap(find.byKey(const Key('assist_send')));
+    await tester.pump();
+    expect(find.byKey(const Key('assistant_guide')), findsNothing);
+
+    model.reply.complete();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('assistant_guide')), findsOneWidget);
+    expect(hint(tester), contains('preview'));
+    expect(hint(tester), contains('No thanks'));
+    expect(spotlit('assist_apply'), isTrue);
+    expect(spotlit('assist_no_thanks'), isTrue);
+
+    await tap(tester, 'assist_no_thanks');
+    expect(accessibility.settings, AccessibilitySettings.defaults);
+    expect(hint(tester), startsWith('The change was discarded'));
+    expect(spotlit('assist_no_thanks'), isFalse);
+  });
+
+  testWidgets('back keeps the field, and a typed prompt is not replaced', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(biggerText()));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('assist_input')), 'my words');
+    await tap(tester, 'assistant_tutorial_next');
+    expect(find.text('my words'), findsOneWidget);
+    await tap(tester, 'assistant_tutorial_back');
+    expect(find.text('Meet Assistant · Step 1 of 3'), findsOneWidget);
+  });
+
+  testWidgets('skip closes the guide for good; replay starts it again', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(biggerText()));
+    await tester.pumpAndSettle();
+    await tap(tester, 'assistant_tutorial_skip');
+    expect(find.byKey(const Key('assistant_guide')), findsNothing);
+    expect(store.getBool(assistantTutorialPendingKey), isFalse);
+    expect(AssistantGuide(store: store).step, isNull);
+    guide.start();
+    await tester.pumpAndSettle();
+    expect(find.text('Meet Assistant · Step 1 of 3'), findsOneWidget);
+  });
+
+  testWidgets('the guide waits until the AI is set up', (tester) async {
+    await tester.pumpWidget(app(biggerText(ModelState.notPrepared)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('assist_setup')), findsOneWidget);
+    expect(find.byKey(const Key('assistant_guide')), findsNothing);
+    await tap(tester, 'assist_setup');
+    expect(find.text('Meet Assistant · Step 1 of 3'), findsOneWidget);
+    expect(store.getBool(assistantTutorialPendingKey), isNull);
+  });
+
+  testWidgets('last step opens accessibility settings only on request', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(biggerText()));
+    await tester.pumpAndSettle();
+    await tap(tester, 'assistant_tutorial_next');
+    await tap(tester, 'assistant_tutorial_next');
+    expect(openedSettings, 0);
+    await tap(tester, 'assistant_tutorial_settings');
+    expect(openedSettings, 1);
+    expect(find.byKey(const Key('assistant_guide')), findsNothing);
+    expect(store.getBool(assistantTutorialPendingKey), isFalse);
+  });
+
+  testWidgets('large text on a narrow screen keeps the real controls', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(app(gate()));
-    await tester.pumpAndSettle();
-    expect(find.text('Step 1 of 3'), findsOneWidget);
-    await tap(tester, 'next');
-    expect(find.text('Step 2 of 3'), findsOneWidget);
-    expect(find.text('“Make the text bigger”'), findsOneWidget);
-    await tap(tester, 'back');
-    expect(find.text('Step 1 of 3'), findsOneWidget);
-    await tap(tester, 'next');
-    await tap(tester, 'next');
-    expect(find.text('Step 3 of 3'), findsOneWidget);
-    await tap(tester, 'next');
-    expect(find.text('Assistant screen'), findsOneWidget);
-    expect(store.getBool(assistantTutorialPendingKey), isFalse);
-    expect(store.getKeys(), {assistantTutorialPendingKey});
-    expect(openedSettings, 0);
-    await tester.pumpWidget(const SizedBox());
-    await tester.pumpWidget(app(gate()));
-    await tester.pumpAndSettle();
-    expect(find.text('Step 1 of 3'), findsNothing);
-  });
-
-  testWidgets('skip dismisses and does not reopen on the next visit', (
-    tester,
-  ) async {
-    await tester.pumpWidget(app(gate()));
-    await tester.pumpAndSettle();
-    await tap(tester, 'skip');
-    expect(store.getBool(assistantTutorialPendingKey), isFalse);
-    await tester.pumpWidget(const SizedBox());
-    await tester.pumpWidget(app(gate()));
-    await tester.pumpAndSettle();
-    expect(find.text('Step 1 of 3'), findsNothing);
-  });
-
-  testWidgets('Settings can disable, replay and re-arm the tutorial', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      app(
-        AssistantTutorialSettings(
-          store: store,
-          onOpenSettings: () => openedSettings++,
-        ),
-      ),
+    await tester.runAsync(
+      () => accessibility.apply(ScaleCategory.touchTarget, 2),
     );
+    await tester.pumpWidget(app(biggerText(), scale: 2));
     await tester.pumpAndSettle();
-    await tap(tester, 'toggle');
-    expect(store.getBool(assistantTutorialPendingKey), isFalse);
-    await tester.tap(find.text('Assistant tutorial'));
-    await tester.pumpAndSettle();
-    expect(find.text('Step 1 of 3'), findsOneWidget);
-    await tap(tester, 'skip');
-    await tap(tester, 'toggle');
-    expect(store.getBool(assistantTutorialPendingKey), isTrue);
-    await tester.pumpWidget(const SizedBox());
-    await tester.pumpWidget(app(gate()));
-    await tester.pumpAndSettle();
-    expect(find.text('Step 1 of 3'), findsOneWidget);
-    await tap(tester, 'skip');
-  });
-
-  testWidgets('last step opens real accessibility settings only on request', (
-    tester,
-  ) async {
-    await tester.pumpWidget(app(gate()));
-    await tester.pumpAndSettle();
-    await tap(tester, 'next');
-    await tap(tester, 'next');
-    await tester.ensureVisible(
-      find.byKey(const Key('assistant_tutorial_settings')),
-    );
-    await tap(tester, 'settings');
-    expect(openedSettings, 1);
-    expect(find.text('Step 3 of 3'), findsNothing);
-    expect(store.getBool(assistantTutorialPendingKey), isFalse);
-  });
-
-  testWidgets(
-    'large text on narrow screens keeps controls and content reachable',
-    (tester) async {
-      tester.view.physicalSize = const Size(320, 640);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final accessibility = AccessibilityController(store);
-      addTearDown(accessibility.dispose);
-      await tester.runAsync(
-        () => accessibility.apply(ScaleCategory.touchTarget, 2),
+    for (var step = 0; step < 3; step++) {
+      expect(tester.takeException(), isNull);
+      expect(
+        find.byKey(const Key('assistant_tutorial_skip')).hitTestable(),
+        findsOneWidget,
       );
-      await tester.pumpWidget(
-        AccessibilityScope(
-          controller: accessibility,
-          child: app(gate(), scale: 2),
-        ),
+      expect(
+        find.byKey(const Key('assist_send')).hitTestable(),
+        findsOneWidget,
       );
+      final next = find.byKey(const Key('assistant_tutorial_next'));
+      await tester.ensureVisible(next);
       await tester.pumpAndSettle();
-      for (var step = 0; step < 3; step++) {
-        expect(tester.takeException(), isNull);
-        expect(
-          tester
-              .getSize(find.byKey(const Key('assistant_tutorial_next')))
-              .height,
-          greaterThanOrEqualTo(96),
-        );
-        expect(
-          find.byKey(const Key('assistant_tutorial_skip')).hitTestable(),
-          findsOneWidget,
-        );
-        if (step == 1) {
-          await practice(tester, 'ask');
-          await practice(tester, 'apply');
-          await practice(tester, 'undo');
-          expect(tester.takeException(), isNull);
-          expect(
-            find.byKey(const Key('assistant_tutorial_skip')).hitTestable(),
-            findsOneWidget,
-          );
-        }
-        if (step == 2) {
-          await tester.ensureVisible(
-            find.byKey(const Key('assistant_tutorial_settings')),
-          );
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-        }
-        await tap(tester, 'next');
-      }
-      expect(store.getBool(assistantTutorialPendingKey), isFalse);
-    },
-  );
+      expect(tester.getSize(next).height, greaterThanOrEqualTo(96));
+      await tap(tester, 'assistant_tutorial_next');
+    }
+    expect(store.getBool(assistantTutorialPendingKey), isFalse);
+  });
 }
