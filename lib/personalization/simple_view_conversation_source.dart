@@ -131,6 +131,7 @@ class SimpleViewConversationSource extends StatelessWidget {
           controller: SimplifiedInterfaceScope.maybeOf(context)!,
           accessibility: AccessibilityScope.maybeControllerOf(context),
           account: simpleViewAccount(client),
+          fitsContent: true,
           screen: (_) => Provider<MatrixState>.value(
             value: matrix,
             child: ChatList.preview(previewState: snapshot),

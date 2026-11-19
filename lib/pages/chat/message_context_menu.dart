@@ -264,26 +264,31 @@ class _MessageContextMenu extends StatelessWidget {
       borderRadius: BorderRadius.circular(28),
       child: Padding(
         padding: const EdgeInsets.all(4),
-        child: Row(
-          mainAxisSize: .min,
-          children: [
-            if (event.room.canSendDefaultMessages) ...[
-              for (final emoji in AppConfig.defaultReactions)
+        // Shrinks the grown buttons back when they are wider than the screen.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: .min,
+            children: [
+              if (event.room.canSendDefaultMessages) ...[
+                for (final emoji in AppConfig.defaultReactions)
+                  _ReactionButton(
+                    selected: ownReactions.containsKey(emoji),
+                    onTap: () => _react(context, emoji),
+                    child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                  ),
                 _ReactionButton(
-                  selected: ownReactions.containsKey(emoji),
-                  onTap: () => _react(context, emoji),
-                  child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                  tooltip: l10n.customReaction,
+                  onTap: () => _customReaction(context),
+                  child: Icon(
+                    CupertinoIcons.smiley,
+                    size: MediaQuery.textScalerOf(context).scale(24),
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              _ReactionButton(
-                tooltip: l10n.customReaction,
-                onTap: () => _customReaction(context),
-                child: Icon(
-                  CupertinoIcons.smiley,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -414,7 +419,10 @@ class _ReactionButton extends StatelessWidget {
     onPressed: onTap,
     isSelected: selected,
     padding: EdgeInsets.zero,
-    constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+    // Grows with the text size like the emoji in it.
+    constraints: BoxConstraints.tight(
+      Size.square(MediaQuery.textScalerOf(context).scale(44)),
+    ),
     style: IconButton.styleFrom(
       backgroundColor: selected
           ? Theme.of(context).colorScheme.primary.withAlpha(60)
@@ -486,9 +494,19 @@ class _MenuLayout extends MultiChildLayoutDelegate {
     final reactions = hasChild(_Slot.reactions)
         ? layoutChild(_Slot.reactions, loose)
         : Size.zero;
+    // The menu gets all the room a small bubble leaves, and scrolls when
+    // large text makes it taller than that.
     final menu = layoutChild(
       _Slot.menu,
-      loose.copyWith(maxHeight: area.height / 2),
+      loose.copyWith(
+        maxHeight: max(
+          0.0,
+          area.height -
+              reactions.height -
+              2 * gap -
+              min(rect.height, area.height / 2),
+        ),
+      ),
     );
     final maxBubbleHeight = max(
       0.0,

@@ -10,8 +10,10 @@ import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/appearance_l10n.dart';
 import 'package:fluffychat/personalization/simplified_interface.dart';
 import 'package:fluffychat/personalization/simplified_interface_l10n.dart';
+import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
+import 'package:fluffychat/widgets/native_menu_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -50,120 +52,132 @@ class ChatSettingsPopupMenuState extends State<ChatSettingsPopupMenu> {
               false,
         )
         .listen((u) => setState(() {}));
+    final l10n = L10n.of(context);
+    final simplified = SimplifiedInterfaceScope.enabledOf(context);
+    final tooltip = simplified
+        ? SimplifiedInterfaceL10n.of(context).more
+        : AppearanceL10n.of(context).labelMenu;
+    // Each action with its Material icon and SF Symbol.
+    final items = [
+      if (widget.displayChatDetails && widget.room.membership == .join)
+        (
+          ChatPopupMenuActions.details,
+          (Icons.info_outline_rounded, 'info.circle'),
+          l10n.chatDetails,
+        ),
+      if (widget.room.membership case .join || .leave) ...[
+        (
+          ChatPopupMenuActions.search,
+          (Icons.search_outlined, 'magnifyingglass'),
+          l10n.search,
+        ),
+        (
+          ChatPopupMenuActions.encryption,
+          (Icons.lock_outlined, 'lock'),
+          l10n.encryption,
+        ),
+      ],
+      (
+        ChatPopupMenuActions.leave,
+        (Icons.delete_outlined, 'trash'),
+        l10n.leave,
+      ),
+    ];
+    // The simplified interface has its own labeled child.
+    final simplifiedChild = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.more_vert),
+          Text(
+            SimplifiedInterfaceL10n.of(context).moreShort,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+    );
+    final icon = LabeledIcon(
+      icon: Icon(Icons.adaptive.more),
+      label: AppearanceL10n.of(context).labelMenu,
+    );
+    if (PlatformInfos.isIOS) {
+      return NativeMenuButton(
+        label: tooltip,
+        titles: [for (final item in items) item.$3],
+        symbols: [for (final item in items) item.$2.$2],
+        destructive: [items.length - 1],
+        onSelected: (i) => _onSelected(items[i].$1),
+        // Only the look of the button: the native view on top takes taps.
+        child: simplified
+            ? simplifiedChild
+            : IgnorePointer(
+                child: IconButton(onPressed: () {}, icon: icon),
+              ),
+      );
+    }
     return Stack(
       alignment: Alignment.center,
       children: [
         const SizedBox.shrink(),
         PopupMenuButton<ChatPopupMenuActions>(
           useRootNavigator: true,
-          tooltip: SimplifiedInterfaceScope.enabledOf(context)
-              ? SimplifiedInterfaceL10n.of(context).more
-              : AppearanceL10n.of(context).labelMenu,
-          // The simplified interface has its own labeled child.
-          icon: SimplifiedInterfaceScope.enabledOf(context)
-              ? null
-              : LabeledIcon(
-                  icon: Icon(Icons.adaptive.more),
-                  label: AppearanceL10n.of(context).labelMenu,
-                ),
-          child: SimplifiedInterfaceScope.enabledOf(context)
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.more_vert),
-                      Text(
-                        SimplifiedInterfaceL10n.of(context).moreShort,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                )
-              : null,
-          onSelected: (choice) async {
-            switch (choice) {
-              case ChatPopupMenuActions.leave:
-                final l10n = L10n.of(context);
-                final router = GoRouter.of(context);
-                final confirmed = await showOkCancelAlertDialog(
-                  context: context,
-                  title: l10n.areYouSure,
-                  message: l10n.archiveRoomDescription,
-                  okLabel: l10n.leave,
-                  cancelLabel: l10n.cancel,
-                  isDestructive: true,
-                );
-                if (confirmed != OkCancelResult.ok) return;
-                if (!context.mounted) return;
-                final result = await showFutureLoadingDialog(
-                  context: context,
-                  future: () => widget.room.leave(),
-                );
-                if (result.error == null) {
-                  router.go('/rooms');
-                }
-
-                break;
-              case ChatPopupMenuActions.details:
-                _showChatDetails();
-                break;
-              case ChatPopupMenuActions.search:
-                context.go('/rooms/${widget.room.id}/search');
-                break;
-              case ChatPopupMenuActions.encryption:
-                context.go('/rooms/${widget.room.id}/encryption');
-                break;
-            }
-          },
-          itemBuilder: (BuildContext context) => [
-            if (widget.displayChatDetails && widget.room.membership == .join)
+          tooltip: tooltip,
+          icon: simplified ? null : icon,
+          onSelected: _onSelected,
+          itemBuilder: (context) => [
+            for (final (action, (icon, _), title) in items)
               PopupMenuItem<ChatPopupMenuActions>(
-                value: ChatPopupMenuActions.details,
+                value: action,
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded),
+                    Icon(icon),
                     const SizedBox(width: 12),
-                    Text(L10n.of(context).chatDetails),
+                    Text(title),
                   ],
                 ),
               ),
-            if (widget.room.membership case .join || .leave)
-              PopupMenuItem<ChatPopupMenuActions>(
-                value: ChatPopupMenuActions.search,
-                child: Row(
-                  children: [
-                    const Icon(Icons.search_outlined),
-                    const SizedBox(width: 12),
-                    Text(L10n.of(context).search),
-                  ],
-                ),
-              ),
-            if (widget.room.membership case .join || .leave)
-              PopupMenuItem<ChatPopupMenuActions>(
-                value: ChatPopupMenuActions.encryption,
-                child: Row(
-                  children: [
-                    const Icon(Icons.lock_outlined),
-                    const SizedBox(width: 12),
-                    Text(L10n.of(context).encryption),
-                  ],
-                ),
-              ),
-            PopupMenuItem<ChatPopupMenuActions>(
-              value: ChatPopupMenuActions.leave,
-              child: Row(
-                children: [
-                  const Icon(Icons.delete_outlined),
-                  const SizedBox(width: 12),
-                  Text(L10n.of(context).leave),
-                ],
-              ),
-            ),
           ],
+          child: simplified ? simplifiedChild : null,
         ),
       ],
     );
+  }
+
+  Future<void> _onSelected(ChatPopupMenuActions choice) async {
+    switch (choice) {
+      case ChatPopupMenuActions.leave:
+        final l10n = L10n.of(context);
+        final router = GoRouter.of(context);
+        final confirmed = await showOkCancelAlertDialog(
+          context: context,
+          title: l10n.areYouSure,
+          message: l10n.archiveRoomDescription,
+          okLabel: l10n.leave,
+          cancelLabel: l10n.cancel,
+          isDestructive: true,
+        );
+        if (confirmed != OkCancelResult.ok) return;
+        if (!mounted) return;
+        final result = await showFutureLoadingDialog(
+          context: context,
+          future: () => widget.room.leave(),
+        );
+        if (result.error == null) {
+          router.go('/rooms');
+        }
+
+        break;
+      case ChatPopupMenuActions.details:
+        _showChatDetails();
+        break;
+      case ChatPopupMenuActions.search:
+        context.go('/rooms/${widget.room.id}/search');
+        break;
+      case ChatPopupMenuActions.encryption:
+        context.go('/rooms/${widget.room.id}/encryption');
+        break;
+    }
   }
 
   void _showChatDetails() {

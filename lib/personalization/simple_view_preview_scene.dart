@@ -15,6 +15,10 @@ class SimpleViewPreviewScene {
   final WidgetBuilder screen;
   final String account;
 
+  /// The screen sizes itself to its content, so it is shown whole, not cut at
+  /// one viewport height.
+  final bool fitsContent;
+
   const SimpleViewPreviewScene({
     required this.mediaQuery,
     required this.theme,
@@ -22,5 +26,6 @@ class SimpleViewPreviewScene {
     required this.screen,
     required this.account,
     this.accessibility,
+    this.fitsContent = false,
   });
 }

@@ -209,7 +209,11 @@ class _SimplifiedInterfacePreviewState
               child: SizedBox(
                 width: viewport.width,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: viewport.height),
+                  constraints: BoxConstraints(
+                    maxHeight: scene.fitsContent
+                        ? double.infinity
+                        : viewport.height,
+                  ),
                   child: AbsorbPointer(
                     child: FocusScope(
                       canRequestFocus: false,

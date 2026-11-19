@@ -4,15 +4,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:async/async.dart';
-import 'package:collection/collection.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/matrix.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/services.dart';
+import 'package:fluffychat/widgets/native_menu_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart' hide Result;
@@ -94,47 +91,18 @@ class ClientChooserButton extends StatelessWidget {
     l10n.supportFluffyChat,
   ];
 
-  /// A native `UIMenu` over the avatar, see `NativeMenuButton.swift`.
-  Widget _nativeMenu(BuildContext context, Widget avatar, double scale) {
-    final l10n = L10n.of(context);
-    final params = {
-      'label': l10n.accountsAndSettings,
-      'titles': _titles(l10n),
-      'symbols': _menu.values.map((item) => item.$1).toList(),
-      'isDark': Theme.of(context).brightness == Brightness.dark,
-    };
-    return SizedBox.square(
-      dimension: 40 * scale,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          avatar,
-          Positioned.fill(
-            child: UiKitView(
-              // A new key recreates the view, which reads its parameters once.
-              key: ValueKey(const DeepCollectionEquality().hash(params)),
-              viewType: 'fluffychat/menu_button',
-              creationParams: params,
-              creationParamsCodec: const StandardMessageCodec(),
-              gestureRecognizers: {Factory(EagerGestureRecognizer.new)},
-              onPlatformViewCreated: (id) =>
-                  MethodChannel(
-                    'fluffychat/menu_button/$id',
-                  ).setMethodCallHandler((call) async {
-                    if (call.method != 'selected' || !context.mounted) {
-                      return;
-                    }
-                    _clientSelected(
-                      _menu.keys.elementAt(call.arguments as int),
-                      context,
-                    );
-                  }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  /// A native `UIMenu` over the avatar.
+  Widget _nativeMenu(BuildContext context, Widget avatar, double scale) =>
+      NativeMenuButton(
+        label: L10n.of(context).accountsAndSettings,
+        titles: _titles(L10n.of(context)),
+        symbols: _menu.values.map((item) => item.$1).toList(),
+        onSelected: (i) => _clientSelected(_menu.keys.elementAt(i), context),
+        child: SizedBox.square(
+          dimension: 40 * scale,
+          child: Center(child: avatar),
+        ),
+      );
 
   void _clientSelected(SettingsAction action, BuildContext context) {
     switch (action) {
