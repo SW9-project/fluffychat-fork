@@ -230,11 +230,19 @@ void main() {
       'change_text_size',
       'change_button_size',
       'change_spacing',
+      'change_line_spacing',
       'set_simple_mode',
       'set_button_labels',
       'set_high_contrast',
       'change_avatar_size',
       'set_theme',
+      'set_read_aloud',
+      'set_bubble_color',
+      'set_app_color',
+      'set_wallpaper',
+      'set_gesture',
+      'pin_chat',
+      'mute_chat',
       'reset_settings',
       'ask_clarification',
       'no_action',
@@ -487,7 +495,7 @@ void main() {
               })
             : const ProposedCall('change_text_size', {
                 'direction': 'bigger',
-                'steps': 2,
+                'steps': 3,
               }),
       );
       await pump(tester, model);

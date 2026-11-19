@@ -1072,7 +1072,8 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
           words.noAction,
           key: const Key('assist_no_action'),
         );
-      case AssistNotAvailable():
+      // Shown by the Assist tab in the next task.
+      case AssistNotAvailable() || AssistAppProposal() || AssistNeedsDetail():
         return Text(words.notAvailable, key: const Key('assist_not_available'));
       case AssistUnchanged(:final reason, :final category):
         return withSettingsLink(

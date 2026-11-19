@@ -156,6 +156,8 @@ class AssistAnswered extends StudyEvent {
     AssistProposal() => 'assist_proposal',
     AssistClarification() => 'assist_clarification',
     AssistNeedsChat() => 'assist_needs_chat',
+    AssistAppProposal() => 'assist_app_proposal',
+    AssistNeedsDetail() => 'assist_needs_detail',
     AssistUnchanged() => 'assist_unchanged',
     AssistNotAvailable() => 'assist_not_available',
     AssistNoAction() => 'assist_no_action',
@@ -186,6 +188,14 @@ class AssistAnswered extends StudyEvent {
         'options': options,
       },
       AssistNeedsChat(:final call) => _call(call),
+      AssistAppProposal(:final call, :final change) => {
+        ..._call(call),
+        'setting': change.setting.name,
+      },
+      AssistNeedsDetail(:final call, :final parameter) => {
+        ..._call(call),
+        'parameter': parameter,
+      },
       AssistUnchanged(:final call, :final reason, :final category) => {
         ..._call(call),
         'reason': reason.name,
