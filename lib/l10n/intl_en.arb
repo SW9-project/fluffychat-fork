@@ -2334,6 +2334,7 @@
     "ownBubbleColor": "Your messages",
     "otherBubbleColor": "Messages from others",
     "defaultBubbleColor": "Default",
+    "useGeneralBubbleColors": "Use general colors",
     "manageAccount": "Manage account",
     "noContactInformationProvided": "Server does not provide any valid contact information",
     "contactServerAdmin": "Contact server admin",

@@ -71,6 +71,7 @@ class ChatDetailsController extends State<ChatDetails> {
     final room = Matrix.of(context).client.getRoomById(roomId!)!;
     var own = room.bubbleColor;
     var other = room.otherBubbleColor;
+    final general = room.client.applicationAccountConfig;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -108,6 +109,15 @@ class ChatDetailsController extends State<ChatDetails> {
                     onSelected: (color) => save(own, color),
                     nullLabel: l10n.defaultBubbleColor,
                   ),
+                  // Read local state: the saved account data arrives with a later sync.
+                  if (own?.toARGB32() != general.bubbleColor?.toARGB32() ||
+                      other?.toARGB32() != general.otherBubbleColor?.toARGB32())
+                    ListTile(
+                      leading: const Icon(Icons.restart_alt_outlined),
+                      title: Text(l10n.useGeneralBubbleColors),
+                      onTap: () =>
+                          save(general.bubbleColor, general.otherBubbleColor),
+                    ),
                 ],
               ),
             ),
