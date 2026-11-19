@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:math';
+
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
@@ -186,7 +188,14 @@ class _CupertinoSearchBar extends StatelessWidget {
       primary: false,
       floating: true,
       pinned: isColumnMode,
-      toolbarHeight: 60,
+      // Room for the grown profile button and search text.
+      toolbarHeight: max(
+        60,
+        max(
+          40 * AccessibilityScope.of(context).touchTargetScale + 16,
+          MediaQuery.textScalerOf(context).scale(17) + 40,
+        ),
+      ),
       titleSpacing: 16,
       scrolledUnderElevation: 0,
       backgroundColor: isColumnMode
@@ -313,10 +322,19 @@ class ChatListLargeTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isColumnMode = FluffyThemes.isColumnMode(context);
+    final settings = AccessibilityScope.of(context);
+    final showMenu =
+        controller.spaces.isNotEmpty || AppSettings.displayNavigationRail.value;
+    // The tallest button: the compose button or, if shown, the menu button.
+    final buttonHeight = max(
+      40 * settings.touchTargetScale,
+      showMenu ? settings.icon(24, AccessibleButton.menu) + 16 : 0.0,
+    );
     return SliverAppBar(
       pinned: true,
-      // Room for the labels under its buttons.
-      toolbarHeight: 52 + AccessibilityButtonLabel.heightOf(context),
+      // Room for the buttons and the labels under them.
+      toolbarHeight:
+          buttonHeight + 12 + AccessibilityButtonLabel.heightOf(context),
       titleSpacing: 16,
       centerTitle: false,
       scrolledUnderElevation: 0,
@@ -334,8 +352,7 @@ class ChatListLargeTitle extends StatelessWidget {
       actions: isColumnMode
           ? null
           : [
-              if (controller.spaces.isNotEmpty ||
-                  AppSettings.displayNavigationRail.value)
+              if (showMenu)
                 AccessibilityIconButtons(
                   button: AccessibleButton.menu,
                   child: IconButton(
@@ -358,9 +375,7 @@ class ChatListLargeTitle extends StatelessWidget {
                           child: NativeGlassButton(
                             symbol: 'square.and.pencil',
                             label: L10n.of(context).newChat,
-                            size:
-                                40 *
-                                AccessibilityScope.of(context).touchTargetScale,
+                            size: 40 * settings.touchTargetScale,
                             onPressed: () =>
                                 context.go('/rooms/newprivatechat'),
                           ),

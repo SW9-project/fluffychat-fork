@@ -168,13 +168,15 @@ class GlassFilterBar: NSObject, FlutterPlatformView {
       )
     }
     let selectedIndex = arguments["selectedIndex"] as? Int
+    // Already scaled by the app's text size in Flutter.
+    let fontSize = CGFloat(arguments["fontSize"] as? Double ?? 14)
     for (index, view) in stack.arrangedSubviews.enumerated() {
       guard let button = view as? UIButton else { continue }
       var config: UIButton.Configuration = index == selectedIndex ? .prominentGlass() : .glass()
       config.title = labels[index]
       config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer {
         var attributes = $0
-        attributes.font = .systemFont(ofSize: 14, weight: .semibold)
+        attributes.font = .systemFont(ofSize: fontSize, weight: .semibold)
         return attributes
       }
       button.configuration = config

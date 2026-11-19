@@ -53,6 +53,7 @@ class _GlassFilterBarState extends State<GlassFilterBar> {
       'selectedIndex': widget.selectedIndex,
       'tintColor': theme.colorScheme.primary.toARGB32(),
       'isDark': theme.brightness == Brightness.dark,
+      'fontSize': MediaQuery.textScalerOf(context).scale(14),
     };
   }
 

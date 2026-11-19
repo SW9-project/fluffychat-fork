@@ -2063,7 +2063,7 @@ packages:
       path: "packages/speech_to_text"
       relative: true
     source: path
-    version: "7.5.0+sw9.1"
+    version: "7.5.0+sw9.2"
   speech_to_text_platform_interface:
     dependency: "direct main"
     description:

@@ -18,6 +18,7 @@ public enum SwiftSpeechToTextMethods: String {
   case stop
   case cancel
   case locales
+  case has_on_device_support
   case unknown  // just for testing
 }
 
@@ -219,6 +220,16 @@ public class SpeechToTextPlugin: NSObject, FlutterPlugin {
         } else {
             locales(result)
         }
+    case SwiftSpeechToTextMethods.has_on_device_support.rawValue:
+      // SW9 patch: answer the platform interface's on-device check for the
+      // locale, without permission or initialize. See PATCHES.md.
+      var supported = false
+      if #available(iOS 13.0, macOS 10.15, *) {
+        let localeStr = (call.arguments as? [String: Any])?["localeId"] as? String
+        supported =
+          SFSpeechRecognizer(locale: getLocale(localeStr))?.supportsOnDeviceRecognition ?? false
+      }
+      sendBoolResult(supported, result)
     default:
       os_log("Unrecognized method: %{PUBLIC}@", log: pluginLog, type: .error, call.method)
       DispatchQueue.main.async {
@@ -775,9 +786,6 @@ extension SpeechToTextPlugin: SFSpeechRecognitionTaskDelegate {
     reportError(source: "FinishSuccessfully", error: task.error)
     os_log("FinishSuccessfully", log: pluginLog, type: .debug)
     if !successfully {
-      invokeFlutter(
-        SwiftSpeechToTextCallbackMethods.notifyStatus,
-        arguments: SpeechToTextStatus.doneNoResult.rawValue)
       if let err = task.error as NSError? {
         var errorMsg: String
         switch err.code {
@@ -812,6 +820,11 @@ extension SpeechToTextPlugin: SFSpeechRecognitionTaskDelegate {
           os_log("Could not encode JSON", log: pluginLog, type: .error)
         }
       }
+      // SW9 patch: sent after the error instead of before it, so Dart never
+      // sees the end of a session before its error. See PATCHES.md.
+      invokeFlutter(
+        SwiftSpeechToTextCallbackMethods.notifyStatus,
+        arguments: SpeechToTextStatus.doneNoResult.rawValue)
     }
     if !stopping {
       if let sound = successfully ? successSound : cancelSound {

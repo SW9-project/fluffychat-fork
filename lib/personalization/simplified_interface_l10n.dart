@@ -23,6 +23,7 @@ class SimplifiedInterfaceL10n {
   String get choose =>
       _text('Choose conversations', 'Elegir conversaciones', 'Vælg samtaler');
   String get edit => _text('Change', 'Cambiar', 'Rediger');
+  String get editQuickAccess => _text('Edit', 'Editar', 'Rediger');
   String get chooseInfo => _text(
     'Choose up to 3 conversations you use often. Their order stays the same.',
     'Elige hasta 3 conversaciones que uses a menudo. Su orden se mantiene.',
@@ -54,6 +55,15 @@ class SimplifiedInterfaceL10n {
   );
   String get sampleHello => _text('Hello!', '¡Hola!', 'Hej!');
   String get sampleBye => _text('See you soon.', 'Hasta pronto.', 'Vi ses.');
+  String get sampleHowAreYou =>
+      _text('How are you?', '¿Qué tal estás?', 'Hvordan har du det?');
+  String get sampleThanks =>
+      _text('Thanks a lot!', '¡Muchas gracias!', 'Mange tak!');
+  String get sampleTomorrow => _text(
+    'See you tomorrow at 10.',
+    'Nos vemos mañana a las 10.',
+    'Vi ses i morgen kl. 10.',
+  );
   String get turnOn => _text(
     'Try simple view?',
     '¿Probar la vista sencilla?',

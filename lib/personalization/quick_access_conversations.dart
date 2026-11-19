@@ -118,7 +118,9 @@ class QuickAccessConversations extends StatelessWidget {
               TextButton.icon(
                 key: const Key('quick_access_choose'),
                 icon: const Icon(Icons.edit_outlined),
-                label: Text(selected.isEmpty ? text.choose : text.edit),
+                label: Text(
+                  selected.isEmpty ? text.choose : text.editQuickAccess,
+                ),
                 onPressed: conversations.isEmpty
                     ? null
                     : () async {

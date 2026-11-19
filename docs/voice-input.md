@@ -88,9 +88,13 @@ they are, so old lines still load. Audio is never written anywhere.
   the end of speech, so a long value would delay every restart.
 - **`ListenMode.dictation` only has an effect on iOS.** Android always uses
   free-form recognition.
-- **iOS is off.** `SystemTranscriber.isSupported` only accepts Android until
-  it is decided whether the study needs iOS. The iOS patch and usage text are
-  in place.
+- **iOS is on** (19 Nov). `SystemTranscriber.isSupported` accepts iOS when
+  `SFSpeechRecognizer.supportsOnDeviceRecognition` is true for `en_US`
+  (PATCHES.md, change 10), checked without asking for any permission. iOS
+  has no language pack check or download: if the English on-device model is
+  missing, the mic stays hidden. Every `listen` sets
+  `requiresOnDeviceRecognition`, so audio never leaves the phone. The first
+  tap asks for the speech recognition and microphone permissions.
 - **A missing language pack hides the mic for the rest of that visit only**
   (Simon, 16 Nov). The spec said to keep it hidden on the next visit until a
   session succeeds, but a hidden mic can never succeed, so it would never come

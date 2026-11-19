@@ -42,6 +42,8 @@ class ChatListViewBody extends StatelessWidget {
     final simpleController = SimplifiedInterfaceScope.maybeOf(context);
     final simple = simpleController?.enabled ?? false;
     final simpleL10n = SimplifiedInterfaceL10n.of(context);
+    // The preview shows only the conversations, without search or filters.
+    final preview = controller.widget.previewOnly;
 
     final client = Matrix.of(context).client;
     final activeSpace = controller.activeSpaceId;
@@ -113,15 +115,26 @@ class ChatListViewBody extends StatelessWidget {
         final visibleQuickIds = selected
             .where((id) => quickRooms.any((r) => r.id == id))
             .toSet();
-        final listRooms = rooms
+        final realListRooms = rooms
             .where((r) => !visibleQuickIds.contains(r.id))
             .toList();
+        // The preview shows a fixed number of chats, topped up with examples.
+        final listRooms = !preview
+            ? realListRooms
+            : [
+                ...realListRooms,
+                ...simpleViewExampleRooms(client, simpleL10n),
+              ].take(simpleViewPreviewCount(simple: simple)).toList();
         return CustomScrollView(
           controller: controller.scrollController,
+          // The preview is only as tall as its few chats.
+          shrinkWrap: preview,
           slivers: [
-            if (theme.cupertinoStyle) ChatListLargeTitle(controller),
-            ChatListHeader(controller: controller),
-            const SliverToBoxAdapter(child: SimplifiedInterfaceSwitch()),
+            if (!preview) ...[
+              if (theme.cupertinoStyle) ChatListLargeTitle(controller),
+              ChatListHeader(controller: controller),
+              const SliverToBoxAdapter(child: SimplifiedInterfaceSwitch()),
+            ],
             if (showQuick)
               SliverToBoxAdapter(
                 child: QuickAccessConversations(
@@ -229,9 +242,12 @@ class ChatListViewBody extends StatelessWidget {
                           ),
                   ),
                 ],
-                if (client.rooms.isNotEmpty && !controller.isSearchMode)
+                if (client.rooms.isNotEmpty &&
+                    !controller.isSearchMode &&
+                    !preview)
                   SizedBox(
-                    height: 48,
+                    // 48 at normal size, taller with the 14 pt filter text.
+                    height: MediaQuery.textScalerOf(context).scale(14) + 34,
                     child: PlatformInfos.supportsLiquidGlass
                         ? _NativeFolderTabs(controller)
                         : ListView(
@@ -274,7 +290,8 @@ class ChatListViewBody extends StatelessWidget {
                   ),
                 if (client.prevBatch != null &&
                     rooms.isEmpty &&
-                    !controller.isSearchMode) ...[
+                    !controller.isSearchMode &&
+                    !preview) ...[
                   Column(
                     mainAxisAlignment: .center,
                     children: [
@@ -317,7 +334,7 @@ class ChatListViewBody extends StatelessWidget {
                 ],
               ]),
             ),
-            if (client.prevBatch == null)
+            if (client.prevBatch == null && !preview)
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, i) => DummyChatListItem(
@@ -327,7 +344,7 @@ class ChatListViewBody extends StatelessWidget {
                   childCount: dummyChatCount,
                 ),
               ),
-            if (client.prevBatch != null)
+            if (client.prevBatch != null || preview)
               SliverSafeArea(
                 top: false,
                 sliver: SliverList.builder(
@@ -385,7 +402,8 @@ class ChatListViewBody extends StatelessWidget {
                   },
                 ),
               ),
-            if (simple) const SliverToBoxAdapter(child: SizedBox(height: 96)),
+            if (simple && !preview)
+              const SliverToBoxAdapter(child: SizedBox(height: 96)),
           ],
         );
       },

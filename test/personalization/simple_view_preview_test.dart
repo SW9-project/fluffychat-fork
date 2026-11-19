@@ -113,7 +113,7 @@ void main() {
         ),
       ),
     );
-    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 1050));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );

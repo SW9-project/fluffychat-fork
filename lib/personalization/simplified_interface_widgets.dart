@@ -98,8 +98,9 @@ class _SimplifiedInterfacePreviewState
     final generation = _generation;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || generation != _generation) return;
-      // Let cached avatars/profile futures paint before freezing this frame.
-      _captureTimer = Timer(const Duration(milliseconds: 300), () async {
+      // Let avatars load and fade in before freezing this frame. Until then
+      // the live renderer is shown, so waiting costs nothing visible.
+      _captureTimer = Timer(const Duration(seconds: 1), () async {
         final boundary = _boundary.currentContext?.findRenderObject();
         if (boundary is! RenderRepaintBoundary) return;
         ui.Image image;
@@ -163,7 +164,7 @@ class _SimplifiedInterfacePreviewState
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: AspectRatio(
-          aspectRatio: viewport.width / viewport.height,
+          aspectRatio: image.width / image.height,
           child: RawImage(
             image: image,
             fit: BoxFit.contain,
@@ -199,19 +200,20 @@ class _SimplifiedInterfacePreviewState
       child: ExcludeSemantics(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: AspectRatio(
-            aspectRatio: viewport.width / viewport.height,
+          // Full width, and only as tall as the screen's content needs.
+          child: SizedBox(
+            width: double.infinity,
             child: FittedBox(
               fit: BoxFit.contain,
               alignment: Alignment.topLeft,
-              child: SizedBox.fromSize(
-                size: viewport,
-                child: AbsorbPointer(
-                  child: FocusScope(
-                    canRequestFocus: false,
-                    child: HeroMode(
-                      enabled: false,
-                      child: TickerMode(
+              child: SizedBox(
+                width: viewport.width,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: viewport.height),
+                  child: AbsorbPointer(
+                    child: FocusScope(
+                      canRequestFocus: false,
+                      child: HeroMode(
                         enabled: false,
                         child: RepaintBoundary(key: _boundary, child: screen),
                       ),

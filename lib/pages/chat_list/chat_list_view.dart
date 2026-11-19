@@ -25,12 +25,23 @@ class ChatListView extends StatelessWidget {
     final oneColumnSpacesMode =
         !FluffyThemes.isColumnMode(context) &&
         AppSettings.displayNavigationRail.value;
+    final simpleBackground = SimplifiedInterfaceScope.enabledOf(context)
+        ? Color.alphaBlend(
+            Theme.of(context).colorScheme.primary.withAlpha(12),
+            Theme.of(context).colorScheme.surface,
+          )
+        : null;
+    // The preview shows only the conversations: no rail, bars, or buttons.
+    if (controller.widget.previewOnly) {
+      return Material(
+        color: simpleBackground ?? Theme.of(context).colorScheme.surface,
+        child: ChatListViewBody(controller),
+      );
+    }
     return PopScope(
-      canPop:
-          controller.widget.previewOnly ||
-          (!controller.isSearchMode && controller.activeSpaceId == null),
+      canPop: !controller.isSearchMode && controller.activeSpaceId == null,
       onPopInvokedWithResult: (pop, _) {
-        if (pop || controller.widget.previewOnly) return;
+        if (pop) return;
         if (controller.activeSpaceId != null) {
           controller.clearActiveSpace();
           return;
@@ -78,14 +89,11 @@ class ChatListView extends StatelessWidget {
                   excludeFromSemantics: true,
                   behavior: HitTestBehavior.translucent,
                   child: Scaffold(
-                    backgroundColor: SimplifiedInterfaceScope.enabledOf(context)
-                        ? Color.alphaBlend(
-                            Theme.of(context).colorScheme.primary.withAlpha(12),
-                            Theme.of(context).colorScheme.surface,
-                          )
-                        : oneColumnSpacesMode
-                        ? Theme.of(context).colorScheme.surfaceContainer
-                        : null,
+                    backgroundColor:
+                        simpleBackground ??
+                        (oneColumnSpacesMode
+                            ? Theme.of(context).colorScheme.surfaceContainer
+                            : null),
                     body: SafeArea(
                       top: oneColumnSpacesMode,
                       bottom: false,
@@ -102,16 +110,11 @@ class ChatListView extends StatelessWidget {
                                 ),
                               )
                             : null,
-                        color: SimplifiedInterfaceScope.enabledOf(context)
-                            ? Color.alphaBlend(
-                                Theme.of(
-                                  context,
-                                ).colorScheme.primary.withAlpha(12),
-                                Theme.of(context).colorScheme.surface,
-                              )
-                            : oneColumnSpacesMode
-                            ? Theme.of(context).colorScheme.surface
-                            : null,
+                        color:
+                            simpleBackground ??
+                            (oneColumnSpacesMode
+                                ? Theme.of(context).colorScheme.surface
+                                : null),
                         child: ChatListViewBody(controller),
                       ),
                     ),

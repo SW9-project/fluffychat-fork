@@ -62,34 +62,17 @@ extension LocalizedActiveFilter on ActiveFilter {
   }
 }
 
-/// Read-only visual state copied when a home-screen preview is opened.
+/// Read-only filter state copied when a home-screen preview is opened.
+/// The preview shows only the conversations, so search state is not copied.
 class ChatListPreviewState {
   final ActiveFilter filter;
   final String? tag;
-  final double scrollOffset;
-  final String query;
-  final bool searchMode;
-  final String? searchServer;
   final Map<String, int> roomTags;
-  final QueryPublicRoomsResponse? roomSearchResult;
-  final SearchUserDirectoryResponse? userSearchResult;
-  final bool searching;
-  final String? activeChat;
 
   ChatListPreviewState(ChatListController state)
     : filter = state.activeFilter,
       tag = state.activeTag,
-      scrollOffset = state.scrollController.hasClients
-          ? state.scrollController.offset
-          : 0,
-      query = state.searchController.text,
-      searchMode = state.isSearchMode,
-      searchServer = state.searchServer,
-      roomTags = Map.of(state.roomTags),
-      roomSearchResult = state.roomSearchResult,
-      userSearchResult = state.userSearchResult,
-      searching = state.isSearching,
-      activeChat = state.activeChat;
+      roomTags = Map.of(state.roomTags);
 }
 
 class ChatList extends StatefulWidget {
@@ -359,9 +342,7 @@ class ChatListController extends State<ChatList>
 
   BoxConstraints? snappingSheetContainerSize;
 
-  late final ScrollController scrollController = ScrollController(
-    initialScrollOffset: widget.previewState?.scrollOffset ?? 0,
-  );
+  final ScrollController scrollController = ScrollController();
 
   final StreamController<Client> _clientStream = StreamController.broadcast();
 
@@ -379,8 +360,7 @@ class ChatListController extends State<ChatList>
   List<Room> get spaces =>
       Matrix.of(context).client.rooms.where((r) => r.isSpace).toList();
 
-  String? get activeChat =>
-      widget.previewState?.activeChat ?? widget.activeChat;
+  String? get activeChat => widget.activeChat;
 
   void _processIncomingSharedMedia(List<SharedMediaFile> files) {
     files.removeWhere(
@@ -471,15 +451,7 @@ class ChatListController extends State<ChatList>
       if (snapshot == null && activeFilter == ActiveFilter.tag) {
         activeTag = AppSettings.chatFilter.value;
       }
-      if (snapshot != null) {
-        roomTags = Map.of(snapshot.roomTags);
-        searchController.text = snapshot.query;
-        isSearchMode = snapshot.searchMode;
-        searchServer = snapshot.searchServer;
-        roomSearchResult = snapshot.roomSearchResult;
-        userSearchResult = snapshot.userSearchResult;
-        isSearching = snapshot.searching;
-      }
+      if (snapshot != null) roomTags = Map.of(snapshot.roomTags);
       return;
     }
     _initReceiveSharingIntent();

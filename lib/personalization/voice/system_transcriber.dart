@@ -75,8 +75,9 @@ enum _SessionState {
 /// session that ends by itself is followed at once by a new one, and their
 /// texts are joined with one space. The user sees one recording.
 ///
-/// Only Android 12 (API 31) and later with an on-device recognition service
-/// is supported. iOS is off until it is decided whether the study needs it.
+/// Supported: Android 12 (API 31) and later with an on-device recognition
+/// service, and iOS when the recogniser supports on-device recognition for
+/// [localeId].
 ///
 /// Each time it is created (when the Assist tab opens), it checks the
 /// language pack and asks the system to download it when it is missing. The
@@ -187,7 +188,7 @@ class SystemTranscriber implements SpeechTranscriber {
            (PlatformInfos.isAndroid ? const AndroidLanguagePack() : null),
        _logStats = logStats ?? _defaultLogStats {
     _availability = _checkAvailability(
-      isSupported ?? SystemTranscriber.isSupported,
+      isSupported ?? () => SystemTranscriber.isSupported(localeId),
     );
   }
 
@@ -203,13 +204,17 @@ class SystemTranscriber implements SpeechTranscriber {
   /// Restart counts and gaps of the last finished recording.
   RecordingStats? get lastStats => _lastStats;
 
-  /// Android 12 or later, with an on-device recognition service. Asks for no
-  /// permission. The language pack is checked separately.
-  static Future<bool> isSupported() async {
-    if (!PlatformInfos.isAndroid) return false;
-    final info = await DeviceInfoPlugin().androidInfo;
-    if (info.version.sdkInt < 31) return false;
-    return SpeechToTextPlatform.instance.hasOnDeviceSupport();
+  /// Android 12 or later with an on-device recognition service, or iOS with
+  /// on-device recognition for [localeId]. Asks for no permission. The
+  /// Android language pack is checked separately.
+  static Future<bool> isSupported(String localeId) async {
+    if (PlatformInfos.isAndroid) {
+      final info = await DeviceInfoPlugin().androidInfo;
+      if (info.version.sdkInt < 31) return false;
+    } else if (!PlatformInfos.isIOS) {
+      return false;
+    }
+    return SpeechToTextPlatform.instance.hasOnDeviceSupport(localeId: localeId);
   }
 
   static bool _defaultLogStats() {

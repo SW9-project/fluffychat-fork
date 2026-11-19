@@ -66,6 +66,11 @@ iOS and macOS, `darwin/speech_to_text/Sources/speech_to_text/SpeechToTextPlugin.
    now returns after the `onDeviceError` result (upstream went on to listen),
    an OS without on-device support counts as unsupported, and the message and
    details contain `onDeviceUnavailable`.
+10. `handle`: implements `has_on_device_support` like change 4, but for the
+    `localeId` argument (`SFSpeechRecognizer.supportsOnDeviceRecognition`
+    is per language). Needs no permission or `initialize`.
+11. `didFinishSuccessfully`: an unsuccessful session sends its error before
+    `doneNoResult` instead of after it, for the same reason as change 5.
 
 Nothing in `lib/` is changed.
 
@@ -73,7 +78,7 @@ Nothing in `lib/` is changed.
 
 1. Copy the new upstream version over this folder, keeping this file and
    leaving out `example/`.
-2. Re-apply the nine changes above, or drop any that upstream has fixed.
+2. Re-apply the eleven changes above, or drop any that upstream has fixed.
 3. Bump `version` in `pubspec.yaml` (`<upstream>+sw9.<n>`).
 4. Run `flutter test test/personalization/`, then check on a real Android
    phone in airplane mode that voice input still works.

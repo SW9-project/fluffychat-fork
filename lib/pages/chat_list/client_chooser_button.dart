@@ -6,6 +6,7 @@
 import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:fluffychat/widgets/matrix.dart';
@@ -29,6 +30,10 @@ class ClientChooserButton extends StatelessWidget {
     final matrix = Matrix.of(context);
     final client = Result(() => matrix.client).asValue?.value;
 
+    // On iOS it grows with the compose button next to it.
+    final scale = PlatformInfos.isIOS
+        ? AccessibilityScope.of(context).touchTargetScale
+        : 1.0;
     var clientCount = 0;
     matrix.accountBundles.forEach((key, value) => clientCount += value.length);
     return FutureBuilder<Profile>(
@@ -37,9 +42,9 @@ class ClientChooserButton extends StatelessWidget {
         final avatar = Avatar(
           mxContent: snapshot.data?.avatarUrl,
           name: snapshot.data?.displayName ?? client?.userID?.localpart,
-          size: 32,
+          size: 32 * scale,
         );
-        if (PlatformInfos.isIOS) return _nativeMenu(context, avatar);
+        if (PlatformInfos.isIOS) return _nativeMenu(context, avatar, scale);
         return Material(
           clipBehavior: Clip.hardEdge,
           borderRadius: BorderRadius.circular(99),
@@ -90,7 +95,7 @@ class ClientChooserButton extends StatelessWidget {
   ];
 
   /// A native `UIMenu` over the avatar, see `NativeMenuButton.swift`.
-  Widget _nativeMenu(BuildContext context, Widget avatar) {
+  Widget _nativeMenu(BuildContext context, Widget avatar, double scale) {
     final l10n = L10n.of(context);
     final params = {
       'label': l10n.accountsAndSettings,
@@ -99,7 +104,7 @@ class ClientChooserButton extends StatelessWidget {
       'isDark': Theme.of(context).brightness == Brightness.dark,
     };
     return SizedBox.square(
-      dimension: 40,
+      dimension: 40 * scale,
       child: Stack(
         alignment: Alignment.center,
         children: [
