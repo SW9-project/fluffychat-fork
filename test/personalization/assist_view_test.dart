@@ -799,6 +799,43 @@ void main() {
       expect(actions.applied, isEmpty);
     });
 
+    testWidgets('only the latest applied app change can be undone', (
+      tester,
+    ) async {
+      final blue = Colors.blue.toARGB32();
+      actions.values[(AppSetting.ownBubbleColor, null)] = blue;
+      await pump(
+        tester,
+        FakeModel(
+          ModelState.ready,
+          answer: (turn) => ProposedCall('set_bubble_color', {
+            'color': turn is UserTurn && turn.text.contains('my')
+                ? 'red'
+                : 'blue',
+            'side': turn is UserTurn && turn.text.contains('my')
+                ? 'mine'
+                : 'theirs',
+          }),
+        ),
+      );
+      await ask(tester, 'make my bubbles red');
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      await ask(tester, "make other people's bubbles blue");
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      // Undoing the first would make both sides blue.
+      expect(find.byKey(const Key('assist_undo')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('assist_undo')));
+      await tester.pumpAndSettle();
+      expect(actions.applied, [
+        AppChange(AppSetting.ownBubbleColor, null, red),
+        AppChange(AppSetting.otherBubbleColor, null, blue),
+        const AppChange(AppSetting.otherBubbleColor, null, null),
+      ]);
+      expect(find.byKey(const Key('assist_undo')), findsNothing);
+    });
+
     testWidgets('already pinned says already set', (tester) async {
       chats = [...chats, simon];
       actions.values[(AppSetting.pinned, '!simon')] = true;

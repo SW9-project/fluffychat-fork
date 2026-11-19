@@ -167,6 +167,10 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   final AssistConversation _conversation = AssistConversation();
   PersonalizationTools? _tools;
   bool _busy = false;
+
+  /// The only app change Undo is offered for, like the manager's applied
+  /// suggestion: undoing an older one would overwrite newer changes.
+  _Exchange? _lastAppApplied;
   ModelState? _modelState;
 
   /// True from the user's tap on the mic until the recording's text is in
@@ -773,13 +777,13 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
 
   Future<void> _applyApp(_Exchange exchange, AppChange change) async {
     if (exchange.outcome != null) return;
-    // Undo shows at once, so it needs the old value before the change runs.
     exchange.appFrom = widget.actions.current(change.setting, change.roomId);
     setState(() => exchange.outcome = _Outcome.applied);
     if (!await _run(change)) {
       if (mounted) setState(() => exchange.outcome = null);
       return;
     }
+    if (mounted) setState(() => _lastAppApplied = exchange);
     _conversation.resolved(applied: true);
     StudyLog.instance.record(
       AssistAppChangeEvent(change.setting.name, 'apply'),
@@ -796,7 +800,9 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   }
 
   Future<void> _undoApp(_Exchange exchange, AppChange change) async {
-    if (exchange.outcome != _Outcome.applied) return;
+    if (exchange.outcome != _Outcome.applied || exchange != _lastAppApplied) {
+      return;
+    }
     setState(() => exchange.outcome = _Outcome.undone);
     if (!await _run(
       AppChange(change.setting, change.roomId, exchange.appFrom),
@@ -1370,7 +1376,7 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
               ),
             ],
           ),
-          _Outcome.applied => Row(
+          _Outcome.applied when exchange == _lastAppApplied => Row(
             children: [
               Expanded(child: Text(words.applied)),
               TextButton.icon(
@@ -1381,6 +1387,7 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
               ),
             ],
           ),
+          _Outcome.applied => Text(words.applied),
           _Outcome.undone => Text(l10n.changeUndone),
           _Outcome.declined => Text(l10n.notChanged),
         },
