@@ -17,17 +17,30 @@ The functions FunctionGemma is fine-tuned on, in English. The definitions are in
 
 | Function | Changes | Parameters (default) |
 |---|---|---|
-| `change_text_size` | Text size: all text, one kind, or one chat | `chat` name or username, `direction` bigger/smaller (required), `scope` everywhere/one_chat (everywhere), `steps` 1–3 (1), `target` all/messages/chat_list/titles/message_input (all) |
-| `change_button_size` | Icon and tap area of all buttons or one | `button` all/send/attach/emoji/microphone/back/search/menu/navigation (all), `direction` bigger/smaller (required), `steps` 1–3 (1) |
-| `change_spacing` | Space between controls | `direction` more/less (required), `steps` 1–3 (1) |
+| `change_text_size` | Text size: all text, one kind, or one chat | `chat` name or username, `direction` bigger/smaller, `scope` everywhere/one_chat (everywhere), `size` word or number (leave out for a direction), `steps` 1–3 (2), `target` all/messages/chat_list/titles/message_input (all) |
+| `change_button_size` | Icon and tap area of all buttons or one | `button` all/send/attach/emoji/microphone/back/search/menu/navigation (all), `direction` bigger/smaller, `size` word or number (leave out for a direction), `steps` 1–3 (2) |
+| `change_spacing` | Space between controls | `direction` more/less, `size` word or number (leave out for a direction), `steps` 1–3 (2) |
+| `change_line_spacing` | Space between lines of text | `direction` more/less, `size` word or number (leave out for a direction), `steps` 1–3 (2) |
 | `set_simple_mode` | Simple view on or off | `enabled` (required) |
 | `set_button_labels` | Words next to button icons | `enabled` (required) |
 | `set_high_contrast` | Stronger colors and bold text | `enabled` (required) |
-| `change_avatar_size` | Profile picture size | `direction` bigger/smaller (required), `steps` 1–3 (1) |
+| `change_avatar_size` | Profile picture size | `direction` bigger/smaller, `size` word or number (leave out for a direction), `steps` 1–3 (2) |
 | `set_theme` | Light, dark or follow the phone | `mode` light/dark/system (required) |
-| `reset_settings` | Back to normal | `setting` all/text_size/button_size/spacing/simple_mode/button_labels/high_contrast/avatar_size (all) |
-| `ask_clarification` | Asks the user to choose | `options`: the functions that might fit, one when only its details are unclear (required) |
+| `set_read_aloud` | Tap a message three times to hear it | `enabled` (required) |
+| `set_bubble_color` | Message bubble color, everywhere or in one chat | `chat`, `color` (see below), `scope` everywhere/one_chat (everywhere), `side` mine/theirs |
+| `set_app_color` | Main color of the app | `color` (see below) |
+| `set_wallpaper` | Chat background, everywhere or in one chat | `chat`, `scope` everywhere/one_chat (everywhere), `wallpaper` blank/pattern/default (required) |
+| `set_gesture` | A shortcut on or off | `enabled`, `gesture` swipe_to_reply/double_tap_to_react/send_on_enter/autoplay_gifs (both required) |
+| `pin_chat` | Pin a chat to the top, or unpin | `chat`, `enabled` (required) |
+| `mute_chat` | A chat's notifications off or on | `chat`, `enabled` (required) |
+| `reset_settings` | Back to normal | `setting` all/text_size/button_size/spacing/simple_mode/button_labels/high_contrast/avatar_size/line_spacing/read_aloud (all) |
+| `ask_clarification` | Asks the user to choose | `options`: the changing functions that might fit, one when only its details are unclear (required) |
 | `no_action` | Nothing | none |
+
+Every function with `size` needs a `direction` or a `size`, never both (the file lists
+neither as required, so the builder checks it). `size` is `small`, `medium`, `big`,
+`very_big` or a number such as `1.6`. Colors: default, red, pink, purple, indigo, blue,
+cyan, teal, green, lime, yellow, amber, orange, brown, grey.
 
 `reset_settings` with `all` does not include the theme; `set_theme(system)` does that.
 
@@ -41,9 +54,8 @@ one was given:
 
 ## Size
 
-Rendered with FunctionGemma's template and counted with its tokenizer, the eleven
-functions plus a 15-word request take 1364 tokens. The template structure alone (names,
-enums, types) is 852 of them.
+The file is version 2 with 19 functions; the model's context is 4096 tokens. The token
+count of the 19 declarations is measured by `training/build_dataset.py --tokenizer`.
 
 ## How the app applies them
 
@@ -51,7 +63,7 @@ enums, types) is 852 of them.
 the settings in `accessibility_settings.dart`. Nothing applies until the user taps
 Apply in the Assist tab, which shows the change before and after; Undo follows. An
 unknown function, an unknown enum value or a missing required argument is rejected,
-never guessed. `steps` is clamped to 1–3 and every size to its range.
+never guessed. `steps` (default 2) is clamped to 1–3 and every size to its range.
 
 | Function | Setting | One step |
 |---|---|---|

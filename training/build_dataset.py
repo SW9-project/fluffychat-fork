@@ -36,6 +36,8 @@ OUT_DIR = RUN / "data"
 SEED = 20261107
 EVAL_SHARE = 0.15
 MIN_PER_FUNCTION = 50
+SIZE_WORDS = ["small", "medium", "big", "very_big"]
+SIZE_NUMBER = re.compile(r"^\d+([.,]\d+)?\s*%?$")
 NEGATIVE = {"ask_clarification", "no_action"}
 
 # After a change the app answers the call with its status, then closes the
@@ -70,6 +72,8 @@ def normalize_call(tools, name, args, where):
         if kind == "string":
             if not isinstance(value, str) or not value.strip():
                 raise BuildError(f"{where}: {name}.{key} must be a non-empty string")
+            if key == "size" and value not in SIZE_WORDS and not SIZE_NUMBER.match(value):
+                raise BuildError(f"{where}: {name}.size={value!r} is not a size word or a number")
             if "enum" in schema and value not in schema["enum"]:
                 raise BuildError(f"{where}: {name}.{key}={value!r} is not in {schema['enum']}")
         elif kind == "integer":
@@ -96,7 +100,9 @@ def normalize_call(tools, name, args, where):
     for key in tool["parameters"].get("required", []):
         if key not in out:
             raise BuildError(f"{where}: {name} needs {key!r}")
-    if "chat" in out and out.get("scope") != "one_chat":
+    if "size" in props and ("direction" in out) == ("size" in out):
+        raise BuildError(f"{where}: {name} needs direction or size, never both")
+    if "chat" in out and "scope" in props and out.get("scope") != "one_chat":
         raise BuildError(f"{where}: a chat name needs scope one_chat")
     return name, out
 

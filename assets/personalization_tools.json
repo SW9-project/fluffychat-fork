@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "note": "The functions FunctionGemma is fine-tuned on. The model learns these exact words, so any change means training again. Properties are in alphabetical order because the model's chat template sorts them. minimum, maximum and default never reach the model. See docs/personalization-tools.md.",
+  "version": 2,
+  "note": "Version 2 of the functions FunctionGemma is fine-tuned on. The model learns these exact words, so any change means training again. Properties are in alphabetical order because the model's chat template sorts them. minimum, maximum and default never reach the model. See docs/personalization-tools.md.",
   "functions": [
     {
       "name": "change_text_size",
@@ -23,12 +23,16 @@
             "default": "everywhere",
             "description": "one_chat if only for one chat."
           },
+          "size": {
+            "type": "string",
+            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for bigger or smaller."
+          },
           "steps": {
             "type": "integer",
             "minimum": 1,
             "maximum": 3,
-            "default": 1,
-            "description": "1 is a little, 3 is a lot. 1 if not said."
+            "default": 2,
+            "description": "1 is a little, 3 is a lot. Leave out if not said."
           },
           "target": {
             "type": "string",
@@ -37,7 +41,7 @@
             "description": "Which text, all if not said. titles is the top of the screen, message_input what the user types."
           }
         },
-        "required": ["direction"]
+        "required": []
       }
     },
     {
@@ -48,17 +52,7 @@
         "properties": {
           "button": {
             "type": "string",
-            "enum": [
-              "all",
-              "send",
-              "attach",
-              "emoji",
-              "microphone",
-              "back",
-              "search",
-              "menu",
-              "navigation"
-            ],
+            "enum": ["all", "send", "attach", "emoji", "microphone", "back", "search", "menu", "navigation"],
             "default": "all",
             "description": "Which button, all if not said. attach is the paperclip, menu the three dots, navigation the bottom tabs."
           },
@@ -67,15 +61,19 @@
             "enum": ["bigger", "smaller"],
             "description": "bigger if too small or hard to hit, smaller if too big."
           },
+          "size": {
+            "type": "string",
+            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for bigger or smaller."
+          },
           "steps": {
             "type": "integer",
             "minimum": 1,
             "maximum": 3,
-            "default": 1,
-            "description": "1 is a little, 3 is a lot. 1 if not said."
+            "default": 2,
+            "description": "1 is a little, 3 is a lot. Leave out if not said."
           }
         },
-        "required": ["direction"]
+        "required": []
       }
     },
     {
@@ -89,15 +87,45 @@
             "enum": ["more", "less"],
             "description": "more if too close, less if too far apart."
           },
+          "size": {
+            "type": "string",
+            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for bigger or smaller."
+          },
           "steps": {
             "type": "integer",
             "minimum": 1,
             "maximum": 3,
-            "default": 1,
-            "description": "1 is a little, 3 is a lot. 1 if not said."
+            "default": 2,
+            "description": "1 is a little, 3 is a lot. Leave out if not said."
           }
         },
-        "required": ["direction"]
+        "required": []
+      }
+    },
+    {
+      "name": "change_line_spacing",
+      "description": "Put more or less space between lines of text. Use when lines are cramped or too far apart.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "string",
+            "enum": ["more", "less"],
+            "description": "more if cramped, less if too far apart."
+          },
+          "size": {
+            "type": "string",
+            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for bigger or smaller."
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "default": 2,
+            "description": "1 is a little, 3 is a lot. Leave out if not said."
+          }
+        },
+        "required": []
       }
     },
     {
@@ -153,15 +181,19 @@
             "enum": ["bigger", "smaller"],
             "description": "bigger if too small, smaller if too big."
           },
+          "size": {
+            "type": "string",
+            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for bigger or smaller."
+          },
           "steps": {
             "type": "integer",
             "minimum": 1,
             "maximum": 3,
-            "default": 1,
-            "description": "1 is a little, 3 is a lot. 1 if not said."
+            "default": 2,
+            "description": "1 is a little, 3 is a lot. Leave out if not said."
           }
         },
-        "required": ["direction"]
+        "required": []
       }
     },
     {
@@ -180,6 +212,145 @@
       }
     },
     {
+      "name": "set_read_aloud",
+      "description": "Turn reading aloud on or off: tapping a message three times reads it out. Use when reading is hard or the user wants to hear messages.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "true for on, false for off."
+          }
+        },
+        "required": ["enabled"]
+      }
+    },
+    {
+      "name": "set_bubble_color",
+      "description": "Change the color of message bubbles, everywhere or in one chat.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "chat": {
+            "type": "string",
+            "description": "Name or username of that chat, as written. Leave out if not given."
+          },
+          "color": {
+            "type": "string",
+            "enum": ["default", "red", "pink", "purple", "indigo", "blue", "cyan", "teal", "green", "lime", "yellow", "amber", "orange", "brown", "grey"],
+            "description": "default for the normal color. Leave out if not one of these."
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["everywhere", "one_chat"],
+            "default": "everywhere",
+            "description": "one_chat if only for one chat."
+          },
+          "side": {
+            "type": "string",
+            "enum": ["mine", "theirs"],
+            "description": "Whose messages. Leave out if not clear."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "set_app_color",
+      "description": "Change the main color of the app.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "enum": ["default", "red", "pink", "purple", "indigo", "blue", "cyan", "teal", "green", "lime", "yellow", "amber", "orange", "brown", "grey"],
+            "description": "default for the normal color. Leave out if not one of these."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "set_wallpaper",
+      "description": "Change the chat background, everywhere or in one chat.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "chat": {
+            "type": "string",
+            "description": "Name or username of that chat, as written. Leave out if not given."
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["everywhere", "one_chat"],
+            "default": "everywhere",
+            "description": "one_chat if only for one chat."
+          },
+          "wallpaper": {
+            "type": "string",
+            "enum": ["blank", "pattern", "default"],
+            "description": "blank for none, default for the normal one."
+          }
+        },
+        "required": ["wallpaper"]
+      }
+    },
+    {
+      "name": "set_gesture",
+      "description": "Turn a shortcut on or off: swipe to reply, double tap to react, Enter to send, or playing GIFs by themselves. Use when it happens by accident.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "true for on, false for off."
+          },
+          "gesture": {
+            "type": "string",
+            "enum": ["swipe_to_reply", "double_tap_to_react", "send_on_enter", "autoplay_gifs"],
+            "description": "Which one."
+          }
+        },
+        "required": ["enabled", "gesture"]
+      }
+    },
+    {
+      "name": "pin_chat",
+      "description": "Pin a chat to the top of the chat list, or unpin it.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "chat": {
+            "type": "string",
+            "description": "Name or username of that chat, as written. Leave out if not given."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "true to pin, false to unpin."
+          }
+        },
+        "required": ["enabled"]
+      }
+    },
+    {
+      "name": "mute_chat",
+      "description": "Turn a chat's notifications off or on again.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "chat": {
+            "type": "string",
+            "description": "Name or username of that chat, as written. Leave out if not given."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "true to mute, false to unmute."
+          }
+        },
+        "required": ["enabled"]
+      }
+    },
+    {
       "name": "reset_settings",
       "description": "Put settings back to normal. Use when the user wants to undo changes.",
       "parameters": {
@@ -187,16 +358,7 @@
         "properties": {
           "setting": {
             "type": "string",
-            "enum": [
-              "all",
-              "text_size",
-              "button_size",
-              "spacing",
-              "simple_mode",
-              "button_labels",
-              "high_contrast",
-              "avatar_size"
-            ],
+            "enum": ["all", "text_size", "button_size", "spacing", "simple_mode", "button_labels", "high_contrast", "avatar_size", "line_spacing", "read_aloud"],
             "default": "all",
             "description": "Which setting, all if not said."
           }
@@ -214,17 +376,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": [
-                "change_text_size",
-                "change_button_size",
-                "change_spacing",
-                "set_simple_mode",
-                "set_button_labels",
-                "set_high_contrast",
-                "change_avatar_size",
-                "set_theme",
-                "reset_settings"
-              ]
+              "enum": ["change_text_size", "change_button_size", "change_spacing", "change_line_spacing", "set_simple_mode", "set_button_labels", "set_high_contrast", "change_avatar_size", "set_theme", "set_read_aloud", "set_bubble_color", "set_app_color", "set_wallpaper", "set_gesture", "reset_settings"]
             },
             "description": "Functions that might fit. Only one when just its details are unclear."
           }

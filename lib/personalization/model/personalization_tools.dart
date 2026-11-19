@@ -35,11 +35,19 @@ class PersonalizationTools {
   static const changeTextSize = 'change_text_size';
   static const changeButtonSize = 'change_button_size';
   static const changeSpacing = 'change_spacing';
+  static const changeLineSpacing = 'change_line_spacing';
   static const setSimpleMode = 'set_simple_mode';
   static const setButtonLabels = 'set_button_labels';
   static const setHighContrast = 'set_high_contrast';
   static const changeAvatarSize = 'change_avatar_size';
   static const setTheme = 'set_theme';
+  static const setReadAloud = 'set_read_aloud';
+  static const setBubbleColor = 'set_bubble_color';
+  static const setAppColor = 'set_app_color';
+  static const setWallpaper = 'set_wallpaper';
+  static const setGesture = 'set_gesture';
+  static const pinChat = 'pin_chat';
+  static const muteChat = 'mute_chat';
   static const resetSettings = 'reset_settings';
   static const askClarification = 'ask_clarification';
   static const noAction = 'no_action';
@@ -49,12 +57,40 @@ class PersonalizationTools {
     changeTextSize,
     changeButtonSize,
     changeSpacing,
+    changeLineSpacing,
     setSimpleMode,
     setButtonLabels,
     setHighContrast,
     changeAvatarSize,
     setTheme,
+    setReadAloud,
+    setBubbleColor,
+    setAppColor,
+    setWallpaper,
+    setGesture,
     resetSettings,
+  ];
+
+  /// The words `size` may be, from smallest to biggest.
+  static const sizeWords = ['small', 'medium', 'big', 'very_big'];
+
+  /// The colors of `set_bubble_color` and `set_app_color`.
+  static const colors = [
+    'default',
+    'red',
+    'pink',
+    'purple',
+    'indigo',
+    'blue',
+    'cyan',
+    'teal',
+    'green',
+    'lime',
+    'yellow',
+    'amber',
+    'orange',
+    'brown',
+    'grey',
   ];
 
   /// The declarations as the model gets them.

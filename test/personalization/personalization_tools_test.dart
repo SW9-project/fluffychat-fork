@@ -26,13 +26,23 @@ void main() {
       ];
       expect([for (final d in tools.declarations) d.name], names);
       expect(names, [
-        ...PersonalizationTools.changeFunctions.take(3),
-        PersonalizationTools.setSimpleMode,
-        PersonalizationTools.setButtonLabels,
-        PersonalizationTools.setHighContrast,
-        PersonalizationTools.changeAvatarSize,
-        PersonalizationTools.setTheme,
-        PersonalizationTools.resetSettings,
+        'change_text_size',
+        'change_button_size',
+        'change_spacing',
+        'change_line_spacing',
+        'set_simple_mode',
+        'set_button_labels',
+        'set_high_contrast',
+        'change_avatar_size',
+        'set_theme',
+        'set_read_aloud',
+        'set_bubble_color',
+        'set_app_color',
+        'set_wallpaper',
+        'set_gesture',
+        'pin_chat',
+        'mute_chat',
+        'reset_settings',
         PersonalizationTools.askClarification,
         PersonalizationTools.noAction,
       ]);
@@ -49,7 +59,7 @@ void main() {
       final sent = jsonEncode([
         for (final d in tools.declarations) d.parameters,
       ]);
-      expect(sent, isNot(contains('"default"')));
+      expect(sent, isNot(contains('"default":')));
       expect(sent, isNot(contains('"minimum"')));
       expect(sent, isNot(contains('"maximum"')));
       // Everything else is kept, such as the enum of a list's items.
@@ -99,8 +109,18 @@ void main() {
     test('the app reads defaults and ranges from the file', () {
       expect(tools.defaultOf('change_text_size', 'target'), 'all');
       expect(tools.rangeOf('change_spacing', 'steps'), (1, 3));
+      expect(tools.defaultOf('change_text_size', 'steps'), 2);
+      expect(tools.requiredOf('change_text_size'), isEmpty);
+      expect(tools.requiredOf('set_gesture'), ['enabled', 'gesture']);
       expect(tools.enumOf('change_button_size', 'button'), contains('menu'));
       expect(tools.requiredOf('set_theme'), ['mode']);
+    });
+
+    test('the new chat functions name their chat like text size does', () {
+      expect(tools.enumOf('set_bubble_color', 'scope'), [
+        'everywhere',
+        'one_chat',
+      ]);
     });
 
     test('every function has training examples', () {
