@@ -16,8 +16,10 @@ import 'dart:io';
 
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_controller.dart';
+import 'package:fluffychat/personalization/assist/assist_actions.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
+import 'package:fluffychat/personalization/model/app_change.dart';
 import 'package:fluffychat/personalization/model/personalization_tools.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/personalization_layer.dart';
@@ -35,6 +37,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // ignore: avoid_print
 void report(String line) => print('[study] $line');
+
+class _NoActions implements AssistActions {
+  @override
+  Object? current(AppSetting setting, String? roomId) => null;
+
+  @override
+  Future<void> apply(AppChange change) async {}
+}
 
 class _Model implements SettingsIntentModel {
   @override
@@ -111,6 +121,7 @@ void main() {
             tools: PersonalizationTools.load(),
             themeMode: () => ThemeMode.system,
             chats: () => const [],
+            actions: _NoActions(),
           ),
         ),
       ),

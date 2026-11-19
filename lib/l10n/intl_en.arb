@@ -245,6 +245,7 @@
         }
     },
     "sendTypingNotifications": "Send typing notifications",
+    "swipeToReply": "Swipe to reply",
     "swipeRightToLeftToReply": "Swipe right to left to reply",
     "sendOnEnter": "Send on enter",
     "emptyUnreadTitle": "You're all caught up",

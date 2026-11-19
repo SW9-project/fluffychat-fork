@@ -247,6 +247,21 @@ class SuggestionResolved extends StudyEvent {
   };
 }
 
+/// What the participant did with a proposed app change: `apply`, `decline`
+/// or `undo`. The [setting] is an `AppSetting` name; the chat is not kept.
+class AssistAppChangeEvent extends StudyEvent {
+  final String setting;
+  final String action;
+
+  const AssistAppChangeEvent(this.setting, this.action);
+
+  @override
+  String get type => 'assist_app_change';
+
+  @override
+  Map<String, Object?> get data => {'setting': setting, 'action': action};
+}
+
 /// A change to the accessibility settings from any source: a slider, an
 /// applied suggestion, reset or undo. Lists each changed value as
 /// `[from, to]`.

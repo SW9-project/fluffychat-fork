@@ -23,6 +23,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'assist_view_test.dart' show FakeModel;
+import 'fake_actions.dart';
 
 void main() {
   late SharedPreferences store;
@@ -500,6 +501,7 @@ void main() {
               ),
               themeMode: () => ThemeMode.system,
               chats: () => const [],
+              actions: FakeActions(),
             ),
           ),
         ),

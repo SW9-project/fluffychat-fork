@@ -30,6 +30,9 @@ enum UnchangedReason {
 
   /// The setting is already as asked, or already normal for a reset.
   alreadySet,
+
+  /// The bubbles of the other side already have the color.
+  sameAsOtherSide,
 }
 
 /// What the Assist tab does with one call of the model.
@@ -173,7 +176,8 @@ class ToolCallInterpreter {
     for (final b in AccessibleButton.values) b.category,
   ];
 
-  static final _colors = {
+  /// The ARGB of each color the functions name, except `default`.
+  static final colorValues = {
     'red': Colors.red.toARGB32(),
     'pink': Colors.pink.toARGB32(),
     'purple': Colors.purple.toARGB32(),
@@ -262,9 +266,7 @@ class ToolCallInterpreter {
       final to = range.normalize(
         size ?? from + _sign(call, 'bigger', 'smaller') * _amount(call, range),
       );
-      if (to == from) {
-        return AssistUnchanged(call, UnchangedReason.atLimit, range);
-      }
+      if (to == from) return _unchanged(call, range);
       final below = settings.effective(ScaleCategory.messageText);
       return AssistProposal(
         call,
@@ -320,11 +322,19 @@ class ToolCallInterpreter {
             settings.effective(c) + _sign(call, up, down) * _amount(call, c),
       );
     }
-    if (next == settings) {
-      return AssistUnchanged(call, UnchangedReason.atLimit, categories.first);
-    }
+    if (next == settings) return _unchanged(call, categories.first);
     return AssistProposal(call, SettingsChange(from: settings, to: next));
   }
+
+  /// An exact size is already set; a step goes no further.
+  AssistUnchanged _unchanged(ProposedCall call, ScaleCategory category) =>
+      AssistUnchanged(
+        call,
+        call.args['size'] == null
+            ? UnchangedReason.atLimit
+            : UnchangedReason.alreadySet,
+        category,
+      );
 
   AssistResult _toggle(ProposedCall call, AccessibilityToggle toggle) {
     final enabled = _bool(call, 'enabled');
@@ -419,20 +429,20 @@ class ToolCallInterpreter {
             ? AppSetting.ownBubbleColor
             : AppSetting.otherBubbleColor,
         room,
-        _colors[color],
+        colorValues[color],
       ),
     );
   }
 
   AssistNeedsDetail _needsColor(ProposedCall call, String? roomId) =>
-      AssistNeedsDetail(call, 'color', _colors.keys.toList(), roomId);
+      AssistNeedsDetail(call, 'color', colorValues.keys.toList(), roomId);
 
   AssistResult _appColor(ProposedCall call) {
     final color = _optionalEnum(call, 'color');
     if (color == null) return _needsColor(call, null);
     return AssistAppProposal(
       call,
-      AppChange(AppSetting.appColor, null, _colors[color]),
+      AppChange(AppSetting.appColor, null, colorValues[color]),
     );
   }
 

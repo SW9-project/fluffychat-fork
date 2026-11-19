@@ -10,6 +10,7 @@ import 'package:fluffychat/personalization/accessibility_scope.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
 import 'package:fluffychat/personalization/heuristics/heuristic.dart';
+import 'package:fluffychat/personalization/model/app_change.dart';
 import 'package:fluffychat/personalization/model/personalization_tools.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/signals/interaction_signal.dart';
@@ -22,6 +23,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'fake_actions.dart';
 import 'fake_transcriber.dart';
 
 class MemoryStorage implements StudyLogStorage {
@@ -128,6 +130,7 @@ void main() {
   late int settingsOpened;
   late ThemeMode themeMode;
   late List<AssistChat> chats;
+  late FakeActions actions;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -150,6 +153,7 @@ void main() {
       AssistChat(id: '!family', name: 'Family'),
     ];
     manager.setThemeMode = (mode) async => themeMode = mode;
+    actions = FakeActions();
   });
 
   tearDown(() {
@@ -174,6 +178,7 @@ void main() {
             tools: Future.value(_tools),
             themeMode: () => themeMode,
             chats: () => chats,
+            actions: actions,
           ),
         ),
       ),
@@ -684,6 +689,142 @@ void main() {
       expect(find.textContaining('“Dr. Hansen”'), findsOneWidget);
       expect(manager.current, isNull);
     });
+
+    testWidgets('exact text size proposal says the size', (tester) async {
+      await pump(
+        tester,
+        FakeModel.calls(
+          const ProposedCall('change_text_size', {'size': '1.6'}),
+        ),
+      );
+      await ask(tester, 'set the text to 1.6');
+      expect(find.text('Set all text to 1.6?'), findsOneWidget);
+    });
+  });
+
+  group('app changes', () {
+    const simon = AssistChat(id: '!simon', name: 'Simon');
+    const pinSimon = ProposedCall('pin_chat', {
+      'chat': 'Simon',
+      'enabled': true,
+    });
+    final red = Colors.red.toARGB32();
+
+    testWidgets('pin: a named chat applies after Apply and undoes to the old '
+        'value', (tester) async {
+      chats = [...chats, simon];
+      actions.values[(AppSetting.pinned, '!simon')] = false;
+      await pump(tester, FakeModel.calls(pinSimon));
+      await ask(tester, 'pin my chat with Simon');
+      expect(find.text('Pin the chat with Simon?'), findsOneWidget);
+      expect(actions.applied, isEmpty);
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(actions.applied, [
+        const AppChange(AppSetting.pinned, '!simon', true),
+      ]);
+      await tester.tap(find.byKey(const Key('assist_undo')));
+      await tester.pumpAndSettle();
+      expect(
+        actions.applied.last,
+        const AppChange(AppSetting.pinned, '!simon', false),
+      );
+      expect(find.text('The change was undone.'), findsOneWidget);
+    });
+
+    testWidgets('two chats called Simon show the chooser, not the first', (
+      tester,
+    ) async {
+      chats = [simon, const AssistChat(id: '!simon2', name: 'Simon')];
+      final model = FakeModel.calls(pinSimon);
+      await pump(tester, model);
+      await ask(tester, 'pin Simon');
+      expect(find.byKey(const Key('assist_which_chat')), findsOneWidget);
+      expect(find.byKey(const Key('assist_apply')), findsNothing);
+      await tester.tap(find.byKey(const Key('assist_chat_!simon2')));
+      await tester.pumpAndSettle();
+      expect(model.requests, hasLength(1));
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(actions.applied, [
+        const AppChange(AppSetting.pinned, '!simon2', true),
+      ]);
+    });
+
+    testWidgets('bubble side unclear asks mine or theirs', (tester) async {
+      final model = FakeModel.calls(
+        const ProposedCall('set_bubble_color', {'color': 'red'}),
+      );
+      await pump(tester, model);
+      await ask(tester, 'make the bubbles red');
+      expect(find.byKey(const Key('assist_detail_mine')), findsOneWidget);
+      expect(find.byKey(const Key('assist_apply')), findsNothing);
+      await tester.tap(find.byKey(const Key('assist_detail_theirs')));
+      await tester.pumpAndSettle();
+      // Chosen on the phone: the model is not asked again.
+      expect(model.requests, hasLength(1));
+      expect(
+        find.text("Make other people's bubbles in all chats red?"),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(actions.applied, [
+        AppChange(AppSetting.otherBubbleColor, null, red),
+      ]);
+    });
+
+    testWidgets('a color the other side already has is refused', (
+      tester,
+    ) async {
+      actions.values[(AppSetting.otherBubbleColor, null)] = red;
+      await pump(
+        tester,
+        FakeModel.calls(
+          const ProposedCall('set_bubble_color', {
+            'color': 'red',
+            'side': 'mine',
+          }),
+        ),
+      );
+      await ask(tester, 'make my bubbles red');
+      expect(
+        find.text(
+          'The other side already has that color, so the bubbles would look '
+          'the same. Pick another color.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('assist_apply')), findsNothing);
+      expect(actions.applied, isEmpty);
+    });
+
+    testWidgets('already pinned says already set', (tester) async {
+      chats = [...chats, simon];
+      actions.values[(AppSetting.pinned, '!simon')] = true;
+      await pump(tester, FakeModel.calls(pinSimon));
+      await ask(tester, 'pin Simon');
+      expect(find.text('That is already how it is.'), findsOneWidget);
+      expect(find.byKey(const Key('assist_apply')), findsNothing);
+    });
+
+    testWidgets('no thanks applies nothing', (tester) async {
+      await pump(
+        tester,
+        FakeModel.calls(
+          const ProposedCall('set_gesture', {
+            'gesture': 'autoplay_gifs',
+            'enabled': false,
+          }),
+        ),
+      );
+      await ask(tester, 'stop the gifs moving');
+      expect(find.text('Turn off playing GIFs by themselves?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('assist_no_thanks')));
+      await tester.pumpAndSettle();
+      expect(actions.applied, isEmpty);
+      expect(find.text('Nothing was changed.'), findsOneWidget);
+    });
   });
 
   group('study log', () {
@@ -748,6 +889,34 @@ void main() {
         'backend': 'gpu',
       });
       expect(events()[2], containsPair('function', 'change_button_size'));
+    });
+
+    testWidgets('records app changes without the chat', (tester) async {
+      startLog();
+      chats = [...chats, const AssistChat(id: '!simon', name: 'Simon')];
+      await pump(
+        tester,
+        FakeModel.calls(
+          const ProposedCall('mute_chat', {'chat': 'Simon', 'enabled': true}),
+        ),
+      );
+      await ask(tester, 'mute Simon');
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('assist_undo')));
+      await tester.pumpAndSettle();
+      expect(
+        [
+          for (final e in events())
+            if (e['type'] == 'assist_app_change') e['action'],
+        ],
+        ['apply', 'undo'],
+      );
+      expect(events().last, containsPair('setting', 'muted'));
+      // The prompt is the only text kept.
+      final lines = storage.lines.skip(1).join();
+      expect(lines, isNot(contains('!simon')));
+      expect(lines, isNot(contains('Simon')));
     });
 
     testWidgets('records no suggestion with its reason', (tester) async {
@@ -939,6 +1108,7 @@ void main() {
                   tools: Future.value(_tools),
                   themeMode: () => themeMode,
                   chats: () => chats,
+                  actions: actions,
                 ),
               ),
             ),

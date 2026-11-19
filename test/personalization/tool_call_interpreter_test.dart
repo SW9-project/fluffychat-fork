@@ -239,6 +239,21 @@ void main() {
       );
       expect(to.messageScale('!a'), 1.5);
     });
+
+    test('an exact size that is already set says so, not at the limit', () {
+      final interpreter = ToolCallInterpreter(
+        tools: _tools,
+        settings: AccessibilitySettings.defaults,
+        theme: ThemeMode.system,
+      );
+      const medium = ProposedCall('change_text_size', {'size': 'medium'});
+      for (final result in [
+        interpreter.interpret(medium),
+        interpreter.forChat(medium, '!a'),
+      ]) {
+        expect((result as AssistUnchanged).reason, UnchangedReason.alreadySet);
+      }
+    });
   });
 
   group('new functions', () {
