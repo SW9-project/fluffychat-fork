@@ -1,0 +1,193 @@
+{
+  "function": "change_button_size",
+  "groups": [
+    {
+      "args": {"direction": "bigger"},
+      "prompts": [
+        "the buttons are too small",
+        "make the buttons bigger",
+        "I keep missing the buttons",
+        "the buttons are hard to hit",
+        "bigger buttons please",
+        "I can't press the buttons, they're tiny",
+        "my fingers are too big for these buttons",
+        "buttons too small",
+        "the icons are so small I can hardly see them",
+        "make the icons larger",
+        "I have shaky hands and can't hit the buttons",
+        "the buttons should be easier to tap",
+        "larger buttons",
+        "butons too smal",
+        "can u make the buttons bigger",
+        "the little buttons are impossible to press",
+        "I miss the button every time I try to tap it",
+        "increase the button size",
+        "the icons need to be bigger",
+        "with my arthritis the small buttons are really hard to hit",
+        "the buttons are teeny",
+        "make it easier to hit the buttons by making them bigger",
+        "bigger icons pls",
+        "the tap targets are too small",
+        "my thumb can't hit those tiny buttons",
+        "I have parkinson's and the buttons are too small to tap",
+        "the controls are too small",
+        "enlarge the buttons",
+        "big buttons please, my hands shake",
+        "buttons bigger",
+        "I can't find the buttons, they're too small",
+        "it's hard to tap on the icons",
+        "can you make the buttons a bit larger",
+        "I want chunkier buttons",
+        "the buttons are so small my finger covers them",
+        "bttns r tiny",
+        "make all the buttons larger please",
+        "the little symbols you press are too small",
+        "my grandson says I need bigger buttons, I keep missing them",
+        "every time I try to press something I miss",
+        "biger buttons",
+        "Could the buttons please be made larger? I find them difficult to press."
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "steps": 2},
+      "prompts": [
+        "make the buttons much bigger",
+        "the buttons need to be quite a bit larger",
+        "considerably larger icons please",
+        "much bigger buttons pls"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "steps": 3},
+      "prompts": [
+        "make the buttons as big as possible",
+        "the biggest buttons you have",
+        "make the buttons a lot bigger",
+        "huge buttons please",
+        "maximum button size",
+        "way bigger buttons"
+      ]
+    },
+    {
+      "args": {"direction": "smaller"},
+      "prompts": [
+        "the buttons are too big",
+        "make the buttons smaller",
+        "the icons are huge",
+        "smaller buttons please",
+        "the buttons take up too much room",
+        "reduce the button size",
+        "buttons r too big now",
+        "the icons are too large, make them smaller",
+        "can you shrink the buttons a little"
+      ]
+    },
+    {"args": {"direction": "smaller", "steps": 2}, "prompts": ["make the buttons much smaller"]},
+    {"args": {"direction": "smaller", "steps": 3}, "prompts": ["smallest buttons please"]},
+    {
+      "args": {"direction": "bigger", "button": "send"},
+      "prompts": [
+        "the send button is too small",
+        "make the send button bigger",
+        "I can't hit the send button",
+        "bigger send arrow please",
+        "the button to send messages is tiny",
+        "the little paper plane is too small",
+        "I miss the send button all the time",
+        "send buton too small",
+        "the send icon is too small to hit"
+      ]
+    },
+    {"args": {"direction": "bigger", "button": "send", "steps": 3}, "prompts": ["make the send button as big as possible"]},
+    {"args": {"direction": "smaller", "button": "send"}, "prompts": ["the send button is too big"]},
+    {
+      "args": {"direction": "bigger", "button": "attach"},
+      "prompts": [
+        "the paperclip is too small",
+        "make the attach button bigger",
+        "the button to add photos is too small",
+        "bigger paperclip button",
+        "I can't press the attachment button",
+        "the paper clip icon is tiny",
+        "make the paperclip bigger",
+        "the attach icon is too small"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "button": "emoji"},
+      "prompts": [
+        "the emoji button is too small",
+        "make the smiley face button bigger",
+        "bigger emoji button please",
+        "I can't hit the little smiley",
+        "the emoji icon is hard to press",
+        "the emoji face is tiny"
+      ]
+    },
+    {"args": {"direction": "bigger", "button": "emoji", "steps": 2}, "prompts": ["make the emoji button much bigger"]},
+    {
+      "args": {"direction": "bigger", "button": "microphone"},
+      "prompts": [
+        "the microphone button is too small",
+        "make the voice message button bigger",
+        "the record button is tiny",
+        "I can't hit the mic",
+        "bigger microphone please",
+        "the button for voice messages is hard to press",
+        "the voice button is too small"
+      ]
+    },
+    {"args": {"direction": "smaller", "button": "microphone"}, "prompts": ["the microphone is too big"]},
+    {
+      "args": {"direction": "bigger", "button": "back"},
+      "prompts": [
+        "the back button is too small",
+        "make the back arrow bigger",
+        "I can't hit the arrow to go back",
+        "the go back button is tiny",
+        "bigger back button",
+        "the arrow in the top corner to go back is hard to press",
+        "the back arrow is hard to hit"
+      ]
+    },
+    {"args": {"direction": "smaller", "button": "back"}, "prompts": ["the back button is too big"]},
+    {
+      "args": {"direction": "bigger", "button": "search"},
+      "prompts": [
+        "the search button is too small",
+        "make the magnifying glass bigger",
+        "bigger search icon please",
+        "I can't press the search button",
+        "the search icon is tiny",
+        "the search icon at the top is hard to hit",
+        "make the search button larger"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "button": "menu"},
+      "prompts": [
+        "the three dots are too small",
+        "make the menu button bigger",
+        "I can't hit the three little dots",
+        "the options button is tiny",
+        "bigger menu button please",
+        "the menu dots are tiny",
+        "the button with three dots is hard to press"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "button": "navigation"},
+      "prompts": [
+        "the buttons at the bottom are too small",
+        "make the tabs at the bottom bigger",
+        "the bottom bar buttons are hard to hit",
+        "bigger navigation buttons",
+        "the Chats and Settings buttons at the bottom are tiny",
+        "I can't press the icons at the bottom of the screen",
+        "the icons in the bottom bar are too small",
+        "make the bottom menu buttons bigger"
+      ]
+    },
+    {"args": {"direction": "smaller", "button": "navigation"}, "prompts": ["the tabs at the bottom are too big"]}
+  ]
+}

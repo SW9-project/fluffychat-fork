@@ -31,12 +31,12 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parent
 REPO = ROOT.parent
 
-DEFAULT_CHECKPOINT = ROOT / "output" / "functiongemma-pilot"
+DEFAULT_CHECKPOINT = ROOT / "Train2" / "output" / "functiongemma"
 DEFAULT_BASE = REPO / "assets/models/baseline/functiongemma-270M-it.litertlm"
-DEFAULT_NAME = "functiongemma-270M-sw9-tools1"
+DEFAULT_NAME = "functiongemma-270M-sw9-tools2"
 DEFAULT_OUT = REPO / "assets/models"
 
-KV_CACHE = 2048
+KV_CACHE = 4096
 PREFILL = 256
 
 
@@ -130,7 +130,7 @@ def main() -> None:
     parser.add_argument("--base", type=pathlib.Path, default=DEFAULT_BASE)
     parser.add_argument("--name", default=DEFAULT_NAME)
     parser.add_argument("--out", type=pathlib.Path, default=DEFAULT_OUT)
-    parser.add_argument("--workdir", type=pathlib.Path, default=ROOT / "output" / "convert")
+    parser.add_argument("--workdir", type=pathlib.Path, default=ROOT / "Train2" / "output" / "convert")
     args = parser.parse_args()
 
     for path in (args.checkpoint / "model.safetensors", args.base):

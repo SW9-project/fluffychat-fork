@@ -1,0 +1,91 @@
+{
+  "function": "set_theme",
+  "groups": [
+    {
+      "args": {"mode": "dark"},
+      "prompts": [
+        "the screen is too bright",
+        "dark mode please",
+        "turn on dark mode",
+        "the white background hurts my eyes",
+        "night mode",
+        "make the background black",
+        "it's too bright at night",
+        "switch to the dark theme",
+        "the brightness is blinding me",
+        "dark theme",
+        "I want a black background",
+        "the app is too white",
+        "it's glaring",
+        "dark mode plz",
+        "too much white, it hurts",
+        "can the app be dark",
+        "the light background is too bright for my eyes",
+        "use dark colors",
+        "switch to night mode, I read in bed",
+        "I get headaches from the bright screen",
+        "make the screen darker",
+        "dark background please",
+        "the screen is so bright",
+        "darkmode",
+        "turn the app black",
+        "I have light sensitivity, the app is too bright",
+        "change to dark",
+        "the bright white is too much",
+        "enable dark theme",
+        "go dark",
+        "the white is too bright for me",
+        "can you make the background dark",
+        "black mode"
+      ]
+    },
+    {
+      "args": {"mode": "light"},
+      "prompts": [
+        "the screen is too dark",
+        "light mode please",
+        "turn off dark mode",
+        "I want a white background",
+        "switch to the light theme",
+        "I can't see anything, it's all black",
+        "the dark background makes it hard to read",
+        "day mode",
+        "make the screen lighter",
+        "light theme",
+        "the black background is depressing",
+        "can the app be white again",
+        "too dark",
+        "I can't read in the sun with the dark screen",
+        "bright mode",
+        "the app is too dark for me",
+        "lightmode pls",
+        "use a light background",
+        "go back to the white screen",
+        "the dark theme is hard on my eyes",
+        "white background please",
+        "change to light",
+        "the screen is too dim",
+        "I want the light colors back"
+      ]
+    },
+    {
+      "args": {"mode": "system"},
+      "prompts": [
+        "use the same theme as my phone",
+        "follow the phone's setting",
+        "automatic dark mode",
+        "switch between light and dark by itself",
+        "match my phone's theme",
+        "system theme",
+        "let the phone decide light or dark",
+        "use the system setting for dark mode",
+        "same colors as my phone",
+        "auto theme",
+        "dark at night and light during the day, automatically",
+        "follow system",
+        "set the theme to automatic",
+        "follow my phone's dark mode"
+      ]
+    }
+  ]
+}

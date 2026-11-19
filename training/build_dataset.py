@@ -30,7 +30,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 TOOLS_PATH = HERE.parent / "assets" / "personalization_tools.json"
 SOURCE_DIR = HERE / "source"
-OUT_DIR = HERE / "data"
+RUN = HERE / "Train2"
+OUT_DIR = RUN / "data"
 
 SEED = 20261107
 EVAL_SHARE = 0.15
@@ -267,7 +268,7 @@ def main():
     try:
         examples = load_examples(tools)
         train, evaluation = split(examples)
-        OUT_DIR.mkdir(exist_ok=True)
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
         write_jsonl(OUT_DIR / "train.jsonl", train)
         write_jsonl(OUT_DIR / "eval.jsonl", evaluation)
         report(order, train, evaluation)

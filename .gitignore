@@ -337,4 +337,4 @@ training/.venv/
 training/.convert-venv/
 training/.hf/
 training/functiongemma-270m-it/
-training/output/
+training/Train*/output/

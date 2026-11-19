@@ -6,7 +6,7 @@
 
     python3 training/export_eval_cases.py
 
-Reads data/eval.jsonl and data/eval_rendered.jsonl and writes
+Reads Train2/data/eval.jsonl and Train2/data/eval_rendered.jsonl and writes
 integration_test/personalization_eval_cases.dart: per example its id, kind,
 the conversation before the final call, the expected call, and the prompt the
 training render produced, so the phone can check that LiteRT-LM renders the
@@ -22,7 +22,7 @@ OUT = HERE.parent / "integration_test" / "personalization_eval_cases.dart"
 
 def main() -> None:
     rendered = {
-        r["id"]: r for r in map(json.loads, (HERE / "data/eval_rendered.jsonl").open())
+        r["id"]: r for r in map(json.loads, (HERE / "Train2/data/eval_rendered.jsonl").open())
     }
     # The declarations are the same in every prompt: kept once.
     marker = "<end_function_declaration><end_of_turn>\n"
@@ -31,7 +31,7 @@ def main() -> None:
     if not all(p.startswith(prefix) for p in prompts):
         raise SystemExit("The prompts do not share their declarations")
     cases = []
-    for example in map(json.loads, (HERE / "data/eval.jsonl").open()):
+    for example in map(json.loads, (HERE / "Train2/data/eval.jsonl").open()):
         *before, last = example["messages"]
         call = last["tool_calls"][0]["function"]
         cases.append(

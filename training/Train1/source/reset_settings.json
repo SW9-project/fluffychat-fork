@@ -1,0 +1,116 @@
+{
+  "function": "reset_settings",
+  "groups": [
+    {
+      "args": {},
+      "prompts": [
+        "put everything back to normal",
+        "reset all settings",
+        "undo all the changes",
+        "I messed everything up, go back to how it was",
+        "restore the default settings",
+        "start over",
+        "back to normal please",
+        "reset",
+        "make it like it was at the beginning",
+        "factory settings",
+        "go back to the original look",
+        "I don't like the changes, undo everything",
+        "reset everything",
+        "the app looks weird now, put it back",
+        "return to default",
+        "can you reset the app's look",
+        "make it normal again",
+        "restore everything",
+        "change it all back",
+        "reset to default",
+        "how do I get the old look back",
+        "everything back the way it was",
+        "set everything to standard",
+        "rest all settings",
+        "undo all of it",
+        "my grandson changed things, put them back to normal",
+        "default settings please",
+        "revert all changes",
+        "put it all back the way it was",
+        "can you undo everything you changed",
+        "go back to the standard look",
+        "I want the app like it was before",
+        "reset the whole app look",
+        "back to the start please",
+        "set all settings back",
+        "clear all my changes"
+      ]
+    },
+    {
+      "args": {"setting": "text_size"},
+      "prompts": [
+        "reset the text size",
+        "make the text normal size again",
+        "text back to normal",
+        "put the font size back to default",
+        "the original text size please",
+        "undo the text size change",
+        "normal letters again",
+        "go back to the normal text size",
+        "reset font"
+      ]
+    },
+    {
+      "args": {"setting": "button_size"},
+      "prompts": [
+        "reset the button size",
+        "normal buttons again",
+        "put the buttons back to their normal size",
+        "default button size",
+        "undo the button size change",
+        "reset the buttons"
+      ]
+    },
+    {
+      "args": {"setting": "spacing"},
+      "prompts": [
+        "reset the spacing",
+        "normal spacing again",
+        "put the space between buttons back to default",
+        "undo the spacing change",
+        "spacing back to normal"
+      ]
+    },
+    {
+      "args": {"setting": "simple_mode"},
+      "prompts": [
+        "reset the simple view",
+        "undo the simple mode change",
+        "reset simple mode to default"
+      ]
+    },
+    {
+      "args": {"setting": "button_labels"},
+      "prompts": [
+        "reset the button labels",
+        "undo the label change",
+        "button labels back to default"
+      ]
+    },
+    {
+      "args": {"setting": "high_contrast"},
+      "prompts": [
+        "reset the contrast",
+        "contrast back to default",
+        "undo the contrast change",
+        "reset the high contrast setting"
+      ]
+    },
+    {
+      "args": {"setting": "avatar_size"},
+      "prompts": [
+        "reset the profile picture size",
+        "normal size profile pictures again",
+        "undo the change to the profile pictures",
+        "avatars back to default",
+        "reset avatars"
+      ]
+    }
+  ]
+}
