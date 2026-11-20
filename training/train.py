@@ -48,7 +48,7 @@ RUN = HERE / "Train2"
 DATA_DIR = RUN / "data"
 OUT_DIR = RUN / "output" / "functiongemma"
 
-MAX_LENGTH = 4096  # the tool declarations alone are several thousand tokens
+MAX_LENGTH = 4096  # the v2 declarations are ~2,590 tokens; examples are 2,589-2,687
 SEED = 20261107
 
 
@@ -74,6 +74,8 @@ def main():
     parser.add_argument("--device", choices=["cuda", "cpu", "mps"], help="default: cuda if there is one, else cpu")
     parser.add_argument("--train-embeddings", action=argparse.BooleanOptionalAction, default=None,
                         help="also train the embedding table (default: yes, except on mps)")
+    parser.add_argument("--gradient-checkpointing", action=argparse.BooleanOptionalAction, default=None,
+                        help="recompute activations to save GPU memory (default: on for mps only)")
     parser.add_argument("--resume", action="store_true", help="continue from the last saved epoch")
     a = parser.parse_args()
 
@@ -99,6 +101,8 @@ def main():
     print(f"device {device}: {len(train)} train, {len(evaluation)} eval examples, "
           f"{trainable / 1e6:.0f}M trainable parameters")
 
+    checkpointing = mps if a.gradient_checkpointing is None else a.gradient_checkpointing
+    print(f"gradient checkpointing: {'on' if checkpointing else 'off'}")
     smoke = a.max_steps > 0
     config = SFTConfig(
         output_dir=str(a.output),
@@ -111,7 +115,7 @@ def main():
         per_device_eval_batch_size=1,
         optim="adamw_torch_fused",
         # On mps: recomputes activations in the backward pass, about 1.5 GB less GPU memory per step
-        gradient_checkpointing=mps,
+        gradient_checkpointing=checkpointing,
         gradient_checkpointing_kwargs={"use_reentrant": False},  # works with frozen embeddings
         max_length=MAX_LENGTH,
         completion_only_loss=True,

@@ -13,6 +13,15 @@ and `data/eval.jsonl`. It needs only Python 3. With `--tokenizer` and `--templat
 `jinja2` packages) it also renders every example with the real chat template and
 reports its length in tokens.
 
+## Train1 and Train2
+
+`Train1/` is the first run (11 functions), kept as history. `Train2/` is the second (19
+functions): `Train2/data/` is the dataset, and training and evaluation write to
+`Train2/output/`. Training runs on Google Colab: `bash training/pack_colab.sh` makes
+`Train2/colab.zip`; upload it to the root of My Drive, open `colab_train.ipynb`, choose a
+GPU runtime (L4 or A100 preferred, T4 works) and Run all. The result is
+`MyDrive/train2_result.zip`. See `TRAINING.md`.
+
 ## What is in it
 
 2063 examples: 1910 single requests and 153 conversations. Each function has 74 to 278.

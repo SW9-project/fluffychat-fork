@@ -12,6 +12,25 @@ training/.venv/bin/python training/train.py --max-steps 5   # smoke test
 
 Environment: M1 Pro, 16 GB, macOS (Darwin 27.2), PyTorch 2.15, Transformers 5.22, TRL 1.17.
 
+## Train1 and Train2
+
+- `Train1/`: the first run (11 functions): its data, sources, function file and output. Kept as history; the
+  results below labelled "first run" are Train1's.
+- `Train2/`: the second run (19 functions, `assets/personalization_tools.json` v2). `Train2/data/` holds the
+  dataset and its rendered form; `train.py` writes `Train2/output/functiongemma` and `evaluate.py` writes
+  `Train2/output/eval_*.jsonl`. The scripts default to Train2.
+
+### Training Train2 on Google Colab
+
+The Mac's CPU would need more than a day, so training runs on a Colab GPU:
+
+1. `bash training/pack_colab.sh` writes `training/Train2/colab.zip`; upload it to the root of My Drive.
+2. Open `training/colab_train.ipynb` in Colab; Runtime > Change runtime type > GPU (L4 or A100 preferred, T4 works).
+3. Runtime > Run all. The result is `MyDrive/train2_result.zip` (model, predictions, `train.log`, `eval.log`).
+
+Examples are ~2,700 tokens with a 262k-token vocabulary. A T4 (15 GB, no bf16) trains in fp32, so the
+notebook passes `--gradient-checkpointing` when the GPU has less than 20 GB.
+
 ## Settings compared with Google's guide
 
 | Guide | `train.py` | Why |
@@ -19,7 +38,7 @@ Environment: M1 Pro, 16 GB, macOS (Darwin 27.2), PyTorch 2.15, Transformers 5.22
 | learning rate 5e-5, constant scheduler | same | |
 | optimizer `adamw_torch_fused` | same | |
 | full fine-tune | same on CPU and CUDA (268M parameters) | On `mps` the embedding table is frozen, see below. |
-| maximum length 512 | **1536** | The 11 function declarations alone are ~1300 tokens; examples are 1344 to 1442 tokens. At 512 every example would be truncated before the call, so nothing would be learned. |
+| maximum length 512 | **4096** | The 19 v2 declarations alone are ~2,590 tokens; examples are 2,589 to 2,687 tokens (Train1 used 1536: 11 declarations, ~1300 tokens, examples 1344 to 1442). At 512 every example would be truncated before the call, so nothing would be learned. |
 | batch 4 per device | **batch 1, gradient accumulation 4** | Same effective batch of 4. Batch 2 already exhausted the GPU memory, mostly because of the 262k-token vocabulary. |
 | 8 epochs | **at most 8, early stopping (patience 2)** | 1050 examples of a few calls phrased many ways overfit quickly. Evaluation after every epoch; the epoch with the lowest `eval_loss` is kept. Also saves hours on CPU. |
 | bf16 | **fp32 on CPU and mps, bf16 on CUDA** | The M1 has no fast bf16; fp16 is unstable with Gemma 3. 270M parameters fit in fp32. |
@@ -41,7 +60,7 @@ Why not let TRL do it: for a prompt/completion text dataset, TRL appends the tok
 saved with the model.
 
 The script checks that the prompt tokens plus the completion tokens are exactly the
-tokens of the full text, and that no example is longer than 1536.
+tokens of the full text, and that no example is longer than 4096 (`MAX_LENGTH`).
 
 ## Problem: Apple's GPU (mps) crashes during training
 
@@ -95,7 +114,7 @@ the top of `train.py`). Expect it to crash.
 On a CUDA GPU (Colab, for example) the same script trains every parameter in bf16, in well
 under an hour.
 
-## Result of the first run (2026-11-10)
+## Result of the first run (Train1, 2026-11-10)
 
 All 8 epochs on the CPU, 7.8 hours, with no crash. Early stopping never triggered, because
 no two epochs in a row failed to improve.
@@ -251,12 +270,13 @@ the app already ran it through the plugin:
 | LLM metadata | start `<bos>`, stop `<end_of_turn>` and `<start_function_response>`, model type `function_gemma` (LiteRT-LM's own FunctionGemma formatter, no Jinja template) | copied from the base file |
 | Tokenizer | SentencePiece | copied from the base file (identical to `functiongemma-270m-it/tokenizer.model`) |
 | Signatures | `prefill_256`, `decode` | same |
-| KV cache, `max_num_tokens` | 1024 | **2048** |
+| KV cache, `max_num_tokens` | 1024 | **2048** (Train1; v2 needs **4096**) |
 | KV layout, mask | transposed, mask as input | same |
 | Quantization | dynamic int8 | same |
 
-The context is the one change: the eleven declarations are ~1300 tokens, so a 1024
-cache cannot hold a single request.
+The context is the one change: Train1's eleven declarations are ~1300 tokens, so a 1024
+cache cannot hold a single request. The v2 declarations are ~2,590 tokens, so the phone
+context for Train2 is 4096.
 
 ## Problems on the way
 

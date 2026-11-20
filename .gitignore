@@ -338,3 +338,4 @@ training/.convert-venv/
 training/.hf/
 training/functiongemma-270m-it/
 training/Train*/output/
+training/Train*/colab.zip
