@@ -25,6 +25,9 @@ class MxcImage extends StatefulWidget {
   final BoxFit? fit;
   final bool isThumbnail;
   final bool animated;
+
+  /// Whether an animated image plays. When false it shows its first frame.
+  final bool autoplay;
   final Duration retryDuration;
   final Duration animationDuration;
   final Curve animationCurve;
@@ -47,6 +50,7 @@ class MxcImage extends StatefulWidget {
     this.placeholder,
     this.isThumbnail = true,
     this.animated = false,
+    this.autoplay = true,
     this.animationDuration = FluffyThemes.animationDuration,
     this.retryDuration = const Duration(seconds: 2),
     this.animationCurve = FluffyThemes.animationCurve,
@@ -195,24 +199,28 @@ class _MxcImageState extends State<MxcImage> {
             height: widget.height,
             placeholder: widget.placeholder,
           )
-        : (ungzippedLottieData != null
-              ? Lottie.memory(
-                  ungzippedLottieData,
-                  width: widget.width,
-                  height: widget.height,
-                  fit: widget.fit,
-                  errorBuilder: errorFallback,
-                )
-              : Image.memory(
-                  data,
-                  width: widget.width,
-                  height: widget.height,
-                  fit: widget.fit,
-                  filterQuality: widget.isThumbnail
-                      ? FilterQuality.low
-                      : FilterQuality.medium,
-                  errorBuilder: errorFallback,
-                ));
+        // Image and Lottie both stop on their first frame without tickers.
+        : TickerMode(
+            enabled: widget.autoplay,
+            child: ungzippedLottieData != null
+                ? Lottie.memory(
+                    ungzippedLottieData,
+                    width: widget.width,
+                    height: widget.height,
+                    fit: widget.fit,
+                    errorBuilder: errorFallback,
+                  )
+                : Image.memory(
+                    data,
+                    width: widget.width,
+                    height: widget.height,
+                    fit: widget.fit,
+                    filterQuality: widget.isThumbnail
+                        ? FilterQuality.low
+                        : FilterQuality.medium,
+                    errorBuilder: errorFallback,
+                  ),
+          );
 
     return AnimatedCrossFade(
       duration: FluffyThemes.animationDuration,

@@ -409,6 +409,7 @@ class HtmlMessage extends StatelessWidget {
               width: actualWidth,
               height: actualHeight,
               isThumbnail: (actualWidth * actualHeight) > (256 * 256),
+              autoplay: AppSettings.autoplayImages.value,
             ),
           ),
         );

@@ -7,6 +7,7 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:fluffychat/config/app_config.dart';
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/sticker_picker_dialog.dart';
@@ -120,6 +121,7 @@ class _Reaction extends StatelessWidget {
         height: 20,
         animated: false,
         isThumbnail: false,
+        autoplay: AppSettings.autoplayImages.value,
       );
     } else {
       var renderKey = Characters(reactionKey);
