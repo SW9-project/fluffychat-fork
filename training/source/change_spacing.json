@@ -155,7 +155,9 @@
         "the icons are too far from each other",
         "reduce the space between the buttons",
         "the icons have too much space around them",
-        "the buttons are spread out, not the text lines, bring them closer"
+        "the buttons are spread out, not the text lines, bring them closer",
+        "the gaps between the icons are huge",
+        "the space between the buttons is huge"
       ]
     },
     {"args": {"direction": "less", "steps": 1}, "prompts": ["bring the buttons a bit closer together"]},

@@ -73,8 +73,13 @@ def normalize_call(tools, name, args, where):
         if kind == "string":
             if not isinstance(value, str) or not value.strip():
                 raise BuildError(f"{where}: {name}.{key} must be a non-empty string")
-            if key == "size" and value not in SIZE_WORDS and not SIZE_NUMBER.match(value):
-                raise BuildError(f"{where}: {name}.size={value!r} is not a size word or a number")
+            if key == "size" and value not in SIZE_WORDS:
+                if not SIZE_NUMBER.match(value):
+                    raise BuildError(f"{where}: {name}.size={value!r} is not a size word or a number")
+                # The same range as the app's interpreter, which rejects the rest.
+                number = float(value.replace("%", "").replace(",", ".").strip())
+                if not 0.5 <= (number / 100 if "%" in value else number) <= 3:
+                    raise BuildError(f"{where}: {name}.size={value!r} is outside 0.5 to 3")
             if "enum" in schema and value not in schema["enum"]:
                 raise BuildError(f"{where}: {name}.{key}={value!r} is not in {schema['enum']}")
         elif kind == "integer":

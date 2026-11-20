@@ -89,7 +89,7 @@
           },
           "size": {
             "type": "string",
-            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for bigger or smaller."
+            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for more or less."
           },
           "steps": {
             "type": "integer",
@@ -115,7 +115,7 @@
           },
           "size": {
             "type": "string",
-            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for bigger or smaller."
+            "description": "Exact size: small, medium, big, very_big or a number like 1.6. Leave out for more or less."
           },
           "steps": {
             "type": "integer",

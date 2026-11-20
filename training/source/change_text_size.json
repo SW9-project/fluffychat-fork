@@ -173,7 +173,9 @@
         "smaler font pls",
         "the text is too large for me, I liked it smaller",
         "teh letters r too big",
-        "the letters are too big for the screen"
+        "the letters are too big for the screen",
+        "the letters are huge",
+        "the text is gigantic"
       ]
     },
     {"args": {"direction": "smaller", "steps": 1}, "prompts": ["make the font a little smaller", "the text is a bit too big now", "slightly smaller letters please"]},

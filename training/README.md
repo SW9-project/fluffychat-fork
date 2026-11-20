@@ -24,16 +24,17 @@ GPU runtime (L4 or A100 preferred, T4 works) and Run all. The result is
 
 ## What is in it
 
-2063 examples: 1910 single requests and 153 conversations. Each function has 74 to 278.
+2084 examples: 1920 single requests and 164 conversations. Each function has 74 to 280.
 `change_text_size` has the most because it has the most combinations (text targets,
-chats, directions, exact sizes). 271 examples (13.1%) end in `ask_clarification` or
+chats, directions, exact sizes). 271 examples (13.0%) end in `ask_clarification` or
 `no_action`. Rendered with the 19 declarations, an example is 2589 to 2687 tokens; the
 build stops above 4096.
 15% of every function, separately for single requests and conversations, is held out in
 `data/eval.jsonl`.
 
-The build stops when a call does not match its declaration, or when a prompt appears
-twice or with two different answers.
+The build stops when a call does not match its declaration, when a numeric `size` is
+outside 0.5 to 3 (as in the app), or when a prompt appears twice or with two different
+answers.
 
 ## Format
 

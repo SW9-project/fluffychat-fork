@@ -122,7 +122,9 @@
         "the buttons take up too much room",
         "reduce the button size",
         "buttons r too big now",
-        "the icons are too large, make them smaller"
+        "the icons are too large, make them smaller",
+        "the buttons are huge",
+        "these buttons are enormous"
       ]
     },
     {"args": {"direction": "smaller", "steps": 1}, "prompts": ["can you shrink the buttons a little"]},
@@ -148,7 +150,7 @@
       ]
     },
     {"args": {"direction": "bigger", "button": "send", "steps": 3}, "prompts": ["make the send button a lot bigger"]},
-    {"args": {"direction": "smaller", "button": "send"}, "prompts": ["the send button is too big"]},
+    {"args": {"direction": "smaller", "button": "send"}, "prompts": ["the send button is too big", "the send button is huge"]},
     {
       "args": {"direction": "bigger", "button": "attach"},
       "prompts": [
