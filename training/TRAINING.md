@@ -111,8 +111,8 @@ not sleep; every epoch is saved, so `--resume` continues after an interruption.
 gradient checkpointing (non-reentrant), frozen embeddings and the capped MPS cache (set at
 the top of `train.py`). Expect it to crash.
 
-On a CUDA GPU (Colab, for example) the same script trains every parameter in bf16, in well
-under an hour.
+On a CUDA GPU (Colab, for example) the same script trains every parameter in bf16: about
+1-2 h on an L4/A100; longer on a T4 (fp32 with gradient checkpointing).
 
 ## Result of the first run (Train1, 2026-11-10)
 
