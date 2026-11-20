@@ -36,6 +36,7 @@ OUT_DIR = RUN / "data"
 SEED = 20261107
 EVAL_SHARE = 0.15
 MIN_PER_FUNCTION = 50
+MAX_TOKENS = 4096  # training MAX_LENGTH and the phone's context
 SIZE_WORDS = ["small", "medium", "big", "very_big"]
 SIZE_NUMBER = re.compile(r"^\d+([.,]\d+)?\s*%?$")
 NEGATIVE = {"ask_clarification", "no_action"}
@@ -263,6 +264,8 @@ def token_report(tools_by_name, order, examples, tokenizer_path, template_path):
     values = [n for n, _ in lengths]
     print(f"tokens per example: min {values[0]}, median {values[len(values) // 2]}, "
           f"max {values[-1]} ({lengths[-1][1]})")
+    if values[-1] > MAX_TOKENS:
+        raise BuildError(f"{lengths[-1][1]} has {values[-1]} tokens, more than {MAX_TOKENS}")
 
 
 def main():

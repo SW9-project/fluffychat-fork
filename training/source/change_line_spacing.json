@@ -1,0 +1,147 @@
+{
+  "function": "change_line_spacing",
+  "groups": [
+    {
+      "args": {"direction": "more"},
+      "prompts": [
+        "the lines of text are too close together",
+        "more space between the lines please",
+        "the lines are cramped",
+        "increase the line spacing",
+        "the lines in the messages almost touch each other",
+        "I lose my place when I read because the lines are so close",
+        "can u put more room between the lines",
+        "the sentences are squashed on top of each other",
+        "line spacing bigger",
+        "the writing is squeezed, one line sits right on the next",
+        "more line spacing",
+        "the lines of a long message are crammed together",
+        "spread the lines of text out",
+        "it's hard to follow a line, they're too tight",
+        "the rows of words are too close",
+        "increase the leading",
+        "lines too close",
+        "there's no space between the lines of writing",
+        "my eyes jump to the next line because they're so close together",
+        "more gap between lines of text",
+        "the text lines are packed too tightly",
+        "the lines in long messages are too crowded",
+        "teh lines are to close",
+        "I'd like more space between each line",
+        "the paragraphs look squashed, the lines are too close",
+        "with my dyslexia it helps to have more space between lines",
+        "the lines of text are glued together",
+        "space the lines out more",
+        "line height bigger please",
+        "the text looks crammed, more space between the lines would help",
+        "not the buttons, the lines of text are too close",
+        "the letters of one line touch the line below",
+        "open up the lines, they're stuck together"
+      ]
+    },
+    {
+      "args": {"direction": "more", "steps": 1},
+      "prompts": [
+        "a little more space between the lines",
+        "slightly more line spacing",
+        "Could you put a bit of air between the lines of text?",
+        "the lines are a tad too close",
+        "lines a touch further apart please",
+        "can the lines be a bit further apart",
+        "just a tiny bit more space between lines",
+        "somewhat more room between the lines"
+      ]
+    },
+    {
+      "args": {"direction": "more", "steps": 3},
+      "prompts": [
+        "much more space between the lines",
+        "a lot more line spacing",
+        "way more room between lines of text",
+        "the lines need to be considerably further apart",
+        "spread the lines out a lot"
+      ]
+    },
+    {
+      "args": {"direction": "less"},
+      "prompts": [
+        "the lines are too far apart",
+        "less space between the lines",
+        "reduce the line spacing",
+        "there's too much space between the lines of text",
+        "the lines are spread out so much, the messages are so long now",
+        "bring the lines closer together",
+        "less line spacing pls",
+        "the text has big gaps between the lines",
+        "the lines of text are miles apart",
+        "line spacing is too big",
+        "the gap between each line is too large",
+        "the lines look too loose",
+        "make the lines tighter",
+        "tighter line spacing",
+        "the lines of writing float too far from each other"
+      ]
+    },
+    {
+      "args": {"direction": "less", "steps": 1},
+      "prompts": [
+        "a little less space between the lines",
+        "slightly tighter lines please",
+        "bring the lines a bit closer"
+      ]
+    },
+    {
+      "args": {"direction": "less", "steps": 3},
+      "prompts": [
+        "much less space between the lines",
+        "a lot less line spacing"
+      ]
+    },
+    {
+      "args": {"size": "big"},
+      "prompts": [
+        "set the line spacing to big",
+        "big line spacing",
+        "large line spacing please",
+        "make the space between the lines large",
+        "line spacing: big"
+      ]
+    },
+    {
+      "args": {"size": "very_big"},
+      "prompts": [
+        "very big line spacing",
+        "maximum line spacing",
+        "as much space between the lines as possible",
+        "the biggest line spacing there is",
+        "huge gaps between the lines please"
+      ]
+    },
+    {
+      "args": {"size": "medium"},
+      "prompts": [
+        "medium line spacing",
+        "set the line spacing to medium",
+        "line spacing medium please"
+      ]
+    },
+    {
+      "args": {"size": "small"},
+      "prompts": [
+        "small line spacing",
+        "minimum line spacing",
+        "the smallest space between lines",
+        "as little space between the lines as possible",
+        "set the line spacing to small"
+      ]
+    },
+    {"args": {"size": "1.5"}, "prompts": ["line spacing 1.5", "can you set the line spacing at 1.5"]},
+    {"args": {"size": "1.6"}, "prompts": ["set the line spacing to 1.6"]},
+    {"args": {"size": "2"}, "prompts": ["line spacing 2", "put the lines at 2 please"]},
+    {"args": {"size": "150%"}, "prompts": ["make the line spacing 150%"]},
+    {"args": {"size": "1,3"}, "prompts": ["line spacing to 1,3"]},
+    {"args": {"size": "120%"}, "prompts": ["set the space between lines to 120%"]},
+    {"args": {"size": "1.8"}, "prompts": ["line height 1.8"]},
+    {"args": {"size": "1.2"}, "prompts": ["the space between the lines at 1.2 pls"]}
+  ]
+}

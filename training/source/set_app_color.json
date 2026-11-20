@@ -1,0 +1,118 @@
+{
+  "function": "set_app_color",
+  "groups": [
+    {
+      "args": {"color": "blue"},
+      "prompts": [
+        "make the app blue",
+        "I want the app in blue",
+        "change the app color to blue",
+        "blue app please",
+        "the app should match my blue phone case",
+        "change the highlight color to blue",
+        "make the whole app blue, not just the bubbles",
+        "app colour blue pls",
+        "Could the app be blue? It's my favourite colour."
+      ]
+    },
+    {
+      "args": {"color": "green"},
+      "prompts": [
+        "make the app green",
+        "the main color should be green",
+        "change the theme color to green",
+        "the app is blue, I want green",
+        "the main colour green please",
+        "can the buttons and the top of the app be green",
+        "green for the app",
+        "i like green, change the app to that"
+      ]
+    },
+    {
+      "args": {"color": "pink"},
+      "prompts": [
+        "pink app please",
+        "can the whole app be pink",
+        "aap color pink",
+        "my granddaughter wants the app pink",
+        "pink theme color please"
+      ]
+    },
+    {
+      "args": {"color": "purple"},
+      "prompts": [
+        "purple app",
+        "the app color should be violet",
+        "my favourite color is purple, can the app be that color",
+        "use purple for the app",
+        "a purple app would be nice"
+      ]
+    },
+    {
+      "args": {"color": "red"},
+      "prompts": [
+        "make the app red",
+        "red as the main color",
+        "change the app colour to red",
+        "i want the whole app in red",
+        "make the app red like my football team"
+      ]
+    },
+    {
+      "args": {"color": "orange"},
+      "prompts": [
+        "the app looks boring, make it orange",
+        "orange app color",
+        "the accent color to orange",
+        "change the app to orange"
+      ]
+    },
+    {
+      "args": {"color": "yellow"},
+      "prompts": [
+        "can u make the app yellow",
+        "a yellow app please, it makes me happy",
+        "the app colour should be yellow"
+      ]
+    },
+    {"args": {"color": "teal"}, "prompts": ["teal as the app color", "the app in teal", "can the main color be teal"]},
+    {"args": {"color": "cyan"}, "prompts": ["make the app colour cyan", "cyan for the app please"]},
+    {"args": {"color": "lime"}, "prompts": ["the app's main colour should be lime green", "lime app"]},
+    {"args": {"color": "amber"}, "prompts": ["amber please for the app", "make the app amber"]},
+    {"args": {"color": "brown"}, "prompts": ["brown app color", "set the main color of the app to brown", "the app in brown please"]},
+    {"args": {"color": "indigo"}, "prompts": ["can the app be dark blue", "navy app", "indigo main color"]},
+    {"args": {"color": "grey"}, "prompts": ["the colour of the app to grey", "gray app", "make the app grey, the colours are too loud"]},
+    {
+      "args": {"color": "default"},
+      "prompts": [
+        "back to the normal app color",
+        "the original color for the app",
+        "default app color",
+        "reset the app color",
+        "make the app the usual color again",
+        "I don't like the green, put the app's color back to normal",
+        "the standard main colour please",
+        "undo the app color change",
+        "the app was nicer in its first color, go back to it"
+      ]
+    },
+    {
+      "args": {},
+      "prompts": [
+        "change the app color",
+        "I want a different main color",
+        "the app's color is ugly",
+        "can I change the color of the app",
+        "the app is too purple, change it",
+        "change the accent color",
+        "pick a new color for the app",
+        "another colour for the app please",
+        "make the app gold",
+        "silver app color",
+        "the main color should be beige",
+        "magenta app please",
+        "can the app's main color be turquoise"
+      ]
+    }
+  ]
+}

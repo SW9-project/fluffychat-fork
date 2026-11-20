@@ -15,9 +15,11 @@ reports its length in tokens.
 
 ## What is in it
 
-1050 examples: 958 single requests and 92 conversations. Each function has 70 to 221.
+2063 examples: 1910 single requests and 153 conversations. Each function has 74 to 278.
 `change_text_size` has the most because it has the most combinations (text targets,
-chats, directions). 154 examples (14.7%) end in `ask_clarification` or `no_action`.
+chats, directions, exact sizes). 271 examples (13.1%) end in `ask_clarification` or
+`no_action`. Rendered with the 19 declarations, an example is 2589 to 2687 tokens; the
+build stops above 4096.
 15% of every function, separately for single requests and conversations, is held out in
 `data/eval.jsonl`.
 
@@ -45,12 +47,23 @@ as `tools`. Every example ends with the call the model has to learn.
 ## Labelling rules
 
 - Arguments the user did not give are left out. The build drops any argument equal to
-  its default, so the model never learns to write `target: all` or `steps: 1`.
+  its default, so the model never learns to write `target: all` or `steps: 2`.
 - `steps` comes only from words about the size of the change. It defaults to 2, so it is
   left out when the user says nothing about the amount. "A little", "a bit", "slightly"
-  or "somewhat" is 1; "much", "quite a bit", "considerably", "a lot", "way bigger",
-  "huge" or "as big as possible" is 3. How bad the problem sounds ("way too small") does
-  not change it. In a conversation, the words of the follow-up count ("a bit more" is 1).
+  or "somewhat" is 1; "much", "quite a bit", "considerably", "a lot" or "way bigger"
+  is 3. How bad the problem sounds ("way too small") does not change it. In a
+  conversation, the words of the follow-up count ("a bit more" is 1).
+- A size the user asks for gives `size` instead of `direction`: `small`, `medium`, `big`,
+  `very_big`, or a number as written (`1.6`, `150%`, `1,4`). "Large" is `big`; "huge",
+  "biggest", "maximum" or "as big as possible" is `very_big`; "tiny", "smallest",
+  "minimum" or "as little as possible" is `small`. A complaint is still a direction
+  ("the icons are huge" is smaller). "Normal size" is `reset_settings`, only "medium" is
+  `size: medium`.
+- Bubble side only when it is said: "my messages" is `mine`, "Simon's messages" or
+  "other people's messages" is `theirs`; "Simon's bubbles" has no `side`. A color the
+  list lacks (black, white, gold, silver, beige, turquoise) is left out. Gray is `grey`,
+  violet `purple`, dark blue or navy `indigo`. Photo wallpapers, app-wide notifications
+  and voice settings ("speak slower") are `no_action`.
 - A named chat always gives `scope: one_chat` and the name as written, without the
   possessive ("Maria's chat" gives `Maria`). "This chat" or "one chat" gives
   `scope: one_chat` without a name.

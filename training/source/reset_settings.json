@@ -53,7 +53,11 @@
         "undo the text size change",
         "normal letters again",
         "go back to the normal text size",
-        "reset font"
+        "reset font",
+        "normal text size please",
+        "the letters at their usual size again",
+        "standard font size",
+        "make the writing regular size again"
       ]
     },
     {
@@ -64,7 +68,10 @@
         "put the buttons back to their normal size",
         "default button size",
         "undo the button size change",
-        "reset the buttons"
+        "reset the buttons",
+        "regular size buttons again",
+        "buttons back to the normal size",
+        "the icons at their normal size please"
       ]
     },
     {
@@ -109,7 +116,28 @@
         "normal size profile pictures again",
         "undo the change to the profile pictures",
         "avatars back to default",
-        "reset avatars"
+        "reset avatars",
+        "the profile pictures back to normal size",
+        "normal size faces again"
+      ]
+    },
+    {
+      "args": {"setting": "line_spacing"},
+      "prompts": [
+        "reset the line spacing",
+        "normal line spacing again",
+        "line spacing back to normal",
+        "put the space between the lines back to default",
+        "undo the line spacing change",
+        "the lines at their normal distance again"
+      ]
+    },
+    {
+      "args": {"setting": "read_aloud"},
+      "prompts": [
+        "reset the read aloud setting",
+        "read aloud back to default",
+        "undo the reading aloud change"
       ]
     }
   ]

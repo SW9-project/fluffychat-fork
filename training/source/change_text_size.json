@@ -82,18 +82,79 @@
         "make the writing a good deal bigger",
         "font much bigger pls",
         "can the text be significantly larger",
+        "make the text a lot bigger",
+        "the text needs to be way way bigger",
+        "make the letters very much larger",
+        "way bigger letters please",
+        "the font should be a lot larger"
+      ]
+    },
+    {
+      "args": {"size": "big"},
+      "prompts": [
+        "set the text to big",
+        "make the text big",
+        "large text please",
+        "big font",
+        "i want big letters",
+        "font size large",
+        "big writing pls",
+        "Please set the font size to large."
+      ]
+    },
+    {
+      "args": {"size": "very_big"},
+      "prompts": [
         "make the text as big as possible",
         "biggest font please",
-        "make the text a lot bigger",
         "I want huge letters",
         "maximum text size",
-        "the text needs to be way way bigger",
         "make the font as large as it goes",
         "set the text to the largest size",
         "giant text please",
-        "make the letters very much larger"
+        "very big text",
+        "huge font please",
+        "set the font to very big",
+        "the biggest letters you have"
       ]
     },
+    {
+      "args": {"size": "medium"},
+      "prompts": [
+        "medium text size",
+        "set the font to medium",
+        "medium letters please",
+        "text size medium",
+        "can the letters be medium sized"
+      ]
+    },
+    {
+      "args": {"size": "small"},
+      "prompts": [
+        "make the text small",
+        "small font please",
+        "tiny text please",
+        "minimum font size",
+        "set the text to small",
+        "make the text as small as possible",
+        "smallest font please"
+      ]
+    },
+    {"args": {"size": "1.6"}, "prompts": ["text size 1.6", "can you put the font at 1.6"]},
+    {"args": {"size": "2"}, "prompts": ["set the font to 2"]},
+    {"args": {"size": "150%"}, "prompts": ["text at 150%", "make all the text 150%"]},
+    {"args": {"size": "1,4"}, "prompts": ["make the text 1,4"]},
+    {"args": {"size": "1.2"}, "prompts": ["font size 1.2 please"]},
+    {"args": {"size": "130%"}, "prompts": ["letters 130%"]},
+    {"args": {"size": "1.5", "target": "messages"}, "prompts": ["the messages to 1.5"]},
+    {"args": {"size": "big", "target": "messages"}, "prompts": ["the messages big please"]},
+    {"args": {"size": "very_big", "target": "messages"}, "prompts": ["huge letters in the messages"]},
+    {"args": {"size": "1.3", "target": "titles"}, "prompts": ["set the titles to 1.3"]},
+    {"args": {"size": "big", "target": "chat_list"}, "prompts": ["make the chat list text large"]},
+    {"args": {"size": "very_big", "target": "chat_list"}, "prompts": ["make the chat list text as big as possible"]},
+    {"args": {"size": "medium", "target": "chat_list"}, "prompts": ["medium size for the names in the chat list"]},
+    {"args": {"size": "1.4", "target": "message_input"}, "prompts": ["make what I type 1.4"]},
+    {"args": {"size": "small", "target": "titles"}, "prompts": ["the title at the top small please"]},
     {
       "args": {"direction": "smaller"},
       "prompts": [
@@ -115,14 +176,12 @@
         "the letters are too big for the screen"
       ]
     },
-    {"args": {"direction": "smaller", "steps": 1}, "prompts": ["make the font a little smaller"]},
+    {"args": {"direction": "smaller", "steps": 1}, "prompts": ["make the font a little smaller", "the text is a bit too big now", "slightly smaller letters please"]},
     {
       "args": {"direction": "smaller", "steps": 3},
       "prompts": [
         "make the text much smaller",
         "the font needs to be considerably smaller",
-        "make the text as small as possible",
-        "smallest font please",
         "make the text a lot smaller"
       ]
     },
@@ -162,12 +221,6 @@
         "make the list of conversations larger",
         "chat list text bigger pls",
         "the list of people I talk to is too small to read"
-      ]
-    },
-    {
-      "args": {"direction": "bigger", "target": "chat_list", "steps": 3},
-      "prompts": [
-        "make the chat list text as big as possible"
       ]
     },
     {
@@ -267,10 +320,21 @@
     {"args": {"direction": "smaller", "scope": "one_chat", "chat": "Maria"}, "prompts": ["the text in Maria's chat is too big"]},
     {"args": {"direction": "smaller", "scope": "one_chat", "chat": "George"}, "prompts": ["make the font smaller in the chat with George"]},
     {"args": {"direction": "smaller", "scope": "one_chat", "chat": "work group"}, "prompts": ["smaller letters in the work group chat"]},
-    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Maria", "steps": 3}, "prompts": ["make the text as big as possible in the chat with Maria"]},
-    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Grandpa", "steps": 3}, "prompts": ["in Grandpa's chat I want huge letters"]},
+    {"args": {"size": "very_big", "scope": "one_chat", "chat": "Maria"}, "prompts": ["make the text as big as possible in the chat with Maria"]},
+    {"args": {"size": "very_big", "scope": "one_chat", "chat": "Grandpa"}, "prompts": ["in Grandpa's chat I want huge letters"]},
     {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Mum"}, "prompts": ["bigger letters in the chat with Mum"]},
     {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Tom"}, "prompts": ["the text in Tom's chat is too small to read"]},
-    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Walking Club"}, "prompts": ["make the font larger in Walking Club"]}
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Walking Club"}, "prompts": ["make the font larger in Walking Club"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Simon", "steps": 1}, "prompts": ["the text in Simon's chat a little bigger please"]},
+    {"args": {"size": "big", "scope": "one_chat", "chat": "Simon"}, "prompts": ["make Simon's chat text big"]},
+    {"args": {"size": "big", "scope": "one_chat", "chat": "Dr. Hansen"}, "prompts": ["big text in the chat with Dr. Hansen"]},
+    {"args": {"size": "very_big", "scope": "one_chat", "chat": "grandma"}, "prompts": ["very big letters in grandma's chat"]},
+    {"args": {"size": "medium", "scope": "one_chat", "chat": "Book Club"}, "prompts": ["make the text in the Book Club chat medium"]},
+    {"args": {"size": "small", "scope": "one_chat", "chat": "work group"}, "prompts": ["small letters in the work group chat"]},
+    {"args": {"size": "1.8", "scope": "one_chat", "chat": "Simon"}, "prompts": ["text in Simon's chat at 1.8"]},
+    {"args": {"size": "120%", "scope": "one_chat", "chat": "mum"}, "prompts": ["120% text in the chat with mum"]},
+    {"args": {"size": "2", "scope": "one_chat", "chat": "Tante Inge"}, "prompts": ["font 2 in Tante Inge's chat"]},
+    {"args": {"size": "big", "scope": "one_chat"}, "prompts": ["big text just in this chat"]},
+    {"args": {"size": "big", "target": "messages", "scope": "one_chat", "chat": "James"}, "prompts": ["make James's messages big"]}
   ]
 }
