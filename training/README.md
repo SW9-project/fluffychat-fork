@@ -67,6 +67,10 @@ as `tools`. Every example ends with the call the model has to learn.
 - A named chat always gives `scope: one_chat` and the name as written, without the
   possessive ("Maria's chat" gives `Maria`). "This chat" or "one chat" gives
   `scope: one_chat` without a name.
+- Bare "space" or "spacing" with a direction or a reset ("more spacing", "less space
+  please", "reset the spacing") is `change_spacing`; without one ("the spacing", "fix
+  the spacing") it is `ask_clarification` with `change_spacing` and `change_line_spacing`.
+  `change_line_spacing` needs a word about lines of text.
 - Taps that miss or buttons that are hard to hit: `change_button_size`. Tapping the
   wrong one because they are close together: `change_spacing`. Too many buttons:
   `set_simple_mode`. Not knowing what a button does: `set_button_labels`.
