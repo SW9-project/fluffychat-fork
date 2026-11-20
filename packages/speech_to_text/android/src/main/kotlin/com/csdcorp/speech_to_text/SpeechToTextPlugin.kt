@@ -851,6 +851,18 @@ public class SpeechToTextPlugin :
             else -> "error_unknown ($errorCode)"
         }
 
+        if (SpeechRecognizer.ERROR_SERVER_DISCONNECTED == errorCode) {
+            // SW9 patch: the recogniser's connection to the recognition
+            // service is gone for good. Drop it, so the next listen creates a
+            // new one instead of failing the same way. See PATCHES.md.
+            val disconnected = speechRecognizer
+            speechRecognizer = null
+            handler.post {
+                run {
+                    disconnected?.destroy()
+                }
+            }
+        }
         sendError(errorMsg)
         if ( isListening()) {
             notifyListening(false)

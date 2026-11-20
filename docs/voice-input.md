@@ -90,7 +90,7 @@ they are, so old lines still load. Audio is never written anywhere.
   free-form recognition.
 - **iOS is on** (19 Nov). `SystemTranscriber.isSupported` accepts iOS when
   `SFSpeechRecognizer.supportsOnDeviceRecognition` is true for `en_US`
-  (PATCHES.md, change 10), checked without asking for any permission. iOS
+  (PATCHES.md, change 11), checked without asking for any permission. iOS
   has no language pack check or download: if the English on-device model is
   missing, the mic stays hidden. Every `listen` sets
   `requiresOnDeviceRecognition`, so audio never leaves the phone. The first
@@ -126,6 +126,14 @@ they are, so old lines still load. Audio is never written anywhere.
   end of speech twice, and the plugin's second timer replaced the first
   without cancelling it. The lost timer then ended the next session while it
   was still listening. Patch change 8 fixes it.
+- **A disconnected recogniser is replaced** (20 Nov). After using the mic,
+  leaving the Assist tab and coming back, every tap failed at once with
+  `error_server_disconnected` and the retry failed the same way
+  (`end=restartFailed`). The language pack check on the new visit opens and
+  closes its own recogniser, and closing it ended the recognition service
+  connection that the plugin's recogniser from the previous visit still used.
+  Patch change 9 drops that recogniser, so the app's retry 300 ms later gets
+  a new one.
 - Not built: the `assist_voice` timing event (waiting for Simon), and
   `WhisperTranscriber` (not needed after the device test, see below).
 

@@ -385,6 +385,25 @@ void main() {
     await finish(tester, transcriber);
   });
 
+  testWidgets('a disconnected recogniser on the first tap is retried', (
+    tester,
+  ) async {
+    // On the phone: the patched plugin drops the disconnected recogniser
+    // (PATCHES.md, change 9), so the retry gets a new one.
+    final transcriber = await recording(tester);
+    platform.endWithError('error_server_disconnected');
+    await tester.pump();
+    expect(transcriber.status.value, TranscriberStatus.recording);
+    await tester.pump(SystemTranscriber.retryDelay);
+    expect(platform.listenCalls.length, 2);
+    expect(transcriber.status.value, TranscriberStatus.recording);
+    platform.endSession('make the text bigger');
+    await tester.pump();
+    expect(transcriber.text.value, 'make the text bigger');
+    expect(transcriber.lastEnd, isNull);
+    await finish(tester, transcriber);
+  });
+
   testWidgets('cancel discards the text', (tester) async {
     final transcriber = await recording(tester);
     platform.hear('never mind');

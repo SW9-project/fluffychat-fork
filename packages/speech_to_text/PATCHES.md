@@ -59,17 +59,24 @@ Android, `android/src/main/kotlin/com/csdcorp/speech_to_text/SpeechToTextPlugin.
    later during the next session and reported it as ended. The app then
    started another session while the real one was still running, and Android
    answered with `error_client`.
+9. `onError`: after `ERROR_SERVER_DISCONNECTED` the recognizer is destroyed,
+   so the next `listen` creates a new one. Upstream kept it, and its
+   connection to the recognition service never comes back. On the S22 Ultra
+   the app's language pack check (`SpeechLanguagePack`) opens a second
+   recognizer each time the Assist tab opens; closing it ended the service
+   connection that the plugin's recognizer from the previous visit still
+   used, and every `listen` after that failed at once.
 
 iOS and macOS, `darwin/speech_to_text/Sources/speech_to_text/SpeechToTextPlugin.swift`:
 
-9. `listenForSpeech`: when on-device recognition is not supported, the call
-   now returns after the `onDeviceError` result (upstream went on to listen),
-   an OS without on-device support counts as unsupported, and the message and
-   details contain `onDeviceUnavailable`.
-10. `handle`: implements `has_on_device_support` like change 4, but for the
+10. `listenForSpeech`: when on-device recognition is not supported, the call
+    now returns after the `onDeviceError` result (upstream went on to listen),
+    an OS without on-device support counts as unsupported, and the message and
+    details contain `onDeviceUnavailable`.
+11. `handle`: implements `has_on_device_support` like change 4, but for the
     `localeId` argument (`SFSpeechRecognizer.supportsOnDeviceRecognition`
     is per language). Needs no permission or `initialize`.
-11. `didFinishSuccessfully`: an unsuccessful session sends its error before
+12. `didFinishSuccessfully`: an unsuccessful session sends its error before
     `doneNoResult` instead of after it, for the same reason as change 5.
 
 Nothing in `lib/` is changed.
@@ -78,7 +85,7 @@ Nothing in `lib/` is changed.
 
 1. Copy the new upstream version over this folder, keeping this file and
    leaving out `example/`.
-2. Re-apply the eleven changes above, or drop any that upstream has fixed.
+2. Re-apply the twelve changes above, or drop any that upstream has fixed.
 3. Bump `version` in `pubspec.yaml` (`<upstream>+sw9.<n>`).
 4. Run `flutter test test/personalization/`, then check on a real Android
    phone in airplane mode that voice input still works.
