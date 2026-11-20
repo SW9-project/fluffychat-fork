@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/assist/assist_conversation.dart';
 import 'package:fluffychat/personalization/model/app_change.dart';
@@ -339,7 +340,7 @@ void main() {
       AppChange change(AssistResult r) => (r as AssistAppProposal).change;
       expect(
         change(_interpret('set_app_color', {'color': 'default'})),
-        const AppChange(AppSetting.appColor, null, null),
+        AppChange(AppSetting.appColor, null, AppConfig.chatColor.toARGB32()),
       );
       expect(
         (_interpret('set_app_color', {}) as AssistNeedsDetail).parameter,

@@ -700,6 +700,29 @@ void main() {
       await ask(tester, 'set the text to 1.6');
       expect(find.text('Set all text to 1.6?'), findsOneWidget);
     });
+
+    testWidgets('an exact size proposal says the size it applies', (
+      tester,
+    ) async {
+      final calls = {
+        // The titles go up to 1.5, the tabs to 1.4, and spacing snaps.
+        const ProposedCall('change_text_size', {
+          'target': 'titles',
+          'size': 'very_big',
+        }): 'Set the titles to 1.5?',
+        const ProposedCall('change_button_size', {
+          'button': 'navigation',
+          'size': '2',
+        }): 'Set the tabs at the bottom to 1.4?',
+        const ProposedCall('change_spacing', {'size': '1.6'}):
+            'Set the space between buttons to 1.5?',
+      };
+      for (final MapEntry(key: call, value: text) in calls.entries) {
+        await pump(tester, FakeModel.calls(call));
+        await ask(tester, 'a size');
+        expect(find.text(text), findsOneWidget);
+      }
+    });
   });
 
   group('app changes', () {
@@ -862,6 +885,50 @@ void main() {
       expect(actions.applied, isEmpty);
       expect(find.text('Nothing was changed.'), findsOneWidget);
     });
+
+    testWidgets('a tapped color answers a missing color', (tester) async {
+      final model = FakeModel.calls(
+        const ProposedCall('set_bubble_color', {'side': 'mine'}),
+      );
+      await pump(tester, model);
+      await ask(tester, 'change the color of my bubbles');
+      expect(find.text('Which color?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('assist_detail_red')));
+      await tester.pumpAndSettle();
+      expect(model.requests, hasLength(1));
+      expect(find.text('Make your bubbles in all chats red?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('assist_apply')));
+      await tester.pumpAndSettle();
+      expect(actions.applied, [
+        AppChange(AppSetting.ownBubbleColor, null, red),
+      ]);
+    });
+
+    testWidgets('pin or mute a chat that does not exist shows the chooser', (
+      tester,
+    ) async {
+      final names = ['pin_chat', 'mute_chat'];
+      for (final (i, name) in names.indexed) {
+        await pump(
+          tester,
+          FakeModel.calls(ProposedCall(name, {'chat': 'Bob', 'enabled': true})),
+        );
+        await ask(tester, '$name Bob');
+        // The earlier question stays in the conversation.
+        expect(
+          find.text('I found no single chat called “Bob”. Which chat?'),
+          findsNWidgets(i + 1),
+        );
+        expect(
+          find.byKey(const Key('assist_chat_!family')),
+          findsNWidgets(i + 1),
+        );
+        expect(find.byKey(const Key('assist_apply')), findsNothing);
+      }
+      await tester.tap(find.byKey(const Key('assist_chat_!family')).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Mute the chat with Family?'), findsOneWidget);
+    });
   });
 
   group('study log', () {
@@ -954,6 +1021,33 @@ void main() {
       final lines = storage.lines.skip(1).join();
       expect(lines, isNot(contains('!simon')));
       expect(lines, isNot(contains('Simon')));
+    });
+
+    testWidgets('an app change left for a new prompt is a decline', (
+      tester,
+    ) async {
+      startLog();
+      await pump(
+        tester,
+        FakeModel.calls(
+          const ProposedCall('set_gesture', {
+            'gesture': 'autoplay_gifs',
+            'enabled': false,
+          }),
+        ),
+      );
+      await ask(tester, 'stop the gifs moving');
+      await ask(tester, 'something else');
+      expect(
+        [
+          for (final e in events())
+            if (e['type'] == 'assist_app_change') [e['setting'], e['action']],
+        ],
+        [
+          ['autoplayGifs', 'decline'],
+        ],
+      );
+      expect(actions.applied, isEmpty);
     });
 
     testWidgets('records no suggestion with its reason', (tester) async {

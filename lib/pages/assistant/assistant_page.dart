@@ -129,7 +129,7 @@ class _AssistantPageState extends State<AssistantPage> {
                 chats: () => _chats(context),
                 actions: MatrixAssistActions(
                   Matrix.of(context).client,
-                  ThemeController.of(context).setPrimaryColor,
+                  ThemeController.of(context),
                 ),
                 guide: _guide,
               ),

@@ -63,10 +63,6 @@ class AppearanceL10n {
   /// What a size is of, such as "all text", for [sizeTo].
   final String Function(ScaleCategory category) sizeTarget;
   final String Function(String chat) chatText;
-
-  /// The size words of [PersonalizationTools.sizeWords], as the user sees
-  /// them.
-  final Map<String, String> sizeLabels;
   final String Function(String what, String size) sizeTo;
   final String Function(bool more) lineSpacing;
   final String Function(AppChange change, String? chat) appChange;
@@ -117,7 +113,6 @@ class AppearanceL10n {
     required this.reset,
     required this.sizeTarget,
     required this.chatText,
-    required this.sizeLabels,
     required this.sizeTo,
     required this.lineSpacing,
     required this.appChange,
@@ -254,12 +249,6 @@ class AppearanceL10n {
     reset: _resetEn,
     sizeTarget: _sizeTargetEn,
     chatText: _chatTextEn,
-    sizeLabels: {
-      'small': 'Small',
-      'medium': 'Medium',
-      'big': 'Big',
-      'very_big': 'Very big',
-    },
     sizeTo: _sizeToEn,
     lineSpacing: _lineSpacingEn,
     appChange: _appChangeEn,
@@ -364,12 +353,6 @@ class AppearanceL10n {
     reset: _resetDa,
     sizeTarget: _sizeTargetDa,
     chatText: _chatTextDa,
-    sizeLabels: {
-      'small': 'Lille',
-      'medium': 'Mellem',
-      'big': 'Stor',
-      'very_big': 'Meget stor',
-    },
     sizeTo: _sizeToDa,
     lineSpacing: _lineSpacingDa,
     appChange: _appChangeDa,
@@ -558,15 +541,15 @@ String _appChangeDa(AppChange change, String? chat) {
     AppSetting.pinned => '${on ? 'Fastgøre' : 'Frigøre'} chatten med $chat?',
     AppSetting.muted =>
       'Slå lyden ${on ? 'fra' : 'til'} for chatten med $chat?',
-    AppSetting.ownBubbleColor => 'Give dine bobler $where $color?',
-    AppSetting.otherBubbleColor => 'Give de andres bobler $where $color?',
+    AppSetting.ownBubbleColor => 'Give dine bobler $color $where?',
+    AppSetting.otherBubbleColor => 'Give de andres bobler $color $where?',
     AppSetting.appColor => 'Give appen $color?',
     AppSetting.wallpaper => switch (change.value) {
       'none' => 'Bruge en ensfarvet baggrund $where?',
       'pattern' => 'Bruge mønsterbaggrunden $where?',
       _ => 'Bruge den normale baggrund $where?',
     },
-    AppSetting.swipeToReply => 'Slå svar ved at stryge $onOff?',
+    AppSetting.swipeToReply => 'Slå stryg for at svare $onOff?',
     AppSetting.doubleTapToReact => 'Slå reaktion ved dobbelttryk $onOff?',
     AppSetting.sendOnEnter => 'Slå send med Enter-tasten $onOff?',
     AppSetting.autoplayGifs => "Slå automatisk afspilning af GIF'er $onOff?",

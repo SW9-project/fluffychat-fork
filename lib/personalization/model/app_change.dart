@@ -23,9 +23,10 @@ class AppChange {
   /// The chat it is for, or null when it is for every chat.
   final String? roomId;
 
-  /// An `int?` ARGB for colors (null is the default color), a `String?` for
-  /// the wallpaper (`'none'`, `'pattern'`, null is the chat's default), and a
-  /// `bool` for everything else.
+  /// An `int?` ARGB for colors (null is the default bubble color, or for the
+  /// app color the system accent color), a `String?` for the wallpaper
+  /// (`'none'`, `'pattern'`, null is the chat's default), and a `bool` for
+  /// everything else.
   final Object? value;
 
   const AppChange(this.setting, this.roomId, this.value);

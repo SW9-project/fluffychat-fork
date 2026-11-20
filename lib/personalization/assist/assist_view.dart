@@ -456,16 +456,17 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   }
 
   /// A new request replaces what is still open: an unanswered proposal is
-  /// declined for the model (the manager logs it as superseded), an open
-  /// question is left.
+  /// declined for the model (the manager logs a settings one as superseded,
+  /// an app one is logged as declined here), an open question is left.
   void _closeOpen() {
     final last = _last;
     if (last == null) return;
     last.answered = true;
-    if (last.outcome == null &&
-        (last.result is AssistAppProposal ||
-            (last.suggestion != null &&
-                widget.manager.current == last.suggestion))) {
+    if (last.outcome != null) return;
+    if (last.result case AssistAppProposal(:final change)) {
+      _declineApp(last, change);
+    } else if (last.suggestion != null &&
+        widget.manager.current == last.suggestion) {
       last.outcome = _Outcome.declined;
       _conversation.resolved(applied: false);
     }
@@ -1455,7 +1456,7 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        Text(_describe(words, call, exchange.chatName)),
+        Text(_describe(words, call, change, exchange.chatName)),
         const SizedBox(height: 12),
         ChangePreview(change: change),
         const SizedBox(height: 12),
@@ -1485,10 +1486,12 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     );
   }
 
-  /// The question above the preview, from the call itself.
+  /// The question above the preview, from the call itself, with an exact
+  /// size as [change] applies it.
   static String _describe(
     AppearanceL10n words,
     ProposedCall call,
+    SettingsChange change,
     String? chat,
   ) {
     final args = call.args;
@@ -1504,32 +1507,30 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     final button = AccessibleButton.values
         .where((b) => b.name == args['button'])
         .firstOrNull;
-    final sized = switch (call.name) {
-      PersonalizationTools.changeTextSize when chat != null => words.chatText(
-        chat,
-      ),
-      PersonalizationTools.changeTextSize => words.sizeTarget(target),
-      PersonalizationTools.changeButtonSize => words.sizeTarget(
+    final category = switch (call.name) {
+      PersonalizationTools.changeTextSize when chat != null =>
+        AccessibilitySettings.chatTextRange,
+      PersonalizationTools.changeTextSize => target,
+      PersonalizationTools.changeButtonSize =>
         button?.category ?? ScaleCategory.button,
-      ),
-      PersonalizationTools.changeSpacing => words.sizeTarget(
-        ScaleCategory.spacing,
-      ),
-      PersonalizationTools.changeLineSpacing => words.sizeTarget(
-        ScaleCategory.lineSpacing,
-      ),
-      PersonalizationTools.changeAvatarSize => words.sizeTarget(
-        ScaleCategory.avatar,
-      ),
+      PersonalizationTools.changeSpacing => ScaleCategory.spacing,
+      PersonalizationTools.changeLineSpacing => ScaleCategory.lineSpacing,
+      PersonalizationTools.changeAvatarSize => ScaleCategory.avatar,
       _ => null,
     };
-    final size = args['size'];
-    // An exact size wins over the direction, as in the interpreter.
-    if (sized != null && size != null) {
-      final written = '$size'.trim();
+    // An exact size wins over the direction, as in the interpreter. The
+    // category clamps and snaps it, so say what is applied, not what was
+    // written.
+    if (category != null && args['size'] != null) {
+      final roomId = change.changedChat;
+      final size = roomId == null
+          ? change.to.effective(category)
+          : change.to.messageScale(roomId);
       return words.sizeTo(
-        sized,
-        words.sizeLabels[written.toLowerCase().replaceAll(' ', '_')] ?? written,
+        roomId == null || chat == null
+            ? words.sizeTarget(category)
+            : words.chatText(chat),
+        size.toStringAsFixed(category.step < 0.1 ? 2 : 1),
       );
     }
     return switch (call.name) {

@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/utils/account_config.dart';
 import 'package:fluffychat/utils/chat_wallpaper.dart';
+import 'package:fluffychat/widgets/theme_builder.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
@@ -23,9 +25,9 @@ abstract class AssistActions {
 /// settings pages and the chat list change them.
 class MatrixAssistActions implements AssistActions {
   final Client client;
-  final void Function(Color?) setPrimaryColor;
+  final ThemeController theme;
 
-  const MatrixAssistActions(this.client, this.setPrimaryColor);
+  const MatrixAssistActions(this.client, this.theme);
 
   static const _seed = AppSettings.colorSchemeSeedInt;
 
@@ -39,10 +41,11 @@ class MatrixAssistActions implements AssistActions {
       AppSetting.otherBubbleColor =>
         (roomId == null ? config.otherBubbleColor : room?.otherBubbleColor)
             ?.toARGB32(),
-      // shortcut: the default seed reads as the default color, also when it
-      // was picked by hand; store the choice apart if that ever matters.
+      // As the Style page ticks it: null follows the system accent color.
       AppSetting.appColor =>
-        _seed.value == _seed.defaultValue ? null : _seed.value,
+        theme.useSystemColor
+            ? null
+            : (theme.primaryColor ?? AppConfig.chatColor).toARGB32(),
       AppSetting.wallpaper => _wallpaper(
         roomId == null ? client.defaultChatWallpaper : room?.customWallpaper,
       ),
@@ -95,7 +98,12 @@ class MatrixAssistActions implements AssistActions {
         );
       case AppSetting.appColor:
         await _seed.setItem(color?.toARGB32() ?? _seed.defaultValue);
-        setPrimaryColor(color);
+        // The Style page's own instances, so its picker ticks the color.
+        final picked = [
+          AppConfig.chatColor,
+          ...Colors.primaries,
+        ].where((c) => c.toARGB32() == value);
+        return theme.setPrimaryColor(picked.firstOrNull ?? color);
       case AppSetting.wallpaper:
         final wallpaper = switch (value) {
           final ChatWallpaper wallpaper => wallpaper,

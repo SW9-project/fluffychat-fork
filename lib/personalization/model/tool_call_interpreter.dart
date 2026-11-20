@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/config/app_config.dart';
 import 'package:material_ui/material_ui.dart' show Colors, ThemeMode;
 
 import '../accessibility_settings.dart';
@@ -398,7 +399,7 @@ class ToolCallInterpreter {
   }
 
   /// Whether [call] is for one chat: `one_chat`, or a chat named, which
-  /// always means that chat. Null when it is for everywhere.
+  /// always means that chat. False when it is for everywhere.
   bool _forOneChat(ProposedCall call) =>
       _enum(call, 'scope') == 'one_chat' ||
       (_string(call, 'chat')?.isNotEmpty ?? false);
@@ -442,7 +443,13 @@ class ToolCallInterpreter {
     if (color == null) return _needsColor(call, null);
     return AssistAppProposal(
       call,
-      AppChange(AppSetting.appColor, null, colorValues[color]),
+      // default is the app's own color, which the Style page offers next to
+      // the system one.
+      AppChange(
+        AppSetting.appColor,
+        null,
+        colorValues[color] ?? AppConfig.chatColor.toARGB32(),
+      ),
     );
   }
 
@@ -544,8 +551,9 @@ class ToolCallInterpreter {
     return size.toDouble();
   }
 
-  /// Steps default to the declared default, accept numbers and numeric strings, and are clamped
-  /// to the declared range. Anything else is invalid.
+  /// Steps default to the declared default, accept numbers and numeric
+  /// strings, and are clamped to the declared range. Anything else is
+  /// invalid.
   int _steps(ProposedCall call) {
     final value = call.args['steps'] ?? tools.defaultOf(call.name, 'steps');
     final (min, max) = tools.rangeOf(call.name, 'steps') ?? (1, 3);

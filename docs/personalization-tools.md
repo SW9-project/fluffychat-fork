@@ -54,32 +54,53 @@ one was given:
 
 ## Size
 
-The file is version 2 with 19 functions; the model's context is 4096 tokens. The token
-count of the 19 declarations is measured by `training/build_dataset.py --tokenizer`.
+The file is version 2 with 19 functions; the model's context is 4096 tokens. With the
+19 declarations a single request is about 2,590 tokens; the training examples are 2,589
+to 2,687. `training/build_dataset.py --tokenizer` measures them.
 
 ## How the app applies them
 
 `lib/personalization/model/tool_call_interpreter.dart` turns a call into a change of
-the settings in `accessibility_settings.dart`. Nothing applies until the user taps
-Apply in the Assist tab, which shows the change before and after; Undo follows. An
-unknown function, an unknown enum value or a missing required argument is rejected,
-never guessed. `steps` (default 2) is clamped to 1–3 and every size to its range.
+the settings in `accessibility_settings.dart`, or of an app setting
+(`model/app_change.dart`, applied by `assist/assist_actions.dart`). Nothing applies
+until the user taps Apply in the Assist tab, which shows the change before and after;
+Undo follows. An unknown function, an unknown enum value or a missing required
+argument is rejected, never guessed. `steps` (default 2) is clamped to 1–3 and every
+size to its range.
 
-| Function | Setting | One step |
+`steps` 1 is one slider step, 2 one suggestion step (at least 0.2), 3 is 0.5. An
+exact `size` sets the whole size instead: `small` is the minimum of that size, `medium`
+1.0, `big` 1.5, `very_big` 2.0, and a number is a factor (`1.6`, `1,6`) or a
+percentage (`160%`). Numbers outside 0.5–3 are rejected; the rest is clamped to the
+range and snapped to its steps, so titles at `very_big` get 1.5. The Assist tab says
+the size that will apply.
+
+| Function | Setting | Steps 1 / 2 / 3 |
 |---|---|---|
-| `change_text_size`, `target` all / messages / chat_list / titles / message_input | Text size, or the text size of that kind on top of it | 0.1× |
-| `change_text_size`, one chat | That chat's own text size, on top of the others. A name that matches exactly one chat (display name, or the username of a direct chat) is used; otherwise the app asks which chat. The chat list never reaches the model. | 0.1× |
-| `change_button_size`, `button` all | Icon size and the area that reacts to a tap | 0.1× |
-| `change_button_size`, one button | That button's own size, on top of the button size; its box grows with it | 0.1× |
-| `change_spacing` | Spacing: Material's density from −2 to +4, the gaps in the message input row and the chat list rows | 0.25× |
-| `change_avatar_size` | Picture size | 0.1× |
+| `change_text_size`, `target` all / messages / chat_list / titles / message_input | Text size, or the text size of that kind on top of it | 0.1 / 0.2 / 0.5 |
+| `change_text_size`, one chat | That chat's own text size, on top of the others. A name that matches exactly one chat (display name, or the username of a direct chat) is used; otherwise the app asks which chat. The chat list never reaches the model. | 0.1 / 0.2 / 0.5 |
+| `change_button_size`, `button` all | Icon size and the area that reacts to a tap | 0.1 / 0.2 / 0.5 |
+| `change_button_size`, one button | That button's own size, on top of the button size; its box grows with it | 0.1 / 0.2 / 0.5 |
+| `change_spacing` | Spacing: Material's density from −2 to +4, the gaps in the message input row and the chat list rows | 0.25 / 0.25 / 0.5 |
+| `change_line_spacing` | Space between lines of text in messages | 0.1 / 0.2 / 0.5 |
+| `change_avatar_size` | Picture size | 0.1 / 0.2 / 0.5 |
 | `set_button_labels` | Words under the icons of the message input buttons, the back button and the chat menu | |
 | `set_high_contrast` | Bold text everywhere, secondary text and outlines as strong as the main text, stronger containers and dividers | |
+| `set_read_aloud` | Tapping a message three times reads it aloud | |
 | `set_theme` | FluffyChat's own light/dark setting (also in Style) | |
+| `set_bubble_color` | The bubble colors of Style, everywhere or for one chat. A missing `side` or `color` is asked on the phone; a color the other side already has is refused. Changing one side keeps the other. | |
+| `set_app_color` | The app color of Style; `default` is the app's own color. Undo puts back what Style showed, also the system accent color. | |
+| `set_wallpaper` | The chat background of Style. `blank` is none; `default` is none everywhere, and in one chat the chat follows the app's background again. | |
+| `set_gesture` | The chat settings: swipe to reply, double tap to react, send with Enter, and playing animated GIFs, stickers and emotes in the timeline (off shows their first frame) | |
+| `pin_chat` | The chat is pinned to the top of the list, or unpinned | |
+| `mute_chat` | The chat's notifications go to mentions only, or back to all | |
 | `reset_settings` | The named setting back to normal; `all` resets every accessibility setting, not the theme | |
 | `set_simple_mode`, `reset_settings(simple_mode)` | Not built yet: the app says so and changes nothing | |
 | `ask_clarification` | The options as buttons; with one option, its details as quick replies (sent as English words, like the training answers). Typed text answers too. | |
 | `no_action` | The app explains what it can change | |
+
+For `pin_chat`, `mute_chat` and the one-chat functions the app finds the chat by name as
+for text size, and asks which chat when none or several match.
 
 ## Conversations
 
