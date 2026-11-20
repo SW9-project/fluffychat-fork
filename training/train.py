@@ -81,7 +81,9 @@ def main():
 
     device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
     mps = device == "mps"
-    use_bf16 = device == "cuda" and torch.cuda.is_bf16_supported()  # a T4 has no bf16
+    # Native bf16 only: the default `is_bf16_supported()` also counts emulation, which a T4 (7.5) offers but TRL's
+    # chunked log-prob kernel rejects ("only supported for CUDA devices with compute capability 8.0 or higher").
+    use_bf16 = device == "cuda" and torch.cuda.is_bf16_supported(including_emulation=False)
     tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_DIR,
