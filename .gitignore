@@ -338,3 +338,7 @@ training/.convert-venv/
 training/.hf/
 training/functiongemma-270m-it/
 training/output/
+# Training runs and their results; the models are shared on Drive
+training/Train*/
+assets/models/train1/*.litertlm
+.DS_Store

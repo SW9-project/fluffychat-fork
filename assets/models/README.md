@@ -6,7 +6,8 @@ large for git, so it is not committed.
 
 | File | What it is | Bundled |
 |---|---|---|
-| `functiongemma-270M-sw9-tools1.litertlm` | FunctionGemma fine-tuned on the eleven functions in `assets/personalization_tools.json`, which the app runs | yes |
+| `functiongemma-270M-sw9-tools2.litertlm` | Train2: FunctionGemma fine-tuned on the 19 functions in `assets/personalization_tools.json`, which the app runs | yes |
+| `train1/functiongemma-270M-sw9-tools1.litertlm` | Train1: the first model (11 functions), kept for comparison | no |
 | `baseline/functiongemma-270M-it.litertlm` | The base model: kept for comparison, and the converter copies its metadata | no |
 
 ## The fine-tuned model

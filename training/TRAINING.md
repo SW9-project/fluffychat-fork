@@ -226,6 +226,81 @@ spacing and button size, more phrasings for turning things off, smaller, less an
 and chat names with dots, spaces and longer words. Then build, render, train and run
 `evaluate.py` again to compare.
 
+# Results of the second run (Train2, 2026-11-22)
+
+Trained on Kaggle (`kaggle_train.ipynb`): early stopping ended it after 4 epochs, and the best
+epoch (2, `eval_loss` 0.079) was saved.
+
+| Epoch | eval_loss | eval token accuracy |
+|---|---|---|
+| 1 | 0.138 | 96.2% |
+| **2** | **0.079** | **97.7%** |
+| 3 | 0.114 | 97.6% |
+| 4 | 0.085 | 98.0% |
+
+`evaluate.py` on the 314 examples of `Train2/data/eval.jsonl` (286 single, 28 conversations,
+41 abstentions, all 19 functions). Base and Train2 ran on Kaggle (GPU, `Train2/output/eval.log`); Train1 ran
+on the Mac CPU (`Train2/output/eval_train1.log`) with the same prompts, which declare all 19 functions.
+Train1 only knows the first 11, so its score on the 8 new functions is 0 by construction: the
+comparison shows what v2 adds, not a fair contest on equal skills.
+
+| Metric | Base | Train1 (epoch 7) | **Train2** |
+|---|---|---|---|
+| Function accuracy | 23.6% (74) | 55.7% (175) | **85.0%** (267) |
+| Exact arguments | 8.3% (26) | 43.6% (137) | **69.1%** (217) |
+| Field accuracy | 27.1% | 67.7% | **83.8%** |
+| Schema validity | 25.2% (79) | 94.3% (296) | **96.2%** (302) |
+| Defaults written out | 2 | 3 | **0** |
+| Correct abstention (of 41) | 0% | 46.3% | **68.3%** (58.5% the exact one) |
+| False abstention (of 273) | 1.1% | 7.3% | 5.5% |
+
+Train2 is better than both on every metric except false abstention, where the base is lowest only
+because it never abstains (it also parses only half its outputs: 162 unparseable). With 314 examples a
+percentage is uncertain by about ±4 points.
+
+By expected function (function accuracy / exact):
+
+| Function | n | Base | Train1 | Train2 |
+|---|---|---|---|---|
+| change_text_size | 42 | 33 / 5 | 98 / 67 | 93 / **74** |
+| change_button_size | 27 | 44 / 4 | 96 / 67 | 96 / **85** |
+| change_spacing | 19 | 0 / 0 | 95 / 63 | **100 / 100** |
+| change_line_spacing | 16 | 31 / 6 | 0 / 0 | 88 / 63 |
+| set_simple_mode | 12 | 25 / 25 | 92 / 83 | 75 / 75 |
+| set_button_labels | 11 | 9 / 9 | 91 / 82 | 100 / 91 |
+| set_high_contrast | 12 | 17 / 17 | 92 / 92 | 75 / 75 |
+| change_avatar_size | 15 | 7 / 7 | 100 / 67 | 87 / 87 |
+| set_theme | 12 | 33 / 25 | 92 / 83 | 92 / 50 |
+| set_read_aloud | 13 | 23 / 23 | 0 / 0 | 92 / 92 |
+| set_bubble_color | 15 | 53 / 7 | 0 / 0 | 93 / 47 |
+| set_app_color | 13 | 0 / 0 | 0 / 0 | 77 / 54 |
+| set_wallpaper | 14 | 21 / 7 | 0 / 0 | 93 / 36 |
+| set_gesture | 14 | 14 / 7 | 0 / 0 | 93 / 71 |
+| pin_chat | 13 | 31 / 0 | 0 / 0 | 92 / 77 |
+| mute_chat | 12 | 42 / 0 | 0 / 0 | **100 / 100** |
+| reset_settings | 13 | 54 / 46 | 100 / 100 | 46 / 46 |
+| ask_clarification | 16 | 0 / 0 | 19 / 0 | 56 / 19 |
+| no_action | 25 | 0 / 0 | 64 / 64 | 60 / 60 |
+
+Conversations: `answer` 9 (Train2 89%), `adjust` 13 (100% function, 69% exact), `correct` 6 (67%, 17% exact).
+
+## What Train2 gets wrong (97 mistakes)
+
+- **Weaker than Train1 on some old functions.** `reset_settings` fell from 100% to 46%, `set_simple_mode` and
+  `set_high_contrast` from ~92% to 75%, `change_avatar_size` exact from 67% to 87% (better) but function from 100% to 87%.
+  More functions made similar requests compete; `reset_settings` is the biggest regression and the first thing to fix.
+- **Wrong values in right functions.** `set_wallpaper` exact is 36%, `set_theme` 50%, `set_bubble_color` 47%:
+  the function is found, an argument (colour, wallpaper, scope, chat name) is not.
+- **Abstention is still the weakest part.** `ask_clarification` is right only 19% of the time (the `options`
+  list is usually too long or wrong), and 15 real requests (5.5%) were wrongly answered with an abstention.
+- 12 outputs break the schema (Train1: 18).
+
+## Next
+
+Add examples for `reset_settings` (and its contrast with the "go back to normal X" requests of other functions),
+`ask_clarification` options, and wallpaper/colour values; then train again. The best epoch was 2 of 8, so a
+lower learning rate or more varied data may help more than more epochs.
+
 # Conversion (step 7)
 
 ```sh

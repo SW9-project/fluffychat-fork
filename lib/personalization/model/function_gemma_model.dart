@@ -32,9 +32,9 @@ class FunctionGemmaModel implements SettingsIntentModel {
   static const assetPath = AssistantModelConfig.assetPath;
   static const fileName = AssistantModelConfig.fileName;
 
-  /// The model file's context: the eleven declarations are ~1300 tokens, a
+  /// The model file's context: the nineteen declarations are ~2600 tokens, a
   /// conversation adds up to ~200 and the answer [maxOutputTokens].
-  static const maxTokens = 2048;
+  static const maxTokens = 4096;
   static const maxOutputTokens = 128;
 
   /// The loaded model is freed after this long without a request.
