@@ -2,10 +2,10 @@
 # SPDX-FileCopyrightText: 2026 SW9-project contributors
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Evaluates FunctionGemma models on data/eval_rendered.jsonl (step 6).
+"""Evaluates FunctionGemma models on Train2/data/eval_rendered.jsonl (step 6).
 
-    training/.venv/bin/python training/evaluate.py                 # base and pilot
-    training/.venv/bin/python training/evaluate.py --models pilot
+    training/.venv/bin/python training/evaluate.py                 # base and train2
+    training/.venv/bin/python training/evaluate.py --models train2
 
 Every model generates greedily from each prompt, and its call is parsed and
 compared with the label. Reported:
@@ -23,7 +23,7 @@ compared with the label. Reported:
                         share where the model called one of the two (and the exact
                         one); on all other requests, the share where it wrongly did
 
-Writes every prediction to output/eval_<model>.jsonl.
+Writes every prediction to Train2/output/eval_<model>.jsonl.
 """
 
 import argparse
@@ -38,9 +38,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from build_dataset import NEGATIVE, BuildError, load_tools, normalize_call
 
 HERE = Path(__file__).resolve().parent
-DATA_DIR = HERE / "data"
-OUT_DIR = HERE / "output"
-MODELS = {"base": HERE / "functiongemma-270m-it", "pilot": OUT_DIR / "functiongemma-pilot"}
+RUN = HERE / "Train2"
+DATA_DIR = RUN / "data"
+OUT_DIR = RUN / "output"
+MODELS = {"base": HERE / "functiongemma-270m-it", "train2": OUT_DIR / "functiongemma"}
 
 CALL_START, CALL_END, ESC = "<start_function_call>", "<end_function_call>", "<escape>"
 
@@ -243,7 +244,7 @@ def show_mistakes(results, prompts_by_id):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--models", default="base,pilot", help="comma-separated: base, pilot or a model folder")
+    parser.add_argument("--models", default="base,train2", help="comma-separated: base, train2 or a model folder")
     parser.add_argument("--device", default="cpu", choices=["cpu", "mps", "cuda"])
     a = parser.parse_args()
 

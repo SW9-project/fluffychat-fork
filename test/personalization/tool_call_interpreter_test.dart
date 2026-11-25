@@ -5,13 +5,15 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/personalization/accessibility_settings.dart';
 import 'package:fluffychat/personalization/assist/assist_conversation.dart';
+import 'package:fluffychat/personalization/model/app_change.dart';
 import 'package:fluffychat/personalization/model/personalization_tools.dart';
 import 'package:fluffychat/personalization/model/settings_intent_model.dart';
 import 'package:fluffychat/personalization/model/tool_call_interpreter.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart' show ThemeMode;
+import 'package:material_ui/material_ui.dart' show Colors, ThemeMode;
 
 final _tools = PersonalizationTools.fromJson(
   jsonDecode(File(PersonalizationTools.asset).readAsStringSync())
@@ -23,15 +25,21 @@ AssistResult _interpret(
   Map<String, Object?> args, {
   AccessibilitySettings settings = AccessibilitySettings.defaults,
   ThemeMode theme = ThemeMode.system,
+  String? roomId,
 }) => ToolCallInterpreter(
   tools: _tools,
   settings: settings,
   theme: theme,
-).interpret(ProposedCall(name, args));
+).interpret(ProposedCall(name, args), roomId: roomId);
 
 /// The settings a proposal would produce.
 AccessibilitySettings _to(AssistResult result) =>
     (result as AssistProposal).change.to;
+
+ScaleCategory _textTarget(String t) => switch (t) {
+  'titles' => ScaleCategory.titleText,
+  _ => ScaleCategory.text,
+};
 
 void main() {
   group('sizes', () {
@@ -74,7 +82,7 @@ void main() {
             'steps': '2',
           }),
         ).avatarScale,
-        1.5,
+        1.2,
       );
     });
 
@@ -120,6 +128,270 @@ void main() {
       expect(result, isA<AssistUnchanged>());
       expect((result as AssistUnchanged).reason, UnchangedReason.atLimit);
       expect(result.category, ScaleCategory.avatar);
+    });
+  });
+
+  group('sizes v2', () {
+    test(
+      'steps: 1 is one slider step, left out is the suggestion step, 3 is 0.5',
+      () {
+        double text(Map<String, Object?> a) => _to(
+          _interpret('change_text_size', {'direction': 'bigger', ...a}),
+        ).textScale;
+        expect(text({'steps': 1}), 1.1);
+        expect(text({}), 1.2);
+        expect(text({'steps': 3}), 1.5);
+        expect(
+          _to(
+            _interpret('change_spacing', {'direction': 'more', 'steps': 1}),
+          ).spacingScale,
+          1.25,
+        );
+      },
+    );
+
+    test(
+      'size words: small is the minimum, medium 1.0, big 1.5, very_big 2.0',
+      () {
+        double text(String size, {String target = 'all'}) => _to(
+          _interpret('change_text_size', {'size': size, 'target': target}),
+        ).effective(_textTarget(target));
+        expect(text('small'), 0.8);
+        expect(
+          _to(
+            _interpret(
+              'change_button_size',
+              {'size': 'small'},
+              settings: AccessibilitySettings.defaults.copyWith(
+                ScaleCategory.button,
+                1.5,
+              ),
+            ),
+          ).buttonScale,
+          1.0,
+        );
+        expect(text('very_big', target: 'titles'), 1.5);
+        expect(text('big'), 1.5);
+        expect(text('very_big'), 2.0);
+        final from = AccessibilitySettings.defaults.copyWith(
+          ScaleCategory.text,
+          1.4,
+        );
+        expect(
+          _to(
+            _interpret('change_text_size', {'size': 'medium'}, settings: from),
+          ).textScale,
+          1.0,
+        );
+      },
+    );
+
+    test('size numbers as the model writes them', () {
+      for (final (size, scale) in [
+        ('1.6', 1.6),
+        (' 1,6 ', 1.6),
+        ('160%', 1.6),
+        ('160 %', 1.6),
+        ('Big', 1.5),
+      ]) {
+        expect(
+          _to(_interpret('change_text_size', {'size': size})).textScale,
+          scale,
+          reason: size,
+        );
+      }
+      for (final size in ['5', 'abc', '']) {
+        final result = _interpret('change_text_size', {'size': size});
+        expect(result, isA<AssistNoSuggestion>(), reason: size);
+        expect(
+          (result as AssistNoSuggestion).reason,
+          RejectionReason.invalidArguments,
+        );
+      }
+    });
+
+    test('size wins over direction; neither is invalid', () {
+      expect(
+        _to(
+          _interpret('change_text_size', {
+            'size': 'big',
+            'direction': 'smaller',
+          }),
+        ).textScale,
+        1.5,
+      );
+      expect(_interpret('change_text_size', {}), isA<AssistNoSuggestion>());
+    });
+
+    test("one chat with a size sets that chat's whole message size", () {
+      final interpreter = ToolCallInterpreter(
+        tools: _tools,
+        settings: AccessibilitySettings.defaults,
+        theme: ThemeMode.system,
+      );
+      final to = _to(
+        interpreter.forChat(
+          const ProposedCall('change_text_size', {
+            'size': 'big',
+            'scope': 'one_chat',
+          }),
+          '!a',
+        ),
+      );
+      expect(to.messageScale('!a'), 1.5);
+    });
+
+    test('an exact size that is already set says so, not at the limit', () {
+      final interpreter = ToolCallInterpreter(
+        tools: _tools,
+        settings: AccessibilitySettings.defaults,
+        theme: ThemeMode.system,
+      );
+      const medium = ProposedCall('change_text_size', {'size': 'medium'});
+      for (final result in [
+        interpreter.interpret(medium),
+        interpreter.forChat(medium, '!a'),
+      ]) {
+        expect((result as AssistUnchanged).reason, UnchangedReason.alreadySet);
+      }
+    });
+  });
+
+  group('new functions', () {
+    test('line spacing and read aloud use the settings', () {
+      expect(
+        _to(
+          _interpret('change_line_spacing', {'direction': 'more'}),
+        )[ScaleCategory.lineSpacing],
+        1.2,
+      );
+      final less = _interpret('change_line_spacing', {'direction': 'less'});
+      expect((less as AssistUnchanged).reason, UnchangedReason.atLimit);
+      expect(
+        _to(_interpret('set_read_aloud', {'enabled': true})).tripleTapToRead,
+        isTrue,
+      );
+      final both = AccessibilitySettings.defaults
+          .copyWith(ScaleCategory.lineSpacing, 1.5)
+          .withToggle(AccessibilityToggle.tripleTapToRead, true)
+          .copyWith(ScaleCategory.spacing, 1.5);
+      final line = _to(
+        _interpret('reset_settings', {
+          'setting': 'line_spacing',
+        }, settings: both),
+      );
+      expect(line[ScaleCategory.lineSpacing], 1.0);
+      expect(line.tripleTapToRead, isTrue);
+      expect(line.spacingScale, 1.5);
+      final read = _to(
+        _interpret('reset_settings', {'setting': 'read_aloud'}, settings: both),
+      );
+      expect(read.tripleTapToRead, isFalse);
+      expect(read[ScaleCategory.lineSpacing], 1.5);
+    });
+
+    test('chat functions ask which chat first', () {
+      const bubble = {'color': 'red', 'side': 'mine', 'scope': 'one_chat'};
+      expect(_interpret('pin_chat', {'enabled': true}), isA<AssistNeedsChat>());
+      expect(_interpret('set_bubble_color', bubble), isA<AssistNeedsChat>());
+      expect(
+        (_interpret('pin_chat', {'enabled': true}, roomId: '!a')
+                as AssistAppProposal)
+            .change,
+        const AppChange(AppSetting.pinned, '!a', true),
+      );
+      expect(
+        (_interpret('set_bubble_color', bubble, roomId: '!a')
+                as AssistAppProposal)
+            .change,
+        AppChange(AppSetting.ownBubbleColor, '!a', Colors.red.toARGB32()),
+      );
+    });
+
+    test('bubble color asks side, then color', () {
+      var r = _interpret('set_bubble_color', {'color': 'red'});
+      expect((r as AssistNeedsDetail).parameter, 'side');
+      expect(r.options, ['mine', 'theirs']);
+      r = _interpret('set_bubble_color', {'side': 'theirs'});
+      expect((r as AssistNeedsDetail).parameter, 'color');
+      expect(r.options, isNot(contains('default')));
+      expect(r.options, contains('red'));
+      expect(
+        _interpret('set_bubble_color', {'side': 'mine', 'color': 'blue'}),
+        isA<AssistAppProposal>(),
+      );
+    });
+
+    test('withArg answers a question of the app', () {
+      const call = ProposedCall('set_bubble_color', {'color': 'red'});
+      expect(
+        (_interpret(call.name, call.args) as AssistNeedsDetail).parameter,
+        'side',
+      );
+      final answered = call.withArg('side', 'theirs');
+      expect(
+        (_interpret(answered.name, answered.args) as AssistAppProposal).change,
+        AppChange(AppSetting.otherBubbleColor, null, Colors.red.toARGB32()),
+      );
+      expect(call.args, {'color': 'red'});
+    });
+
+    test('app color, wallpaper and gestures', () {
+      AppChange change(AssistResult r) => (r as AssistAppProposal).change;
+      expect(
+        change(_interpret('set_app_color', {'color': 'default'})),
+        AppChange(AppSetting.appColor, null, AppConfig.chatColor.toARGB32()),
+      );
+      expect(
+        (_interpret('set_app_color', {}) as AssistNeedsDetail).parameter,
+        'color',
+      );
+      expect(
+        change(_interpret('set_wallpaper', {'wallpaper': 'blank'})),
+        const AppChange(AppSetting.wallpaper, null, 'none'),
+      );
+      expect(
+        change(_interpret('set_wallpaper', {'wallpaper': 'default'})).value,
+        'none',
+      );
+      expect(
+        change(
+          _interpret('set_wallpaper', {
+            'wallpaper': 'default',
+            'scope': 'one_chat',
+          }, roomId: '!a'),
+        ),
+        const AppChange(AppSetting.wallpaper, '!a', null),
+      );
+      expect(
+        _interpret('set_wallpaper', {
+          'wallpaper': 'pattern',
+          'scope': 'one_chat',
+        }),
+        isA<AssistNeedsChat>(),
+      );
+      expect(
+        change(
+          _interpret('set_gesture', {
+            'gesture': 'autoplay_gifs',
+            'enabled': false,
+          }),
+        ),
+        const AppChange(AppSetting.autoplayGifs, null, false),
+      );
+      expect(
+        _interpret('set_gesture', {'gesture': 'shake', 'enabled': true}),
+        isA<AssistNoSuggestion>(),
+      );
+    });
+
+    test('mute false is unmute', () {
+      expect(
+        (_interpret('mute_chat', {'enabled': false}, roomId: '!a')
+                as AssistAppProposal)
+            .change,
+        const AppChange(AppSetting.muted, '!a', false),
+      );
     });
   });
 

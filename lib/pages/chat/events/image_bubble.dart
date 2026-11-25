@@ -95,6 +95,7 @@ class ImageBubble extends StatelessWidget {
                           height: height,
                           fit: fit,
                           animated: animated,
+                          autoplay: AppSettings.autoplayImages.value,
                           isThumbnail: thumbnailOnly,
                           placeholder: event.messageType == MessageTypes.Sticker
                               ? null

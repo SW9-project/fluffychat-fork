@@ -32,11 +32,9 @@
         "I have parkinson's and the buttons are too small to tap",
         "the controls are too small",
         "enlarge the buttons",
-        "big buttons please, my hands shake",
         "buttons bigger",
         "I can't find the buttons, they're too small",
         "it's hard to tap on the icons",
-        "can you make the buttons a bit larger",
         "I want chunkier buttons",
         "the buttons are so small my finger covers them",
         "bttns r tiny",
@@ -48,26 +46,72 @@
         "Could the buttons please be made larger? I find them difficult to press."
       ]
     },
+    {"args": {"direction": "bigger", "steps": 1}, "prompts": ["can you make the buttons a bit larger"]},
     {
-      "args": {"direction": "bigger", "steps": 2},
+      "args": {"direction": "bigger", "steps": 3},
       "prompts": [
         "make the buttons much bigger",
         "the buttons need to be quite a bit larger",
         "considerably larger icons please",
-        "much bigger buttons pls"
-      ]
-    },
-    {
-      "args": {"direction": "bigger", "steps": 3},
-      "prompts": [
-        "make the buttons as big as possible",
-        "the biggest buttons you have",
+        "much bigger buttons pls",
         "make the buttons a lot bigger",
-        "huge buttons please",
-        "maximum button size",
         "way bigger buttons"
       ]
     },
+    {
+      "args": {"size": "big"},
+      "prompts": [
+        "big buttons please, my hands shake",
+        "make the buttons big",
+        "large icons please",
+        "set the buttons to big",
+        "i want big buttons"
+      ]
+    },
+    {
+      "args": {"size": "very_big"},
+      "prompts": [
+        "make the buttons as big as possible",
+        "the biggest buttons you have",
+        "huge buttons please",
+        "maximum button size",
+        "very big buttons",
+        "giant icons please"
+      ]
+    },
+    {
+      "args": {"size": "medium"},
+      "prompts": [
+        "medium buttons",
+        "set the button size to medium",
+        "buttons medium please"
+      ]
+    },
+    {
+      "args": {"size": "small"},
+      "prompts": [
+        "small buttons",
+        "smallest buttons please",
+        "minimum button size",
+        "tiny icons please"
+      ]
+    },
+    {"args": {"size": "1.6"}, "prompts": ["button size 1.6"]},
+    {"args": {"size": "2"}, "prompts": ["buttons to 2"]},
+    {"args": {"size": "150%"}, "prompts": ["150% buttons"]},
+    {"args": {"size": "130%"}, "prompts": ["icons at 130%"]},
+    {"args": {"size": "1.2"}, "prompts": ["buttons 1.2 please"]},
+    {"args": {"size": "big", "button": "send"}, "prompts": ["a big send button please"]},
+    {"args": {"size": "very_big", "button": "send"}, "prompts": ["make the send button as big as possible", "huge send button"]},
+    {"args": {"size": "1.8", "button": "send"}, "prompts": ["make the send button 1.8"]},
+    {"args": {"size": "big", "button": "microphone"}, "prompts": ["make the microphone big"]},
+    {"args": {"size": "very_big", "button": "back"}, "prompts": ["the back arrow as big as it goes"]},
+    {"args": {"size": "medium", "button": "menu"}, "prompts": ["medium size for the menu button"]},
+    {"args": {"size": "small", "button": "navigation"}, "prompts": ["make the navigation buttons small"]},
+    {"args": {"size": "1,5", "button": "attach"}, "prompts": ["attach button 1,5"]},
+    {"args": {"size": "1.4", "button": "search"}, "prompts": ["set the search button to 1.4"]},
+    {"args": {"size": "2", "button": "emoji"}, "prompts": ["the emoji button to 2"]},
+    {"args": {"direction": "bigger", "button": "send", "steps": 1}, "prompts": ["the send button a tad bigger"]},
     {
       "args": {"direction": "smaller"},
       "prompts": [
@@ -79,11 +123,18 @@
         "reduce the button size",
         "buttons r too big now",
         "the icons are too large, make them smaller",
-        "can you shrink the buttons a little"
+        "the buttons are huge",
+        "these buttons are enormous"
       ]
     },
-    {"args": {"direction": "smaller", "steps": 2}, "prompts": ["make the buttons much smaller"]},
-    {"args": {"direction": "smaller", "steps": 3}, "prompts": ["smallest buttons please"]},
+    {"args": {"direction": "smaller", "steps": 1}, "prompts": ["can you shrink the buttons a little"]},
+    {
+      "args": {"direction": "smaller", "steps": 3},
+      "prompts": [
+        "make the buttons much smaller",
+        "a lot smaller buttons please"
+      ]
+    },
     {
       "args": {"direction": "bigger", "button": "send"},
       "prompts": [
@@ -98,8 +149,8 @@
         "the send icon is too small to hit"
       ]
     },
-    {"args": {"direction": "bigger", "button": "send", "steps": 3}, "prompts": ["make the send button as big as possible"]},
-    {"args": {"direction": "smaller", "button": "send"}, "prompts": ["the send button is too big"]},
+    {"args": {"direction": "bigger", "button": "send", "steps": 3}, "prompts": ["make the send button a lot bigger"]},
+    {"args": {"direction": "smaller", "button": "send"}, "prompts": ["the send button is too big", "the send button is huge"]},
     {
       "args": {"direction": "bigger", "button": "attach"},
       "prompts": [
@@ -124,7 +175,7 @@
         "the emoji face is tiny"
       ]
     },
-    {"args": {"direction": "bigger", "button": "emoji", "steps": 2}, "prompts": ["make the emoji button much bigger"]},
+    {"args": {"direction": "bigger", "button": "emoji", "steps": 3}, "prompts": ["make the emoji button much bigger"]},
     {
       "args": {"direction": "bigger", "button": "microphone"},
       "prompts": [

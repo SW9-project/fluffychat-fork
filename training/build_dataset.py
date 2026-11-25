@@ -30,11 +30,15 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 TOOLS_PATH = HERE.parent / "assets" / "personalization_tools.json"
 SOURCE_DIR = HERE / "source"
-OUT_DIR = HERE / "data"
+RUN = HERE / "Train2"
+OUT_DIR = RUN / "data"
 
 SEED = 20261107
 EVAL_SHARE = 0.15
 MIN_PER_FUNCTION = 50
+MAX_TOKENS = 4096  # training MAX_LENGTH and the phone's context
+SIZE_WORDS = ["small", "medium", "big", "very_big"]
+SIZE_NUMBER = re.compile(r"^\d+([.,]\d+)?\s*%?$")
 NEGATIVE = {"ask_clarification", "no_action"}
 
 # After a change the app answers the call with its status, then closes the
@@ -69,6 +73,13 @@ def normalize_call(tools, name, args, where):
         if kind == "string":
             if not isinstance(value, str) or not value.strip():
                 raise BuildError(f"{where}: {name}.{key} must be a non-empty string")
+            if key == "size" and value not in SIZE_WORDS:
+                if not SIZE_NUMBER.match(value):
+                    raise BuildError(f"{where}: {name}.size={value!r} is not a size word or a number")
+                # The same range as the app's interpreter, which rejects the rest.
+                number = float(value.replace("%", "").replace(",", ".").strip())
+                if not 0.5 <= (number / 100 if "%" in value else number) <= 3:
+                    raise BuildError(f"{where}: {name}.size={value!r} is outside 0.5 to 3")
             if "enum" in schema and value not in schema["enum"]:
                 raise BuildError(f"{where}: {name}.{key}={value!r} is not in {schema['enum']}")
         elif kind == "integer":
@@ -95,7 +106,9 @@ def normalize_call(tools, name, args, where):
     for key in tool["parameters"].get("required", []):
         if key not in out:
             raise BuildError(f"{where}: {name} needs {key!r}")
-    if "chat" in out and out.get("scope") != "one_chat":
+    if "size" in props and ("direction" in out) == ("size" in out):
+        raise BuildError(f"{where}: {name} needs direction or size, never both")
+    if "chat" in out and "scope" in props and out.get("scope") != "one_chat":
         raise BuildError(f"{where}: a chat name needs scope one_chat")
     return name, out
 
@@ -256,6 +269,8 @@ def token_report(tools_by_name, order, examples, tokenizer_path, template_path):
     values = [n for n, _ in lengths]
     print(f"tokens per example: min {values[0]}, median {values[len(values) // 2]}, "
           f"max {values[-1]} ({lengths[-1][1]})")
+    if values[-1] > MAX_TOKENS:
+        raise BuildError(f"{lengths[-1][1]} has {values[-1]} tokens, more than {MAX_TOKENS}")
 
 
 def main():
@@ -267,7 +282,7 @@ def main():
     try:
         examples = load_examples(tools)
         train, evaluation = split(examples)
-        OUT_DIR.mkdir(exist_ok=True)
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
         write_jsonl(OUT_DIR / "train.jsonl", train)
         write_jsonl(OUT_DIR / "eval.jsonl", evaluation)
         report(order, train, evaluation)

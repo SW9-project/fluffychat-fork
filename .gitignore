@@ -333,6 +333,9 @@ assets/models/baseline/*.litertlm
 assets/models/baseline/*.part
 
 # Training model
+training/.venv/
+training/.convert-venv/
+training/.hf/
 training/output/
 # Training runs: data and sources are tracked, results are shared on Drive
 training/Train*/output/

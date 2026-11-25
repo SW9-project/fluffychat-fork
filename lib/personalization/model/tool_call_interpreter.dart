@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import 'package:material_ui/material_ui.dart' show ThemeMode;
+import 'package:fluffychat/config/app_config.dart';
+import 'package:material_ui/material_ui.dart' show Colors, ThemeMode;
 
 import '../accessibility_settings.dart';
 import '../suggestions/suggestion.dart';
+import 'app_change.dart';
 import 'personalization_tools.dart';
 import 'settings_intent_model.dart';
 
@@ -29,6 +31,9 @@ enum UnchangedReason {
 
   /// The setting is already as asked, or already normal for a reset.
   alreadySet,
+
+  /// The bubbles of the other side already have the color.
+  sameAsOtherSide,
 }
 
 /// What the Assist tab does with one call of the model.
@@ -53,7 +58,29 @@ class AssistClarification extends AssistResult {
   const AssistClarification(this.call, this.options);
 }
 
-/// Text size for one chat, but the app has to ask which chat: none was named,
+/// A change of an app setting to show with a preview and apply on
+/// confirmation.
+class AssistAppProposal extends AssistResult {
+  final ProposedCall call;
+  final AppChange change;
+
+  const AssistAppProposal(this.call, this.change);
+}
+
+/// The call is valid but lacks a detail the app asks for: [parameter] is
+/// `side` or `color`, and [options] are the values to choose from.
+class AssistNeedsDetail extends AssistResult {
+  final ProposedCall call;
+  final String parameter;
+  final List<String> options;
+
+  /// The chat the change is for, once it is known.
+  final String? roomId;
+
+  const AssistNeedsDetail(this.call, this.parameter, this.options, this.roomId);
+}
+
+/// A change for one chat, but the app has to ask which chat: none was named,
 /// or the name matches no chat or several. See
 /// [ToolCallInterpreter.forChat].
 class AssistNeedsChat extends AssistResult {
@@ -150,7 +177,34 @@ class ToolCallInterpreter {
     for (final b in AccessibleButton.values) b.category,
   ];
 
-  AssistResult interpret(ProposedCall? call) {
+  /// The ARGB of each color the functions name, except `default`.
+  static final colorValues = {
+    'red': Colors.red.toARGB32(),
+    'pink': Colors.pink.toARGB32(),
+    'purple': Colors.purple.toARGB32(),
+    'indigo': Colors.indigo.toARGB32(),
+    'blue': Colors.blue.toARGB32(),
+    'cyan': Colors.cyan.toARGB32(),
+    'teal': Colors.teal.toARGB32(),
+    'green': Colors.green.toARGB32(),
+    'lime': Colors.lime.toARGB32(),
+    'yellow': Colors.yellow.toARGB32(),
+    'amber': Colors.amber.toARGB32(),
+    'orange': Colors.orange.toARGB32(),
+    'brown': Colors.brown.toARGB32(),
+    'grey': Colors.blueGrey.toARGB32(),
+  };
+
+  static const _gestures = {
+    'swipe_to_reply': AppSetting.swipeToReply,
+    'double_tap_to_react': AppSetting.doubleTapToReact,
+    'send_on_enter': AppSetting.sendOnEnter,
+    'autoplay_gifs': AppSetting.autoplayGifs,
+  };
+
+  /// [roomId] is the chat of a call that was answered with
+  /// [AssistNeedsChat].
+  AssistResult interpret(ProposedCall? call, {String? roomId}) {
     if (call == null) return const AssistNoSuggestion(RejectionReason.noCall);
     if (!tools.declares(call.name)) {
       return AssistNoSuggestion(RejectionReason.unknownFunction, call);
@@ -162,12 +216,31 @@ class ToolCallInterpreter {
       return switch (call.name) {
         F.changeTextSize => _textSize(call),
         F.changeButtonSize => _buttonSize(call),
-        F.changeSpacing => _scale(call, [
-          ScaleCategory.spacing,
-        ], _sign(call, 'more', 'less')),
-        F.changeAvatarSize => _scale(call, [
-          ScaleCategory.avatar,
-        ], _sign(call, 'bigger', 'smaller')),
+        F.changeSpacing => _scale(
+          call,
+          [ScaleCategory.spacing],
+          'more',
+          'less',
+        ),
+        F.changeLineSpacing => _scale(
+          call,
+          [ScaleCategory.lineSpacing],
+          'more',
+          'less',
+        ),
+        F.changeAvatarSize => _scale(
+          call,
+          [ScaleCategory.avatar],
+          'bigger',
+          'smaller',
+        ),
+        F.setReadAloud => _toggle(call, AccessibilityToggle.tripleTapToRead),
+        F.setBubbleColor => _bubbleColor(call, roomId),
+        F.setAppColor => _appColor(call),
+        F.setWallpaper => _wallpaper(call, roomId),
+        F.setGesture => _gesture(call),
+        F.pinChat => _chatToggle(call, roomId, AppSetting.pinned),
+        F.muteChat => _chatToggle(call, roomId, AppSetting.muted),
         F.setButtonLabels => _toggle(call, AccessibilityToggle.buttonLabels),
         F.setHighContrast => _toggle(call, AccessibilityToggle.highContrast),
         F.setTheme => _theme(call),
@@ -182,18 +255,19 @@ class ToolCallInterpreter {
     }
   }
 
-  /// The text size of the chat with [roomId], for a `change_text_size` call
-  /// that was answered with [AssistNeedsChat].
+  /// The change for the chat with [roomId], for a call that was answered with
+  /// [AssistNeedsChat]. Text size changes only that chat's text.
   AssistResult forChat(ProposedCall call, String roomId) {
+    if (call.name != F.changeTextSize) return interpret(call, roomId: roomId);
     try {
       // Steps of the whole message size, as the chat's slider shows it.
       final from = settings.messageScale(roomId);
       const range = AccessibilitySettings.chatTextRange;
-      final sign = _sign(call, 'bigger', 'smaller');
-      final to = range.normalize(from + sign * _amount(call, range));
-      if (to == from) {
-        return AssistUnchanged(call, UnchangedReason.atLimit, range);
-      }
+      final size = _size(call, range);
+      final to = range.normalize(
+        size ?? from + _sign(call, 'bigger', 'smaller') * _amount(call, range),
+      );
+      if (to == from) return _unchanged(call, range);
       final below = settings.effective(ScaleCategory.messageText);
       return AssistProposal(
         call,
@@ -208,7 +282,6 @@ class ToolCallInterpreter {
   }
 
   AssistResult _textSize(ProposedCall call) {
-    final sign = _sign(call, 'bigger', 'smaller');
     final chat = _string(call, 'chat');
     final scope = _enum(call, 'scope');
     // A named chat always means that chat, also when the scope is left out.
@@ -216,11 +289,10 @@ class ToolCallInterpreter {
       return AssistNeedsChat(call, chat?.isEmpty ?? true ? null : chat);
     }
     final target = _textTargets[_enum(call, 'target')]!;
-    return _scale(call, [target], sign);
+    return _scale(call, [target], 'bigger', 'smaller');
   }
 
   AssistResult _buttonSize(ProposedCall call) {
-    final sign = _sign(call, 'bigger', 'smaller');
     final button = _enum(call, 'button');
     // All buttons: the icons and the area that reacts to a tap. One button:
     // its own icon, and its box grows with it.
@@ -229,28 +301,41 @@ class ToolCallInterpreter {
       button == 'all'
           ? [ScaleCategory.button, ScaleCategory.touchTarget]
           : [_buttons[button]!.category],
-      sign,
+      'bigger',
+      'smaller',
     );
   }
 
   AssistResult _scale(
     ProposedCall call,
     List<ScaleCategory> categories,
-    int sign,
+    String up,
+    String down,
   ) {
     var next = settings;
     for (final c in categories) {
-      // Steps of the whole size, as the slider shows it.
+      // Steps of the whole size, as the slider shows it. An exact size wins
+      // over the direction.
+      final size = _size(call, c);
       next = next.withEffective(
         c,
-        settings.effective(c) + sign * _amount(call, c),
+        size ??
+            settings.effective(c) + _sign(call, up, down) * _amount(call, c),
       );
     }
-    if (next == settings) {
-      return AssistUnchanged(call, UnchangedReason.atLimit, categories.first);
-    }
+    if (next == settings) return _unchanged(call, categories.first);
     return AssistProposal(call, SettingsChange(from: settings, to: next));
   }
+
+  /// An exact size is already set; a step goes no further.
+  AssistUnchanged _unchanged(ProposedCall call, ScaleCategory category) =>
+      AssistUnchanged(
+        call,
+        call.args['size'] == null
+            ? UnchangedReason.atLimit
+            : UnchangedReason.alreadySet,
+        category,
+      );
 
   AssistResult _toggle(ProposedCall call, AccessibilityToggle toggle) {
     final enabled = _bool(call, 'enabled');
@@ -292,6 +377,11 @@ class ToolCallInterpreter {
       'button_size' => reset(_buttonCategories),
       'spacing' => settings.without(ScaleCategory.spacing),
       'avatar_size' => settings.without(ScaleCategory.avatar),
+      'line_spacing' => settings.without(ScaleCategory.lineSpacing),
+      'read_aloud' => settings.withToggle(
+        AccessibilityToggle.tripleTapToRead,
+        false,
+      ),
       'button_labels' => settings.withToggle(
         AccessibilityToggle.buttonLabels,
         false,
@@ -306,6 +396,95 @@ class ToolCallInterpreter {
       return AssistUnchanged(call, UnchangedReason.alreadySet);
     }
     return AssistProposal(call, SettingsChange(from: settings, to: next));
+  }
+
+  /// Whether [call] is for one chat: `one_chat`, or a chat named, which
+  /// always means that chat. False when it is for everywhere.
+  bool _forOneChat(ProposedCall call) =>
+      _enum(call, 'scope') == 'one_chat' ||
+      (_string(call, 'chat')?.isNotEmpty ?? false);
+
+  AssistNeedsChat _needsChat(ProposedCall call) {
+    final chat = _string(call, 'chat');
+    return AssistNeedsChat(call, chat == null || chat.isEmpty ? null : chat);
+  }
+
+  /// The value of an enum without a default, or null when left out.
+  String? _optionalEnum(ProposedCall call, String parameter) =>
+      call.args[parameter] == null ? null : _enum(call, parameter);
+
+  AssistResult _bubbleColor(ProposedCall call, String? roomId) {
+    final chat = _forOneChat(call);
+    if (chat && roomId == null) return _needsChat(call);
+    final room = chat ? roomId : null;
+    final side = _optionalEnum(call, 'side');
+    if (side == null) {
+      return AssistNeedsDetail(call, 'side', const ['mine', 'theirs'], room);
+    }
+    final color = _optionalEnum(call, 'color');
+    if (color == null) return _needsColor(call, room);
+    return AssistAppProposal(
+      call,
+      AppChange(
+        side == 'mine'
+            ? AppSetting.ownBubbleColor
+            : AppSetting.otherBubbleColor,
+        room,
+        colorValues[color],
+      ),
+    );
+  }
+
+  AssistNeedsDetail _needsColor(ProposedCall call, String? roomId) =>
+      AssistNeedsDetail(call, 'color', colorValues.keys.toList(), roomId);
+
+  AssistResult _appColor(ProposedCall call) {
+    final color = _optionalEnum(call, 'color');
+    if (color == null) return _needsColor(call, null);
+    return AssistAppProposal(
+      call,
+      // default is the app's own color, which the Style page offers next to
+      // the system one.
+      AppChange(
+        AppSetting.appColor,
+        null,
+        colorValues[color] ?? AppConfig.chatColor.toARGB32(),
+      ),
+    );
+  }
+
+  AssistResult _wallpaper(ProposedCall call, String? roomId) {
+    final chat = _forOneChat(call);
+    if (chat && roomId == null) return _needsChat(call);
+    final value = switch (_enum(call, 'wallpaper')) {
+      'blank' => 'none',
+      'pattern' => 'pattern',
+      // The chat's default is the app's wallpaper; the app's is none.
+      _ => chat ? null : 'none',
+    };
+    return AssistAppProposal(
+      call,
+      AppChange(AppSetting.wallpaper, chat ? roomId : null, value),
+    );
+  }
+
+  AssistResult _gesture(ProposedCall call) {
+    final setting = _gestures[_enum(call, 'gesture')];
+    if (setting == null) throw const _Invalid();
+    return AssistAppProposal(
+      call,
+      AppChange(setting, null, _bool(call, 'enabled')),
+    );
+  }
+
+  AssistResult _chatToggle(
+    ProposedCall call,
+    String? roomId,
+    AppSetting setting,
+  ) {
+    final enabled = _bool(call, 'enabled');
+    if (roomId == null) return _needsChat(call);
+    return AssistAppProposal(call, AppChange(setting, roomId, enabled));
   }
 
   AssistResult _clarification(ProposedCall call) {
@@ -341,14 +520,40 @@ class ToolCallInterpreter {
     throw const _Invalid();
   }
 
-  /// How much a call changes [category]: one suggestion step for a plain
-  /// "bigger", and 0.5 for "much" or "a lot" (steps 2 and 3, which the model
-  /// does not tell apart reliably).
+  /// How much a call changes [category]: one slider step for "a little"
+  /// (1), one suggestion step for a plain "bigger" (2, the default), and 0.5
+  /// for "a lot" (3).
   double _amount(ProposedCall call, ScaleCategory category) =>
-      _steps(call) == 1 ? category.suggestionStep : 0.5;
+      switch (_steps(call)) {
+        1 => category.step,
+        3 => 0.5,
+        _ => category.suggestionStep,
+      };
 
-  /// Steps default to 1, accept numbers and numeric strings, and are clamped
-  /// to the declared range. Anything else is invalid.
+  /// The exact size of a call for [category], or null when it has none: a
+  /// word of [PersonalizationTools.sizeWords], or a number as a factor (1.6,
+  /// 1,6) or a percentage (160%). Sizes outside 0.5 to 3 are invalid, and
+  /// the category clamps the rest.
+  double? _size(ProposedCall call, ScaleCategory category) {
+    final raw = call.args['size'];
+    if (raw == null) return null;
+    if (raw is! String && raw is! num) throw const _Invalid();
+    final text = raw.toString().trim().toLowerCase().replaceAll(' ', '_');
+    final word = F.sizeWords.indexOf(text);
+    if (word >= 0) return [category.min, 1.0, 1.5, 2.0][word];
+    final percent = text.endsWith('%');
+    final number = num.tryParse(
+      text.replaceAll('%', '').replaceAll('_', '').replaceAll(',', '.'),
+    );
+    if (number == null || number.isNaN) throw const _Invalid();
+    final size = percent ? number / 100 : number;
+    if (size < 0.5 || size > 3) throw const _Invalid();
+    return size.toDouble();
+  }
+
+  /// Steps default to the declared default, accept numbers and numeric
+  /// strings, and are clamped to the declared range. Anything else is
+  /// invalid.
   int _steps(ProposedCall call) {
     final value = call.args['steps'] ?? tools.defaultOf(call.name, 'steps');
     final (min, max) = tools.rangeOf(call.name, 'steps') ?? (1, 3);

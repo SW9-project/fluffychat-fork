@@ -1,0 +1,93 @@
+{
+  "function": "change_avatar_size",
+  "groups": [
+    {
+      "args": {"direction": "bigger"},
+      "prompts": [
+        "the profile pictures are too small",
+        "make the profile pictures bigger",
+        "I can't see who wrote the message",
+        "bigger photos of people please",
+        "the little round pictures are tiny",
+        "make the avatars larger",
+        "I can't tell who's who",
+        "the faces next to the messages are too small",
+        "I can't recognize my friends' pictures",
+        "bigger profile photos",
+        "the pictures of my contacts are too small",
+        "who sent this? the picture is too small",
+        "make the circles with faces bigger",
+        "the profile pics are tiny",
+        "avatars too small",
+        "I can't see my grandchildren's photos in the list",
+        "larger contact pictures",
+        "the user pictures need to be bigger",
+        "it's hard to see who the chat is with",
+        "profil pictures bigger pls",
+        "make people's photos bigger",
+        "the little faces are hard to see",
+        "I can't make out the faces in the chat list",
+        "enlarge the avatars",
+        "bigger pictures of the people I talk to",
+        "the profile images are too small to recognize anyone",
+        "increase profile picture size",
+        "I don't know who is writing, the photos are so small",
+        "the round photos are too small",
+        "can the pictures of people be larger",
+        "make the avatar icons bigger",
+        "the pictures beside the names are tiny",
+        "i cant see the faces",
+        "photos of my contacts bigger",
+        "my family's faces are so small in the list",
+        "make the profile pictures a bit bigger",
+        "I can't see whose message it is",
+        "the tiny circles with people's pictures should be bigger",
+        "make the contact photos larger please",
+        "the avatar pictures are too small for my eyes",
+        "bigger faces next to the chats",
+        "I can't recognise anyone from their picture",
+        "the profile photo next to each message is too small",
+        "who is this? I can't see the photo",
+        "the people's pictures are tiny",
+        "can u make the profile pics bigger",
+        "larger avatars",
+        "my daughter's photo is so small I can't see it",
+        "increase the size of the profile pictures a little"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "steps": 2},
+      "prompts": [
+        "make the profile pictures much bigger",
+        "considerably larger profile photos"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "steps": 3},
+      "prompts": [
+        "make the profile pictures as big as possible",
+        "huge avatars please",
+        "the profile pictures should be a lot bigger"
+      ]
+    },
+    {
+      "args": {"direction": "smaller"},
+      "prompts": [
+        "the profile pictures are too big",
+        "make the avatars smaller",
+        "the photos of people take too much space",
+        "smaller profile pictures please",
+        "the faces are huge",
+        "reduce the profile picture size",
+        "the round pictures are too large",
+        "the profile pics are too big now",
+        "shrink the avatars",
+        "the contact photos are enormous",
+        "the avatars are too big now, make them smaller",
+        "smaller faces please"
+      ]
+    },
+    {"args": {"direction": "smaller", "steps": 2}, "prompts": ["make the profile pictures much smaller"]},
+    {"args": {"direction": "smaller", "steps": 3}, "prompts": ["smallest profile pictures"]}
+  ]
+}

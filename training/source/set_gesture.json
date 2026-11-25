@@ -1,0 +1,127 @@
+{
+  "function": "set_gesture",
+  "groups": [
+    {
+      "args": {"gesture": "swipe_to_reply", "enabled": false},
+      "prompts": [
+        "I keep replying by accident",
+        "turn off swipe to reply",
+        "when I swipe on a message it starts a reply, stop that",
+        "disable swipe reply",
+        "every time I scroll it quotes a message",
+        "my finger slides across a message and it starts answering",
+        "stop the swiping to reply",
+        "swipe to reply off",
+        "i dont want to reply when i swipe",
+        "I keep answering messages I didn't mean to when I move my finger",
+        "the reply box pops up when I slide a message, turn it off",
+        "no swipe to answer please",
+        "accidental replies when I swipe, please stop it",
+        "I only want to scroll, not reply, when I drag a message"
+      ]
+    },
+    {
+      "args": {"gesture": "swipe_to_reply", "enabled": true},
+      "prompts": [
+        "turn swipe to reply back on",
+        "I want to swipe to answer a message",
+        "enable swipe to reply",
+        "let me reply by swiping",
+        "swipe to reply on",
+        "bring back swiping to reply"
+      ]
+    },
+    {
+      "args": {"gesture": "double_tap_to_react", "enabled": false},
+      "prompts": [
+        "I keep adding reactions by accident",
+        "when I tap twice it puts a heart on the message, turn that off",
+        "turn off double tap to react",
+        "stop the double tap reactions",
+        "I accidentally like messages all the time",
+        "double tap reaction off",
+        "my shaky fingers tap twice and it reacts, stop it",
+        "disable reacting with a double tap",
+        "there are thumbs up on messages I never meant to send",
+        "no reactions when I tap twice please",
+        "i keep putting emojis on messages by mistake",
+        "the double tap thing is annoying, switch it off",
+        "my grandchildren think I'm liking their messages but it's an accident"
+      ]
+    },
+    {
+      "args": {"gesture": "double_tap_to_react", "enabled": true},
+      "prompts": [
+        "turn on double tap to react",
+        "I want to tap twice to like a message",
+        "enable double tap reactions",
+        "let me react by tapping twice",
+        "double tap to react on",
+        "bring back the double tap heart"
+      ]
+    },
+    {
+      "args": {"gesture": "send_on_enter", "enabled": false},
+      "prompts": [
+        "the message sends when I press enter",
+        "I want enter to make a new line",
+        "it sends before I'm done when I press return",
+        "stop sending on enter",
+        "turn off send with enter",
+        "I keep sending half messages because of the enter key",
+        "enter should not send the message",
+        "the return key sends my message, I just want a new line",
+        "disable enter to send",
+        "every time I press enter my message goes off unfinished",
+        "send on enter off",
+        "I want to write several lines but enter sends it",
+        "my messages get sent by accident with the enter key",
+        "pressing return shouldnt send"
+      ]
+    },
+    {
+      "args": {"gesture": "send_on_enter", "enabled": true},
+      "prompts": [
+        "send with the enter key",
+        "make enter send the message",
+        "I want the return key to send",
+        "turn on send on enter",
+        "pressing enter should send",
+        "enable enter to send",
+        "can I send messages by pressing enter"
+      ]
+    },
+    {
+      "args": {"gesture": "autoplay_gifs", "enabled": false},
+      "prompts": [
+        "stop the GIFs moving",
+        "the moving pictures are distracting",
+        "animated stickers play by themselves, stop that",
+        "don't autoplay gifs",
+        "the gifs make me dizzy",
+        "turn off autoplay for gifs",
+        "I don't want the stickers to move on their own",
+        "stop animations playing by themselves",
+        "the jumping pictures make me feel sick",
+        "the moving images in the chat are too much for me",
+        "only play a gif when I tap it",
+        "pause the animated stickers",
+        "no moving gifs please",
+        "the gifs keep playing, it's annoying",
+        "the dancing cats in the group chat won't stop moving, make them still"
+      ]
+    },
+    {
+      "args": {"gesture": "autoplay_gifs", "enabled": true},
+      "prompts": [
+        "play gifs automatically",
+        "I want the stickers to move",
+        "let animations play on their own",
+        "turn on autoplay for gifs",
+        "the gifs don't move, make them play by themselves",
+        "autoplay gifs on",
+        "can the animated stickers play without tapping"
+      ]
+    }
+  ]
+}

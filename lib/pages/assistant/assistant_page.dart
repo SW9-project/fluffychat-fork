@@ -5,6 +5,7 @@
 
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/personalization/accessibility_scope.dart';
+import 'package:fluffychat/personalization/assist/assist_actions.dart';
 import 'package:fluffychat/personalization/assist/assist_view.dart';
 import 'package:fluffychat/personalization/assistant_tutorial.dart';
 import 'package:fluffychat/personalization/assistant_tutorial_l10n.dart';
@@ -126,6 +127,10 @@ class _AssistantPageState extends State<AssistantPage> {
                 tools: _tools,
                 themeMode: () => ThemeController.of(context).themeMode,
                 chats: () => _chats(context),
+                actions: MatrixAssistActions(
+                  Matrix.of(context).client,
+                  ThemeController.of(context),
+                ),
                 guide: _guide,
               ),
       ),

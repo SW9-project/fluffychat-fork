@@ -252,13 +252,20 @@ class Message extends StatelessWidget {
             ),
           ];
     final eventStateTextColor = theme.colorScheme.onSurface;
+    // Either way the subtree belongs to this event, sent or not.
+    final eventKey = ValueKey(event.transactionId ?? event.eventId);
+    Widget swipeToReply(Widget child) => AppSettings.swipeToReply.value
+        ? SwipeToReply(
+            key: eventKey,
+            rightToLeft: AppSettings.swipeRightToLeftToReply.value,
+            onReply: onSwipe,
+            child: child,
+          )
+        : KeyedSubtree(key: eventKey, child: child);
 
     return Center(
-      child: SwipeToReply(
-        key: ValueKey(event.transactionId ?? event.eventId),
-        rightToLeft: AppSettings.swipeRightToLeftToReply.value,
-        onReply: onSwipe,
-        child: Container(
+      child: swipeToReply(
+        Container(
           constraints: const BoxConstraints(
             maxWidth: FluffyThemes.maxTimelineWidth,
           ),

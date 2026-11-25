@@ -46,7 +46,6 @@
         "i always hit the wrong one theyre too close",
         "I wanted to send but pressed the microphone, they are too close",
         "the icons are jammed together",
-        "Could you please put a little more distance between the buttons?",
         "the things to tap are glued together",
         "more gap between the icons pls",
         "the buttons need more space around them",
@@ -56,24 +55,87 @@
         "it's too squashed, I press the wrong buttons",
         "put the buttons further apart",
         "the chats in the list are too close, I open the wrong one",
-        "the buttons are too near each other"
+        "the buttons are too near each other",
+        "the buttons almost touch each other",
+        "the icons are cramped, I tap the wrong one",
+        "more room between the things I tap",
+        "the buttons at the bottom are squashed together",
+        "the icons are packed too tightly, I hit the wrong ones",
+        "the gap between the send and the attach button is too small",
+        "spread out the icons, not the text",
+        "not the lines, the buttons are too close together",
+        "the buttons are squeezed together",
+        "my fingers hit two icons at once, they're so close",
+        "the buttons in the top bar are too close together",
+        "I hit emoji instead of attach, they're right next to each other",
+        "more space between the icons please"
       ]
     },
     {
-      "args": {"direction": "more", "steps": 2},
+      "args": {"direction": "more", "steps": 1},
       "prompts": [
-        "much more space between the buttons",
-        "considerably more room between the icons"
+        "Could you please put a little more distance between the buttons?",
+        "a little more space between the buttons",
+        "slightly more room between the icons",
+        "space the buttons out a bit"
       ]
     },
     {
       "args": {"direction": "more", "steps": 3},
       "prompts": [
+        "much more space between the buttons",
+        "considerably more room between the icons",
         "spread the buttons out a lot",
-        "as much space between the buttons as possible",
-        "a lot more spacing please"
+        "a lot more spacing please",
+        "spread the icons out much more"
       ]
     },
+    {
+      "args": {"size": "big"},
+      "prompts": [
+        "big spacing between the buttons",
+        "set the button spacing to big",
+        "large gaps between the icons",
+        "make the space between the buttons large"
+      ]
+    },
+    {
+      "args": {"size": "very_big"},
+      "prompts": [
+        "as much space between the buttons as possible",
+        "maximum space between the buttons",
+        "very big spacing between the buttons",
+        "the biggest gaps between the buttons",
+        "huge space between the icons"
+      ]
+    },
+    {
+      "args": {"size": "medium"},
+      "prompts": [
+        "medium spacing between the buttons",
+        "set the space between the icons to medium",
+        "button spacing medium"
+      ]
+    },
+    {
+      "args": {"size": "small"},
+      "prompts": [
+        "as little space between the buttons as possible",
+        "minimum space between the buttons",
+        "the smallest gaps between the icons",
+        "set the button spacing to small",
+        "small gaps between the buttons please"
+      ]
+    },
+    {"args": {"size": "1.5"}, "prompts": ["button spacing 1.5"]},
+    {"args": {"size": "2"}, "prompts": ["set the button spacing to 2"]},
+    {"args": {"size": "150%"}, "prompts": ["space between the buttons 150%"]},
+    {"args": {"size": "1.2"}, "prompts": ["make the gaps between the buttons 1.2"]},
+    {"args": {"size": "1,8"}, "prompts": ["spacing between the icons to 1,8"]},
+    {"args": {"size": "130%"}, "prompts": ["space between the icons 130%"]},
+    {"args": {"size": "1.4"}, "prompts": ["set the gaps between the buttons to 1.4"]},
+    {"args": {"size": "1.6"}, "prompts": ["set the space between the buttons to 1.6"]},
+    {"args": {"size": "big"}, "prompts": ["big gaps between the icons please, I have shaky hands"]},
     {
       "args": {"direction": "less"},
       "prompts": [
@@ -90,10 +152,21 @@
         "the buttons are miles apart",
         "make the spacing smaller",
         "less space please, it's too spread out",
-        "the icons are too far from each other"
+        "the icons are too far from each other",
+        "reduce the space between the buttons",
+        "the icons have too much space around them",
+        "the buttons are spread out, not the text lines, bring them closer",
+        "the gaps between the icons are huge",
+        "the space between the buttons is huge"
       ]
     },
-    {"args": {"direction": "less", "steps": 2}, "prompts": ["much less space between the buttons"]},
-    {"args": {"direction": "less", "steps": 3}, "prompts": ["as little space between the buttons as possible"]}
+    {"args": {"direction": "less", "steps": 1}, "prompts": ["bring the buttons a bit closer together"]},
+    {
+      "args": {"direction": "less", "steps": 3},
+      "prompts": [
+        "much less space between the buttons",
+        "a lot less space between the icons"
+      ]
+    }
   ]
 }

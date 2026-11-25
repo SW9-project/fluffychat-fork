@@ -2,13 +2,13 @@
 # SPDX-FileCopyrightText: 2026 SW9-project contributors
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Renders data/train.jsonl and data/eval.jsonl with FunctionGemma's chat
+"""Renders Train2/data/train.jsonl and Train2/data/eval.jsonl with FunctionGemma's chat
 template, through tokenizer.apply_chat_template, and prints one example.
 
     training/.venv/bin/python training/render_dataset.py
     training/.venv/bin/python training/render_dataset.py --show multi-answer-001
 
-Writes data/train_rendered.jsonl and data/eval_rendered.jsonl, one object per
+Writes Train2/data/train_rendered.jsonl and Train2/data/eval_rendered.jsonl, one object per
 line with:
 
     text        the whole rendered conversation
@@ -28,7 +28,7 @@ from transformers import AutoTokenizer
 HERE = Path(__file__).resolve().parent
 TOOLS_PATH = HERE.parent / "assets" / "personalization_tools.json"
 MODEL_DIR = HERE / "functiongemma-270m-it"
-DATA_DIR = HERE / "data"
+DATA_DIR = HERE / "Train2" / "data"
 
 REQUIRED = ["<start_function_declaration>", "<start_function_call>", "<escape>"]
 
@@ -82,7 +82,7 @@ def main():
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
         lengths += [len(tokenizer(r["text"], add_special_tokens=False).input_ids) for r in out]
         shown = shown or next((r for r in out if r["id"] == a.show), None)
-        print(f"{split}: {len(out)} examples -> data/{split}_rendered.jsonl")
+        print(f"{split}: {len(out)} examples -> Train2/data/{split}_rendered.jsonl")
 
     lengths.sort()
     print(f"tokens per example: min {lengths[0]}, median {lengths[len(lengths) // 2]}, max {lengths[-1]}")

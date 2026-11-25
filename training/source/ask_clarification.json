@@ -58,6 +58,16 @@
       ]
     },
     {
+      "args": {"options": ["change_spacing", "change_line_spacing"]},
+      "prompts": [
+        "the spacing",
+        "change the spacing",
+        "adjust the spacing",
+        "I want to change the spacing",
+        "different spacing please"
+      ]
+    },
+    {
       "args": {"options": ["change_text_size", "set_high_contrast"]},
       "prompts": [
         "change the text",
@@ -78,12 +88,17 @@
       ]
     },
     {
-      "args": {"options": ["set_high_contrast", "set_theme"]},
+      "args": {"options": ["set_high_contrast", "set_theme", "set_bubble_color", "set_app_color"]},
       "prompts": [
         "change the colors",
         "the colors are bad",
         "different colors please",
-        "I don't like the colors",
+        "I don't like the colors"
+      ]
+    },
+    {
+      "args": {"options": ["set_high_contrast", "set_theme"]},
+      "prompts": [
         "make it darker",
         "make it lighter",
         "my eyes hurt when I use the app"
@@ -119,6 +134,81 @@
         "the app looks wrong",
         "make the app better for an old person",
         "adjust the screen for me"
+      ]
+    },
+    {
+      "args": {"options": ["change_text_size", "change_button_size", "change_avatar_size"]},
+      "prompts": [
+        "make it big",
+        "set it to 1.5",
+        "medium please",
+        "very big",
+        "size 2",
+        "make it huge"
+      ]
+    },
+    {
+      "args": {"options": ["change_line_spacing"]},
+      "prompts": [
+        "change the line spacing",
+        "line spacing",
+        "adjust the space between the lines"
+      ]
+    },
+    {
+      "args": {"options": ["change_spacing"]},
+      "prompts": [
+        "change the space between the buttons",
+        "the gaps between the icons"
+      ]
+    },
+    {
+      "args": {"options": ["change_spacing", "change_line_spacing"]},
+      "prompts": [
+        "the spacing is off",
+        "fix the spacing",
+        "the spacing looks wrong",
+        "spacing please"
+      ]
+    },
+    {
+      "args": {"options": ["set_high_contrast", "set_theme", "set_bubble_color", "set_app_color"]},
+      "prompts": [
+        "the colors are wrong",
+        "change the colours",
+        "other colors"
+      ]
+    },
+    {
+      "args": {"options": ["set_bubble_color", "set_app_color"]},
+      "prompts": [
+        "make it green",
+        "I want it in blue",
+        "change the color to red",
+        "pink please",
+        "can it be orange",
+        "make it purple"
+      ]
+    },
+    {
+      "args": {"options": ["set_wallpaper"]},
+      "prompts": [
+        "change the wallpaper",
+        "the background of the chats",
+        "different chat background please",
+        "I want another wallpaper",
+        "change the background in the chats",
+        "the wallpaper"
+      ]
+    },
+    {
+      "args": {"options": ["set_gesture"]},
+      "prompts": [
+        "turn off the shortcuts",
+        "the gestures",
+        "change the gesture settings",
+        "things keep happening by accident when I touch a message",
+        "turn off that annoying shortcut"
       ]
     }
   ]

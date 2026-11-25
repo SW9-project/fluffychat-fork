@@ -1,0 +1,281 @@
+{
+  "function": "change_text_size",
+  "groups": [
+    {
+      "args": {"direction": "bigger"},
+      "prompts": [
+        "the text is too small",
+        "I can't read the text, it's too small",
+        "make the text bigger",
+        "bigger text please",
+        "bigger letters",
+        "can you make the writing larger",
+        "the font is tiny",
+        "increase the font size",
+        "my eyes are not what they used to be, I can barely read anything in this app",
+        "teh text is to small",
+        "cant read nothing its so small",
+        "make the words bigger",
+        "larger font",
+        "text bigger",
+        "everything written is too small for me",
+        "could you increase the size of the letters please",
+        "I need my glasses to read this, please make the text larger",
+        "font size up",
+        "the letters are so small I have to squint",
+        "zoom in on the text",
+        "the writing is hard to read",
+        "I have trouble reading the text",
+        "make the font larger please, I'm 82",
+        "my granddaughter installed this for me but the letters are tiny",
+        "biger text pls",
+        "txt too small",
+        "can u make the font bigger",
+        "the text is teeny tiny",
+        "Make all the text larger.",
+        "Please enlarge the text",
+        "I keep pinching the screen to read, can the text just be bigger",
+        "words are too small",
+        "bump up the text size",
+        "the type is too small",
+        "I can hardly read what it says",
+        "it's difficult to read the small print",
+        "small letters are a problem for me",
+        "I'm visually impaired, bigger text would help",
+        "the font should be bigger",
+        "Text size is too small for me to read comfortably",
+        "bigger font",
+        "i need larger text",
+        "the text is so tiny I can't read it",
+        "can't see the letters properly",
+        "the text is like ants",
+        "make the font size larger so I can read without glasses",
+        "letters too small",
+        "make the text a little bigger",
+        "slightly larger text please",
+        "the writing is too small for an old lady like me",
+        "fonts too small",
+        "Could the letters be a bit bigger? I struggle to read them.",
+        "make the txt larger",
+        "the text is way too small",
+        "i cant read the words",
+        "need bigger writing",
+        "font bigger",
+        "I read on my phone without my glasses and the text is too small",
+        "i struggle with the small font",
+        "please make reading easier with a bigger font"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "steps": 2},
+      "prompts": [
+        "make the text much bigger",
+        "the text needs to be quite a bit larger",
+        "considerably bigger font please",
+        "much larger letters",
+        "increase the text size by a fair amount",
+        "make the writing a good deal bigger",
+        "font much bigger pls",
+        "can the text be significantly larger"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "steps": 3},
+      "prompts": [
+        "make the text as big as possible",
+        "biggest font please",
+        "make the text a lot bigger",
+        "I want huge letters",
+        "maximum text size",
+        "the text needs to be way way bigger",
+        "make the font as large as it goes",
+        "set the text to the largest size",
+        "giant text please",
+        "make the letters very much larger"
+      ]
+    },
+    {
+      "args": {"direction": "smaller"},
+      "prompts": [
+        "the text is too big",
+        "make the text smaller",
+        "the font is too large",
+        "smaller letters please",
+        "the writing is huge, make it smaller",
+        "text too big",
+        "can you shrink the text",
+        "reduce the font size",
+        "the letters are enormous now",
+        "the text takes up too much space, make it smaller",
+        "decrease text size",
+        "the words are too big to fit on the screen",
+        "smaler font pls",
+        "the text is too large for me, I liked it smaller",
+        "make the font a little smaller",
+        "teh letters r too big",
+        "the letters are too big for the screen"
+      ]
+    },
+    {
+      "args": {"direction": "smaller", "steps": 2},
+      "prompts": [
+        "make the text much smaller",
+        "the font needs to be considerably smaller"
+      ]
+    },
+    {
+      "args": {"direction": "smaller", "steps": 3},
+      "prompts": [
+        "make the text as small as possible",
+        "smallest font please",
+        "make the text a lot smaller"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "target": "messages"},
+      "prompts": [
+        "the messages are too small to read",
+        "make the messages bigger",
+        "bigger text in the chat bubbles",
+        "I can't read what people write to me",
+        "the messages font is tiny",
+        "make the text of the messages larger",
+        "messges too small",
+        "can the message text be bigger, the rest is fine",
+        "the words in the conversations are too small",
+        "bigger messages please",
+        "the texts people send me are too small",
+        "I can barely read the chat messages",
+        "the speech bubbles text is tiny"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "target": "messages", "steps": 2},
+      "prompts": [
+        "make the messages much bigger"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "target": "chat_list"},
+      "prompts": [
+        "the list of chats is too small",
+        "make the chat list bigger",
+        "the names in the chat list are hard to read",
+        "bigger text on the main screen where all my chats are",
+        "I can't read the names of my conversations in the list",
+        "the chat names on the first page are tiny",
+        "make the list of conversations larger",
+        "chat list text bigger pls",
+        "the list of people I talk to is too small to read"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "target": "chat_list", "steps": 3},
+      "prompts": [
+        "make the chat list text as big as possible"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "target": "titles"},
+      "prompts": [
+        "make the title bigger",
+        "the title at the top is too small",
+        "the name at the top of the screen is hard to read",
+        "bigger headings please",
+        "the titles are tiny",
+        "I can't read the header at the top",
+        "make the top title text larger",
+        "make the heading at the top larger"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "target": "message_input"},
+      "prompts": [
+        "the text I type is too small",
+        "make the typing box text bigger",
+        "when I write a message the letters are tiny",
+        "I can't see what I'm typing",
+        "bigger text in the message box",
+        "the writing field text is too small",
+        "make my typing bigger",
+        "the letters in the box where I write are too small",
+        "the box where I type has tiny letters"
+      ]
+    },
+    {
+      "args": {"direction": "smaller", "target": "messages"},
+      "prompts": [
+        "the messages are too big now",
+        "make the chat bubbles text smaller"
+      ]
+    },
+    {
+      "args": {"direction": "smaller", "target": "chat_list"},
+      "prompts": [
+        "the chat list text is too large"
+      ]
+    },
+    {
+      "args": {"direction": "smaller", "target": "titles"},
+      "prompts": [
+        "the title at the top is too big",
+        "smaller headings please"
+      ]
+    },
+    {
+      "args": {"direction": "smaller", "target": "message_input"},
+      "prompts": [
+        "the text I type is too big"
+      ]
+    },
+    {
+      "args": {"direction": "bigger", "scope": "one_chat", "chat": "Maria"},
+      "prompts": [
+        "in Maria's chat I want the font size bigger",
+        "make the text bigger in the chat with Maria"
+      ]
+    },
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "John"}, "prompts": ["bigger text in my chat with John"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Peter"}, "prompts": ["only in Peter's chat, make the letters larger"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Family group"}, "prompts": ["the text in the Family group is too small"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Anna"}, "prompts": ["can you make the font bigger in the conversation with Anna"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "my son"}, "prompts": ["I can't read the text in the chat with my son"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Book Club"}, "prompts": ["bigger text in the Book Club chat"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "@maria:matrix.org"}, "prompts": ["make the writing larger when I talk to @maria:matrix.org"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "grandma"}, "prompts": ["text bigger in chat with grandma"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Dr. Hansen"}, "prompts": ["in the chat with Dr. Hansen the text is too small"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Lucy"}, "prompts": ["only for Lucy's chat, bigger font"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "peter123"}, "prompts": ["the text in my chat with peter123 is tiny"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Neighbours"}, "prompts": ["increase the text size in the Neighbours chat"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Carlos"}, "prompts": ["make the font bigger just in Carlos chat"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Ahmed"}, "prompts": ["in Ahmed's conversation make the text larger"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "church group"}, "prompts": ["can i have bigger letters in the church group chat"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "@jonas.berg:matrix.org"}, "prompts": ["bigger font for my chat with @jonas.berg:matrix.org please"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Sophie"}, "prompts": ["i want the words bigger but only when im talking to Sophie"]},
+    {
+      "args": {"direction": "bigger", "scope": "one_chat"},
+      "prompts": [
+        "make the text bigger only in this chat",
+        "bigger text in this conversation",
+        "just for one chat, make the font larger",
+        "the text in this chat is too small",
+        "only in one conversation I want bigger letters",
+        "can I have bigger text for a specific chat"
+      ]
+    },
+    {"args": {"direction": "bigger", "target": "messages", "scope": "one_chat", "chat": "Maria"}, "prompts": ["make Maria's messages bigger"]},
+    {"args": {"direction": "bigger", "target": "messages", "scope": "one_chat", "chat": "John"}, "prompts": ["the messages in my chat with John are too small"]},
+    {"args": {"direction": "bigger", "target": "messages", "scope": "one_chat", "chat": "Family"}, "prompts": ["bigger messages in the Family chat"]},
+    {"args": {"direction": "bigger", "target": "titles", "scope": "one_chat", "chat": "Maria"}, "prompts": ["the name at the top of Maria's chat is too small"]},
+    {"args": {"direction": "bigger", "target": "titles", "scope": "one_chat", "chat": "Book Club"}, "prompts": ["make the title of the Book Club chat bigger"]},
+    {"args": {"direction": "bigger", "target": "message_input", "scope": "one_chat", "chat": "Anna"}, "prompts": ["when I write to Anna the text I type is too small"]},
+    {"args": {"direction": "smaller", "scope": "one_chat", "chat": "Maria"}, "prompts": ["the text in Maria's chat is too big"]},
+    {"args": {"direction": "smaller", "scope": "one_chat", "chat": "George"}, "prompts": ["make the font smaller in the chat with George"]},
+    {"args": {"direction": "smaller", "scope": "one_chat", "chat": "work group"}, "prompts": ["smaller letters in the work group chat"]},
+    {"args": {"direction": "bigger", "steps": 3, "scope": "one_chat", "chat": "Maria"}, "prompts": ["make the text as big as possible in the chat with Maria"]},
+    {"args": {"direction": "bigger", "steps": 3, "scope": "one_chat", "chat": "Grandpa"}, "prompts": ["in Grandpa's chat I want huge letters"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Mum"}, "prompts": ["bigger letters in the chat with Mum"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Tom"}, "prompts": ["the text in Tom's chat is too small to read"]},
+    {"args": {"direction": "bigger", "scope": "one_chat", "chat": "Walking Club"}, "prompts": ["make the font larger in Walking Club"]}
+  ]
+}

@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 SW9-project contributors
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Fine-tunes FunctionGemma on data/train_rendered.jsonl with TRL's SFTTrainer.
+"""Fine-tunes FunctionGemma on Train2/data/train_rendered.jsonl with TRL's SFTTrainer.
 
     training/.venv/bin/python training/render_dataset.py   # first, step 4
     training/.venv/bin/python training/train.py
@@ -15,9 +15,9 @@ final call, ending in <start_function_response>, one of the model's stop
 tokens) counts towards the loss. Doing this before the trainer sees the data
 keeps TRL from appending <eos> after the stop token or touching the tokenizer.
 
-Evaluates on data/eval_rendered.jsonl after every epoch, stops when two epochs
+Evaluates on Train2/data/eval_rendered.jsonl after every epoch, stops when two epochs
 in a row do not improve the evaluation loss, and keeps the best epoch in
-output/functiongemma-pilot.
+Train2/output/functiongemma.
 
 Runs on CUDA when there is one, otherwise on the CPU (on an M1 Pro about an
 hour per epoch). Apple's GPU (--device mps) is faster but, with PyTorch 2.15,
@@ -44,10 +44,11 @@ from trl import SFTConfig, SFTTrainer  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 MODEL_DIR = HERE / "functiongemma-270m-it"
-DATA_DIR = HERE / "data"
-OUT_DIR = HERE / "output" / "functiongemma-pilot"
+RUN = HERE / "Train2"
+DATA_DIR = RUN / "data"
+OUT_DIR = RUN / "output" / "functiongemma"
 
-MAX_LENGTH = 1536  # the tool declarations alone are ~1300 tokens; the longest example is 1442
+MAX_LENGTH = 4096  # the v2 declarations are ~2,590 tokens; examples are 2,589-2,687
 SEED = 20261107
 
 
@@ -73,15 +74,20 @@ def main():
     parser.add_argument("--device", choices=["cuda", "cpu", "mps"], help="default: cuda if there is one, else cpu")
     parser.add_argument("--train-embeddings", action=argparse.BooleanOptionalAction, default=None,
                         help="also train the embedding table (default: yes, except on mps)")
+    parser.add_argument("--gradient-checkpointing", action=argparse.BooleanOptionalAction, default=None,
+                        help="recompute activations to save GPU memory (default: on for mps only)")
     parser.add_argument("--resume", action="store_true", help="continue from the last saved epoch")
     a = parser.parse_args()
 
     device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
     mps = device == "mps"
+    # Native bf16 only: the default `is_bf16_supported()` also counts emulation, which a T4 (7.5) offers but TRL's
+    # chunked log-prob kernel rejects ("only supported for CUDA devices with compute capability 8.0 or higher").
+    use_bf16 = device == "cuda" and torch.cuda.is_bf16_supported(including_emulation=False)
     tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_DIR,
-        dtype=torch.bfloat16 if device == "cuda" else torch.float32,
+        dtype=torch.bfloat16 if use_bf16 else torch.float32,
         # Eager attention, often recommended for Gemma, is only needed for attention soft-capping, which this model
         # does not use (attn_logit_softcapping is null). sdpa computes the same, faster, and hangs mps less often.
         attn_implementation="sdpa",
@@ -97,6 +103,8 @@ def main():
     print(f"device {device}: {len(train)} train, {len(evaluation)} eval examples, "
           f"{trainable / 1e6:.0f}M trainable parameters")
 
+    checkpointing = mps if a.gradient_checkpointing is None else a.gradient_checkpointing
+    print(f"gradient checkpointing: {'on' if checkpointing else 'off'}")
     smoke = a.max_steps > 0
     config = SFTConfig(
         output_dir=str(a.output),
@@ -109,11 +117,11 @@ def main():
         per_device_eval_batch_size=1,
         optim="adamw_torch_fused",
         # On mps: recomputes activations in the backward pass, about 1.5 GB less GPU memory per step
-        gradient_checkpointing=mps,
+        gradient_checkpointing=checkpointing,
         gradient_checkpointing_kwargs={"use_reentrant": False},  # works with frozen embeddings
         max_length=MAX_LENGTH,
         completion_only_loss=True,
-        bf16=device == "cuda",
+        bf16=use_bf16,
         logging_steps=10,
         eval_strategy="no" if smoke else "epoch",
         save_strategy="no" if smoke else "epoch",

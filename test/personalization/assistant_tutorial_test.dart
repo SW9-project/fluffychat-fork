@@ -21,6 +21,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'assist_view_test.dart' show FakeModel;
+import 'fake_actions.dart';
 
 /// Answers only once [answer] completes, to see the wait.
 class _SlowModel extends FakeModel {
@@ -100,6 +101,7 @@ void main() {
           tools: Future.value(_tools),
           themeMode: () => ThemeMode.system,
           chats: () => const [],
+          actions: FakeActions(),
           guide: guide,
         ),
       ),

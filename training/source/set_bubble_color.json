@@ -1,0 +1,124 @@
+{
+  "function": "set_bubble_color",
+  "groups": [
+    {
+      "args": {"color": "blue"},
+      "prompts": [
+        "make the chat bubbles blue",
+        "blue bubbles please",
+        "can the speech bubbles be blue",
+        "change the colour of the message bubbles to blue"
+      ]
+    },
+    {
+      "args": {"color": "green"},
+      "prompts": [
+        "green bubbles",
+        "change the bubble color to green",
+        "i want green message bubbles"
+      ]
+    },
+    {"args": {"color": "pink"}, "prompts": ["pink chat bubbles please", "make the message bubbles pink"]},
+    {"args": {"color": "purple"}, "prompts": ["purple bubbles", "violet bubbles please"]},
+    {"args": {"color": "red"}, "prompts": ["make the bubbles red", "red speech bubbles"]},
+    {"args": {"color": "orange"}, "prompts": ["bubbles in orange", "can u make the bubbles orange"]},
+    {"args": {"color": "yellow"}, "prompts": ["yellow message bubbles"]},
+    {"args": {"color": "teal"}, "prompts": ["teal bubbles"]},
+    {"args": {"color": "grey"}, "prompts": ["grey bubbles please", "gray chat bubbles"]},
+    {"args": {"color": "indigo"}, "prompts": ["navy blue bubbles", "dark blue chat bubbles"]},
+    {"args": {"color": "brown"}, "prompts": ["brown bubbles"]},
+    {"args": {"color": "cyan"}, "prompts": ["cyan bubbles"]},
+    {"args": {"color": "lime"}, "prompts": ["lime green bubbles"]},
+    {"args": {"color": "amber"}, "prompts": ["amber color for the bubbles"]},
+    {
+      "args": {"color": "default"},
+      "prompts": [
+        "normal bubble color",
+        "the bubbles back to the default color",
+        "reset the bubble colors",
+        "the original color for the chat bubbles",
+        "put the bubbles back to their usual colour"
+      ]
+    },
+    {
+      "args": {},
+      "prompts": [
+        "change the bubble color",
+        "I want different colored bubbles",
+        "can I choose the color of the message bubbles",
+        "change the colour of the speech bubbles",
+        "the bubble colors are ugly, change them",
+        "black bubbles",
+        "make the bubbles white",
+        "gold bubbles please",
+        "silver chat bubbles",
+        "beige message bubbles"
+      ]
+    },
+    {"args": {"side": "mine", "color": "blue"}, "prompts": ["make my messages blue"]},
+    {"args": {"side": "mine", "color": "green"}, "prompts": ["my bubbles should be green"]},
+    {"args": {"side": "mine", "color": "red"}, "prompts": ["change the color of my own messages to red"]},
+    {"args": {"side": "mine", "color": "pink"}, "prompts": ["I want my texts in pink"]},
+    {"args": {"side": "mine", "color": "teal"}, "prompts": ["what I write should be in teal"]},
+    {"args": {"side": "mine", "color": "orange"}, "prompts": ["the messages I send in orange please"]},
+    {"args": {"side": "mine", "color": "purple"}, "prompts": ["my message bubbles purple"]},
+    {"args": {"side": "mine", "color": "yellow"}, "prompts": ["can my bubbles be yellow"]},
+    {"args": {"side": "mine", "color": "grey"}, "prompts": ["my messages in gray pls"]},
+    {"args": {"side": "mine", "color": "default"}, "prompts": ["my own bubbles back to the normal color"]},
+    {
+      "args": {"side": "mine"},
+      "prompts": [
+        "change the color of my bubbles",
+        "change my bubble colour",
+        "make my messages white",
+        "I want my bubbles in black"
+      ]
+    },
+    {"args": {"side": "theirs", "color": "grey"}, "prompts": ["make other people's messages grey"]},
+    {"args": {"side": "theirs", "color": "yellow"}, "prompts": ["their messages in yellow"]},
+    {"args": {"side": "theirs", "color": "green"}, "prompts": ["the messages I receive should be green"]},
+    {"args": {"side": "theirs", "color": "orange"}, "prompts": ["color the bubbles of people who write to me orange"]},
+    {"args": {"side": "theirs", "color": "blue"}, "prompts": ["the other person's bubbles blue"]},
+    {"args": {"side": "theirs", "color": "pink"}, "prompts": ["messages from others in pink please"]},
+    {"args": {"side": "theirs", "color": "teal"}, "prompts": ["incoming messages in teal"]},
+    {"args": {"side": "theirs", "color": "default"}, "prompts": ["other people's bubbles back to default"]},
+    {
+      "args": {"side": "theirs"},
+      "prompts": [
+        "change the color of the messages I get",
+        "make their bubbles gold"
+      ]
+    },
+    {"args": {"side": "theirs", "color": "blue", "scope": "one_chat", "chat": "Simon"}, "prompts": ["make Simon's messages blue"]},
+    {"args": {"side": "theirs", "color": "grey", "scope": "one_chat", "chat": "Dr. Hansen"}, "prompts": ["Dr. Hansen's messages in grey"]},
+    {"args": {"side": "theirs", "color": "pink", "scope": "one_chat", "chat": "Tante Inge"}, "prompts": ["messages from Tante Inge in pink"]},
+    {"args": {"side": "theirs", "color": "blue", "scope": "one_chat", "chat": "Peter"}, "prompts": ["in Peter's chat make his messages blue"]},
+    {"args": {"side": "theirs", "color": "brown", "scope": "one_chat", "chat": "Mrs. Jensen"}, "prompts": ["Mrs. Jensen's messages brown"]},
+    {"args": {"side": "theirs", "color": "lime", "scope": "one_chat", "chat": "Walking Club"}, "prompts": ["in the Walking Club chat make the other people's bubbles lime"]},
+    {"args": {"side": "theirs", "color": "purple", "scope": "one_chat", "chat": "grandma"}, "prompts": ["what grandma writes should be purple"]},
+    {"args": {"side": "theirs", "scope": "one_chat", "chat": "James"}, "prompts": ["change the color of James's messages"]},
+    {"args": {"side": "mine", "color": "pink", "scope": "one_chat", "chat": "Mum"}, "prompts": ["in the chat with Mum my messages should be pink"]},
+    {"args": {"side": "mine", "color": "green", "scope": "one_chat", "chat": "grandpa"}, "prompts": ["my bubbles in the chat with grandpa should be green"]},
+    {"args": {"side": "mine", "color": "red", "scope": "one_chat", "chat": "Agnes"}, "prompts": ["make my messages to Agnes red"]},
+    {"args": {"side": "mine", "color": "orange", "scope": "one_chat", "chat": "Family group"}, "prompts": ["in the Family group my bubbles orange please"]},
+    {"args": {"side": "mine", "color": "cyan", "scope": "one_chat"}, "prompts": ["only in this chat, my messages cyan"]},
+    {"args": {"side": "mine", "scope": "one_chat", "chat": "@lisa.m:matrix.org"}, "prompts": ["the color of my bubbles when I write to @lisa.m:matrix.org"]},
+    {"args": {"color": "green", "scope": "one_chat", "chat": "Simon"}, "prompts": ["make Simon's bubbles green"]},
+    {"args": {"color": "red", "scope": "one_chat", "chat": "Simon"}, "prompts": ["make the bubbles in Simon's chat red"]},
+    {"args": {"scope": "one_chat", "chat": "Family group"}, "prompts": ["change the bubble color in the Family group"]},
+    {"args": {"color": "purple", "scope": "one_chat"}, "prompts": ["purple bubbles only in this chat"]},
+    {"args": {"color": "teal", "scope": "one_chat", "chat": "@anna.k:matrix.org"}, "prompts": ["in my chat with @anna.k:matrix.org make the bubbles teal"]},
+    {"args": {"color": "yellow", "scope": "one_chat", "chat": "Book Club"}, "prompts": ["yellow bubbles in the Book Club chat"]},
+    {"args": {"color": "orange", "scope": "one_chat", "chat": "James"}, "prompts": ["make James's bubbles orange"]},
+    {"args": {"color": "default", "scope": "one_chat"}, "prompts": ["the bubbles in this chat back to normal"]},
+    {"args": {"color": "blue", "scope": "one_chat", "chat": "church group"}, "prompts": ["blue bubbles in the church group chat"]},
+    {"args": {"scope": "one_chat", "chat": "Simon"}, "prompts": ["change the bubbles in Simon's chat"]},
+    {"args": {"scope": "one_chat", "chat": "Agnes"}, "prompts": ["change the color of Agnes' bubbles"]},
+    {"args": {"color": "indigo", "scope": "one_chat", "chat": "Prof. Larsen"}, "prompts": ["dark blue bubbles for Prof. Larsen's chat"]},
+    {"args": {"color": "green", "scope": "one_chat", "chat": "my son"}, "prompts": ["the bubbles in the chat with my son should be green"]},
+    {"args": {"color": "pink", "scope": "one_chat", "chat": "peter123"}, "prompts": ["pink bubbles when i talk to peter123"]},
+    {"args": {"scope": "one_chat", "chat": "Neighbours"}, "prompts": ["gold bubbles in the Neighbours chat"]},
+    {"args": {"color": "amber", "scope": "one_chat", "chat": "Grandchildren group"}, "prompts": ["amber bubbles for the Grandchildren group"]},
+    {"args": {"color": "red", "scope": "one_chat"}, "prompts": ["just this conversation, red bubbles"]}
+  ]
+}

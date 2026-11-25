@@ -13,16 +13,28 @@ and `data/eval.jsonl`. It needs only Python 3. With `--tokenizer` and `--templat
 `jinja2` packages) it also renders every example with the real chat template and
 reports its length in tokens.
 
+## Train1 and Train2
+
+`Train1/` is the first run (11 functions), kept as history. `Train2/` is the second (19
+functions): `Train2/data/` is the dataset, and training and evaluation write to
+`Train2/output/`. Training runs on Google Colab: `bash training/pack_colab.sh` makes
+`Train2/colab.zip`; upload it to the root of My Drive, open `colab_train.ipynb`, choose a
+GPU runtime (L4 or A100 preferred, T4 works) and Run all. The result is
+`MyDrive/train2_result.zip`. See `TRAINING.md`.
+
 ## What is in it
 
-1050 examples: 958 single requests and 92 conversations. Each function has 70 to 221.
+2084 examples: 1920 single requests and 164 conversations. Each function has 74 to 280.
 `change_text_size` has the most because it has the most combinations (text targets,
-chats, directions). 154 examples (14.7%) end in `ask_clarification` or `no_action`.
+chats, directions, exact sizes). 271 examples (13.0%) end in `ask_clarification` or
+`no_action`. Rendered with the 19 declarations, an example is 2589 to 2687 tokens; the
+build stops above 4096.
 15% of every function, separately for single requests and conversations, is held out in
 `data/eval.jsonl`.
 
-The build stops when a call does not match its declaration, or when a prompt appears
-twice or with two different answers.
+The build stops when a call does not match its declaration, when a numeric `size` is
+outside 0.5 to 3 (as in the app), or when a prompt appears twice or with two different
+answers.
 
 ## Format
 
@@ -45,14 +57,30 @@ as `tools`. Every example ends with the call the model has to learn.
 ## Labelling rules
 
 - Arguments the user did not give are left out. The build drops any argument equal to
-  its default, so the model never learns to write `target: all` or `steps: 1`.
-- `steps` comes only from words about the size of the change: none, "a little" or "a
-  bit" is 1, "much", "quite a bit" or "considerably" is 2, "a lot", "way bigger", "huge"
-  or "as big as possible" is 3. How bad the problem sounds ("way too small") does not
-  change it.
+  its default, so the model never learns to write `target: all` or `steps: 2`.
+- `steps` comes only from words about the size of the change. It defaults to 2, so it is
+  left out when the user says nothing about the amount. "A little", "a bit", "slightly"
+  or "somewhat" is 1; "much", "quite a bit", "considerably", "a lot" or "way bigger"
+  is 3. How bad the problem sounds ("way too small") does not change it. In a
+  conversation, the words of the follow-up count ("a bit more" is 1).
+- A size the user asks for gives `size` instead of `direction`: `small`, `medium`, `big`,
+  `very_big`, or a number as written (`1.6`, `150%`, `1,4`). "Large" is `big`; "huge",
+  "biggest", "maximum" or "as big as possible" is `very_big`; "tiny", "smallest",
+  "minimum" or "as little as possible" is `small`. A complaint is still a direction
+  ("the icons are huge" is smaller). "Normal size" is `reset_settings`, only "medium" is
+  `size: medium`.
+- Bubble side only when it is said: "my messages" is `mine`, "Simon's messages" or
+  "other people's messages" is `theirs`; "Simon's bubbles" has no `side`. A color the
+  list lacks (black, white, gold, silver, beige, turquoise) is left out. Gray is `grey`,
+  violet `purple`, dark blue or navy `indigo`. Photo wallpapers, app-wide notifications
+  and voice settings ("speak slower") are `no_action`.
 - A named chat always gives `scope: one_chat` and the name as written, without the
   possessive ("Maria's chat" gives `Maria`). "This chat" or "one chat" gives
   `scope: one_chat` without a name.
+- Bare "space" or "spacing" with a direction or a reset ("more spacing", "less space
+  please", "reset the spacing") is `change_spacing`; without one ("the spacing", "fix
+  the spacing") it is `ask_clarification` with `change_spacing` and `change_line_spacing`.
+  `change_line_spacing` needs a word about lines of text.
 - Taps that miss or buttons that are hard to hit: `change_button_size`. Tapping the
   wrong one because they are close together: `change_spacing`. Too many buttons:
   `set_simple_mode`. Not knowing what a button does: `set_button_labels`.
@@ -60,10 +88,16 @@ as `tools`. Every example ends with the call the model has to learn.
   bright or too dark screen: `set_theme`.
 - "Reset", "default", "back to normal" or "undo the changes": `reset_settings`.
 - Clear about the app's look but not about what or which way: `ask_clarification`,
-  with the functions that might fit, in declaration order. One function when only its
+  with the functions that might fit, in declaration order ("the spacing" gives
+  `change_spacing` and `change_line_spacing`, "change the colors" gives `set_high_contrast`,
+  `set_theme`, `set_bubble_color` and `set_app_color`). One function when only its
   details are missing ("change the text size").
+- Bubble and app colors, wallpaper, pin, mute, reading aloud, and the shortcuts (swipe to
+  reply, double tap to react, Enter to send, GIFs playing by themselves) have their own
+  functions. Leave out what the user does not say ("make the chat bubbles blue" has
+  no `side`, "mute this chat" no `chat`).
 - Anything else, including other app tasks, look changes no function covers (another
-  font, colored bubbles) and sentences that only use words like "big" or "bright":
+  font) and sentences that only use words like "big" or "bright":
   `no_action`.
 
 ## Conversations

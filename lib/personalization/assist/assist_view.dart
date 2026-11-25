@@ -14,6 +14,7 @@ import '../accessibility_settings.dart';
 import '../appearance_l10n.dart';
 import '../assistant_tutorial.dart';
 import '../assistant_tutorial_l10n.dart';
+import '../model/app_change.dart';
 import '../model/personalization_tools.dart';
 import '../model/settings_intent_model.dart';
 import '../model/tool_call_interpreter.dart';
@@ -27,6 +28,7 @@ import '../study/study_log.dart';
 import '../suggestions/suggestion.dart';
 import '../suggestions/suggestion_manager.dart';
 import '../voice/speech_transcriber.dart';
+import 'assist_actions.dart';
 import 'assist_conversation.dart';
 import 'change_preview.dart';
 
@@ -101,6 +103,9 @@ class AssistView extends StatefulWidget {
   /// The guided tour shown in place, or null for none.
   final AssistantGuide? guide;
 
+  /// Reads and applies the app settings besides accessibility.
+  final AssistActions actions;
+
   const AssistView({
     required this.model,
     required this.manager,
@@ -109,6 +114,7 @@ class AssistView extends StatefulWidget {
     required this.tools,
     required this.themeMode,
     required this.chats,
+    required this.actions,
     this.transcriber,
     this.guide,
     super.key,
@@ -133,6 +139,10 @@ class _Exchange {
 
   /// The chat a one-chat change is for, as shown to the user.
   String? chatName;
+  String? roomId;
+
+  /// The value an applied app change replaced, for undo.
+  Object? appFrom;
 
   /// The user answered this exchange's question.
   bool answered = false;
@@ -157,6 +167,10 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   final AssistConversation _conversation = AssistConversation();
   PersonalizationTools? _tools;
   bool _busy = false;
+
+  /// The only app change Undo is offered for, like the manager's applied
+  /// suggestion: undoing an older one would overwrite newer changes.
+  _Exchange? _lastAppApplied;
   ModelState? _modelState;
 
   /// True from the user's tap on the mic until the recording's text is in
@@ -442,14 +456,16 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
   }
 
   /// A new request replaces what is still open: an unanswered proposal is
-  /// declined for the model (the manager logs it as superseded), an open
-  /// question is left.
+  /// declined for the model (the manager logs a settings one as superseded,
+  /// an app one is logged as declined here), an open question is left.
   void _closeOpen() {
     final last = _last;
     if (last == null) return;
     last.answered = true;
-    if (last.suggestion != null &&
-        last.outcome == null &&
+    if (last.outcome != null) return;
+    if (last.result case AssistAppProposal(:final change)) {
+      _declineApp(last, change);
+    } else if (last.suggestion != null &&
         widget.manager.current == last.suggestion) {
       last.outcome = _Outcome.declined;
       _conversation.resolved(applied: false);
@@ -495,6 +511,7 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
       if (result case AssistNeedsChat(:final call, :final chatName)) {
         result = _resolveChat(tools, exchange, call, chatName);
       }
+      result = _checked(result);
     } catch (e, s) {
       // The app log gets the failure, never the user's words.
       Logs().w('Assistant request failed', e, s);
@@ -545,7 +562,9 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     if (chatName == null) return AssistNeedsChat(call, null);
     final matches = AssistChat.matching(widget.chats(), chatName);
     if (matches.length != 1) return AssistNeedsChat(call, chatName);
-    exchange.chatName = matches.single.name;
+    exchange
+      ..chatName = matches.single.name
+      ..roomId = matches.single.id;
     return _interpreter(tools).forChat(call, matches.single.id);
   }
 
@@ -556,12 +575,62 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
       return;
     }
     exchange.answered = true;
-    final answer = _Exchange(chat.name)..chatName = chat.name;
-    final next = _interpreter(tools).forChat(result.call, chat.id);
+    final answer = _Exchange(chat.name)
+      ..chatName = chat.name
+      ..roomId = chat.id;
+    _answerOnPhone(answer, _interpreter(tools).forChat(result.call, chat.id));
+  }
+
+  /// A side or color chosen on the phone: the model is not asked again.
+  void _chooseDetail(
+    _Exchange exchange,
+    AssistNeedsDetail detail,
+    String option,
+  ) {
+    final tools = _tools;
+    if (tools == null || exchange.answered) return;
+    exchange.answered = true;
+    final answer = _Exchange(AppearanceL10n.of(context).detailOption(option))
+      ..chatName = exchange.chatName
+      ..roomId = exchange.roomId;
+    _answerOnPhone(
+      answer,
+      _interpreter(tools).interpret(
+        detail.call.withArg(detail.parameter, option),
+        roomId: exchange.roomId,
+      ),
+    );
+  }
+
+  void _answerOnPhone(_Exchange answer, AssistResult result) {
+    final next = _checked(result);
     StudyLog.instance.record(AssistAnswered(next, answer: true));
     setState(() => _exchanges.add(answer));
     _show(answer, next);
     _scrollToEnd();
+  }
+
+  /// An app change that is already as asked, or a bubble color the other
+  /// side already has, changes nothing.
+  AssistResult _checked(AssistResult result) {
+    if (result is! AssistAppProposal) return result;
+    final AppChange(:setting, :roomId, :value) = result.change;
+    final actions = widget.actions;
+    if (actions.current(setting, roomId) == value) {
+      return AssistUnchanged(result.call, UnchangedReason.alreadySet);
+    }
+    final otherSide = switch (setting) {
+      AppSetting.ownBubbleColor => AppSetting.otherBubbleColor,
+      AppSetting.otherBubbleColor => AppSetting.ownBubbleColor,
+      _ => null,
+    };
+    // Both sides may have the default color: it differs by side.
+    if (otherSide != null &&
+        value != null &&
+        actions.current(otherSide, roomId) == value) {
+      return AssistUnchanged(result.call, UnchangedReason.sameAsOtherSide);
+    }
+    return result;
   }
 
   /// The simple view [call] asks for: `set_simple_mode`, or resetting it.
@@ -674,7 +743,10 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
         final suggestion = Suggestion.userRequest(call.name, change);
         exchange.suggestion = suggestion;
         widget.manager.proposeUserRequest(suggestion);
-      case AssistClarification() || AssistNeedsChat():
+      case AssistClarification() ||
+          AssistNeedsChat() ||
+          AssistNeedsDetail() ||
+          AssistAppProposal():
         // The conversation waits for the user's answer.
         break;
       default:
@@ -702,6 +774,61 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     await widget.manager.undoApplied();
     if (exchange == _last) _conversation.undone();
     setState(() => exchange.outcome = _Outcome.undone);
+  }
+
+  Future<void> _applyApp(_Exchange exchange, AppChange change) async {
+    if (exchange.outcome != null) return;
+    exchange.appFrom = widget.actions.current(change.setting, change.roomId);
+    setState(() => exchange.outcome = _Outcome.applied);
+    if (!await _run(change)) {
+      if (mounted) setState(() => exchange.outcome = null);
+      return;
+    }
+    if (mounted) setState(() => _lastAppApplied = exchange);
+    _conversation.resolved(applied: true);
+    StudyLog.instance.record(
+      AssistAppChangeEvent(change.setting.name, 'apply'),
+    );
+  }
+
+  void _declineApp(_Exchange exchange, AppChange change) {
+    if (exchange.outcome != null) return;
+    _conversation.resolved(applied: false);
+    StudyLog.instance.record(
+      AssistAppChangeEvent(change.setting.name, 'decline'),
+    );
+    setState(() => exchange.outcome = _Outcome.declined);
+  }
+
+  Future<void> _undoApp(_Exchange exchange, AppChange change) async {
+    if (exchange.outcome != _Outcome.applied || exchange != _lastAppApplied) {
+      return;
+    }
+    setState(() => exchange.outcome = _Outcome.undone);
+    if (!await _run(
+      AppChange(change.setting, change.roomId, exchange.appFrom),
+    )) {
+      if (mounted) setState(() => exchange.outcome = _Outcome.applied);
+      return;
+    }
+    if (exchange == _last) _conversation.undone();
+    StudyLog.instance.record(AssistAppChangeEvent(change.setting.name, 'undo'));
+  }
+
+  /// Applies [change], or says it failed. The app log gets the error.
+  Future<bool> _run(AppChange change) async {
+    try {
+      await widget.actions.apply(change);
+      return true;
+    } catch (e, s) {
+      Logs().w('Assistant change failed', e, s);
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text(AppearanceL10n.of(context).changeFailed)),
+        );
+      }
+      return false;
+    }
   }
 
   void _scrollToEnd() => WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1075,12 +1202,17 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
       case AssistNotAvailable():
         return Text(words.notAvailable, key: const Key('assist_not_available'));
       case AssistUnchanged(:final reason, :final category):
-        return withSettingsLink(
-          reason == UnchangedReason.atLimit && category != null
-              ? l10n.alreadyAtLimit(l10n.categoryTitles[category]!)
-              : words.alreadySet,
-          key: const Key('assist_unchanged'),
-        );
+        return withSettingsLink(switch (reason) {
+          UnchangedReason.atLimit when category != null => l10n.alreadyAtLimit(
+            l10n.categoryTitles[category]!,
+          ),
+          UnchangedReason.sameAsOtherSide => words.sameAsOtherSide,
+          _ => words.alreadySet,
+        }, key: const Key('assist_unchanged'));
+      case final AssistNeedsDetail detail:
+        return _detail(context, exchange, detail);
+      case AssistAppProposal(:final change):
+        return _appProposal(context, exchange, change);
       case AssistClarification(:final options):
         return _clarification(context, exchange, options);
       case AssistNeedsChat(:final chatName):
@@ -1180,6 +1312,90 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     );
   }
 
+  Widget _detail(
+    BuildContext context,
+    _Exchange exchange,
+    AssistNeedsDetail detail,
+  ) {
+    final words = AppearanceL10n.of(context);
+    final open = !exchange.answered && !_busy;
+    return Column(
+      key: const Key('assist_detail'),
+      crossAxisAlignment: .start,
+      children: [
+        Text(words.detailQuestions[detail.parameter] ?? words.clarifyOne),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final option in detail.options)
+              ActionChip(
+                key: Key('assist_detail_$option'),
+                avatar: switch (ToolCallInterpreter.colorValues[option]) {
+                  final argb? => Icon(Icons.circle, color: Color(argb)),
+                  null => null,
+                },
+                label: Text(words.detailOption(option)),
+                onPressed: open
+                    ? () => _chooseDetail(exchange, detail, option)
+                    : null,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _appProposal(
+    BuildContext context,
+    _Exchange exchange,
+    AppChange change,
+  ) {
+    final l10n = PersonalizationL10n.of(context);
+    final words = AppearanceL10n.of(context);
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        Text(words.appChange(change, exchange.chatName)),
+        const SizedBox(height: 12),
+        switch (exchange.outcome) {
+          null => Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              OutlinedButton(
+                key: const Key('assist_no_thanks'),
+                onPressed: () => _declineApp(exchange, change),
+                child: Text(l10n.noThanks),
+              ),
+              FilledButton(
+                key: const Key('assist_apply'),
+                onPressed: () => _applyApp(exchange, change),
+                child: Text(l10n.applyChange),
+              ),
+            ],
+          ),
+          _Outcome.applied when exchange == _lastAppApplied => Row(
+            children: [
+              Expanded(child: Text(words.applied)),
+              TextButton.icon(
+                key: const Key('assist_undo'),
+                onPressed: () => _undoApp(exchange, change),
+                icon: const Icon(Icons.undo),
+                label: Text(l10n.undo),
+              ),
+            ],
+          ),
+          _Outcome.applied => Text(words.applied),
+          _Outcome.undone => Text(l10n.changeUndone),
+          _Outcome.declined => Text(l10n.notChanged),
+        },
+      ],
+    );
+  }
+
   Widget _proposal(
     BuildContext context,
     _Exchange exchange,
@@ -1240,7 +1456,7 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        Text(_describe(words, call, exchange.chatName)),
+        Text(_describe(words, call, change, exchange.chatName)),
         const SizedBox(height: 12),
         ChangePreview(change: change),
         const SizedBox(height: 12),
@@ -1270,36 +1486,71 @@ class _AssistViewState extends State<AssistView> with WidgetsBindingObserver {
     );
   }
 
-  /// The question above the preview, from the call itself.
+  /// The question above the preview, from the call itself, with an exact
+  /// size as [change] applies it.
   static String _describe(
     AppearanceL10n words,
     ProposedCall call,
+    SettingsChange change,
     String? chat,
   ) {
     final args = call.args;
     bool up(String word) => args['direction'] == word;
     bool on() => args['enabled'] == true || args['enabled'] == 'true';
+    final target = switch (args['target']) {
+      'messages' => ScaleCategory.messageText,
+      'chat_list' => ScaleCategory.chatListText,
+      'titles' => ScaleCategory.titleText,
+      'message_input' => ScaleCategory.inputText,
+      _ => ScaleCategory.text,
+    };
+    final button = AccessibleButton.values
+        .where((b) => b.name == args['button'])
+        .firstOrNull;
+    final category = switch (call.name) {
+      PersonalizationTools.changeTextSize when chat != null =>
+        AccessibilitySettings.chatTextRange,
+      PersonalizationTools.changeTextSize => target,
+      PersonalizationTools.changeButtonSize =>
+        button?.category ?? ScaleCategory.button,
+      PersonalizationTools.changeSpacing => ScaleCategory.spacing,
+      PersonalizationTools.changeLineSpacing => ScaleCategory.lineSpacing,
+      PersonalizationTools.changeAvatarSize => ScaleCategory.avatar,
+      _ => null,
+    };
+    // An exact size wins over the direction, as in the interpreter. The
+    // category clamps and snaps it, so say what is applied, not what was
+    // written.
+    if (category != null && args['size'] != null) {
+      final roomId = change.changedChat;
+      final size = roomId == null
+          ? change.to.effective(category)
+          : change.to.messageScale(roomId);
+      return words.sizeTo(
+        roomId == null || chat == null
+            ? words.sizeTarget(category)
+            : words.chatText(chat),
+        size.toStringAsFixed(category.step < 0.1 ? 2 : 1),
+      );
+    }
     return switch (call.name) {
       PersonalizationTools.changeTextSize when chat != null =>
         words.chatTextSize(chat, up('bigger')),
       PersonalizationTools.changeTextSize => words.textSize(
-        switch (args['target']) {
-          'messages' => ScaleCategory.messageText,
-          'chat_list' => ScaleCategory.chatListText,
-          'titles' => ScaleCategory.titleText,
-          'message_input' => ScaleCategory.inputText,
-          _ => ScaleCategory.text,
-        },
+        target,
         up('bigger'),
       ),
       PersonalizationTools.changeButtonSize => words.buttonSize(
-        AccessibleButton.values
-            .where((b) => b.name == args['button'])
-            .firstOrNull,
+        button,
         up('bigger'),
       ),
       PersonalizationTools.changeSpacing => words.spacing(up('more')),
+      PersonalizationTools.changeLineSpacing => words.lineSpacing(up('more')),
       PersonalizationTools.changeAvatarSize => words.avatarSize(up('bigger')),
+      PersonalizationTools.setReadAloud => words.toggle(
+        AccessibilityToggle.tripleTapToRead,
+        on(),
+      ),
       PersonalizationTools.setButtonLabels => words.toggle(
         AccessibilityToggle.buttonLabels,
         on(),
