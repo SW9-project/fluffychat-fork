@@ -12,8 +12,8 @@ large for git, so it is not committed.
 
 ## The fine-tuned model
 
-`functiongemma-270M-sw9-tools1.litertlm` is built in this repository from the
-training run in `training/` (see `training/TRAINING.md`, steps 5 to 7):
+`functiongemma-270M-sw9-tools2.litertlm` is built in this repository from the
+Train2 training run in `training/` (see `training/TRAINING.md`, steps 5 to 7):
 
 ```sh
 bash scripts/fetch_personalization_model.sh --baseline   # the converter needs it
@@ -22,18 +22,18 @@ training/.convert-venv/bin/python training/convert.py
 
 `convert.py` writes the file here. It is not attached to any release yet, so a fresh
 clone has to build it, or copy it from someone who has. sha256 of the file built from
-`checkpoint-1561` (epoch 7) on 2026-11-11:
+Train2 on 2026-11-22 (also in `model.json`):
 
 ```
-37e92741110b1a7bff2607905a3598186d42de36beabe9091400879ef7d1383b
+2f44a436c8020544b96c67051f19e8c4d5dc835d90ebdea2854b13ed5120fd84
 ```
 
 The model is trained on the exact words of the functions, so changing
 `assets/personalization_tools.json` means training again.
 `test/personalization/personalization_tools_test.dart` holds the app to the file.
 
-The file has a 2048-token context (the base file has 1024): the eleven declarations
-alone are about 1300 tokens.
+The file has a 4096-token context (the base file has 1024): the nineteen declarations
+alone are about 2600 tokens.
 
 A build without the file works normally; the Assist tab then says the assistant
 cannot run on this phone.

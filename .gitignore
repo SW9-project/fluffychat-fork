@@ -333,12 +333,11 @@ assets/models/baseline/*.litertlm
 assets/models/baseline/*.part
 
 # Training model
-training/.venv/
-training/.convert-venv/
-training/.hf/
-training/functiongemma-270m-it/
 training/output/
-# Training runs and their results; the models are shared on Drive
-training/Train*/
+# Training runs: data and sources are tracked, results are shared on Drive
+training/Train*/output/
+training/Train*/colab.zip
 assets/models/train1/*.litertlm
 .DS_Store
+training/Train2/train2_result.zip
+training/functiongemma-270m-it/model.safetensors
